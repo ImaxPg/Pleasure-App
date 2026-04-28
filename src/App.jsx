@@ -772,23 +772,45 @@ export default function MassageBookingSite() {
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
             <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
 
-            <input
-              type="text"
-              placeholder="Ime i prezime"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="w-full mb-3 rounded-2xl border border-zinc-300 px-4 py-3"
-            />
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+                <span style={{ minWidth: 120, fontWeight: 700 }}>Ime i prezime</span>
+                <input
+                  type="text"
+                  placeholder="Unesite ime"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                />
+              </label>
 
-            <input
-              type="text"
-              placeholder="Telefon (opciono)"
-              value={clientPhone}
-              onChange={(e) => setClientPhone(e.target.value)}
-              className="w-full mb-6 rounded-2xl border border-zinc-300 px-4 py-3"
-            />
+              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+                <span style={{ minWidth: 120, fontWeight: 700 }}>Telefon</span>
+                <input
+                  type="text"
+                  placeholder="(opciono)"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                />
+              </label>
+            </div>
 
             <h2 className="text-2xl font-semibold mb-4">Izaberite termin</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
+              <input
+                type="date"
+                min={todayISO()}
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  setSelectedSlot("");
+                }}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+              />
+            </label>
 
             <label className="block mb-5">
               <span className="text-sm font-medium text-zinc-700">Datum</span>
