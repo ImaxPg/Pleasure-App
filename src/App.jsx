@@ -28,6 +28,8 @@ export default function MassageBookingSite() {
   const [pending, setPending] = useState([]);
   const [blocked, setBlocked] = useState({});
   const [userMessage, setUserMessage] = useState("");
+  const [userPopup, setUserPopup] = useState(null);
+  const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
   const [adminPopups, setAdminPopups] = useState([]);
@@ -98,6 +100,26 @@ export default function MassageBookingSite() {
               };
             }
 
+            if (trackedBookingId && String(item.id) === String(trackedBookingId)) {
+              if (item.status === "confirmed") {
+                setUserPopup({
+                  title: "Termin je potvrđen",
+                  message: `Vaš termin ${item.date} u ${item.time} je zakazan.`,
+                });
+                localStorage.removeItem("trackedBookingId");
+                setTrackedBookingId(null);
+              }
+
+              if (item.status === "rejected") {
+                setUserPopup({
+                  title: "Termin je odbijen",
+                  message: `Vaš zahtjev za ${item.date} u ${item.time} je odbijen. Molimo izaberite drugi termin.`,
+                });
+                localStorage.removeItem("trackedBookingId");
+                setTrackedBookingId(null);
+              }
+            }
+
             if (item.status === "pending") {
               pendingList.push({
                 id: item.id,
@@ -127,7 +149,7 @@ export default function MassageBookingSite() {
     const interval = setInterval(fetchData, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [selectedDate, trackedBookingId]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
@@ -202,6 +224,13 @@ export default function MassageBookingSite() {
   const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
   const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
 
+  const formatPublicName = (fullName) => {
+    const parts = (fullName || "").trim().split(" ").filter(Boolean);
+    if (parts.length === 0) return "";
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[1][0]}.`;
+  };
+
   const key = (date, slot) => `${date}_${slot}`;
 
   const isBooked = (date, slot) => Boolean(booked[key(date, slot)]);
@@ -255,7 +284,9 @@ export default function MassageBookingSite() {
       };
 
       setPending((current) => [...current, request]);
-      setUserMessage("Zahtjev je poslat administratoru. Termin nije zakazan dok ga administrator ne potvrdi.");
+      localStorage.setItem("trackedBookingId", String(request.id));
+      setTrackedBookingId(String(request.id));
+      setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
       setSelectedSlot("");
     } catch (error) {
       setUserMessage("Greška: zahtjev nije poslat backendu. Provjerite da li backend radi i da li postoji ruta POST /appointments.");
@@ -741,6 +772,51 @@ export default function MassageBookingSite() {
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8">
+      {userPopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 24,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              padding: 28,
+              width: "100%",
+              maxWidth: 440,
+              textAlign: "center",
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>{userPopup.title}</h2>
+            <p style={{ fontSize: 16, marginBottom: 20 }}>{userPopup.message}</p>
+            <button
+              onClick={() => setUserPopup(null)}
+              style={{
+                width: "100%",
+                border: 0,
+                borderRadius: 16,
+                background: "#15803d",
+                color: "white",
+                padding: "14px 18px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              U redu
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto grid gap-6">
         <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
           <div className="flex items-center gap-3 mb-3">
@@ -811,7 +887,7 @@ export default function MassageBookingSite() {
                 const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
                 let label = "Slobodno";
-                if (isBooked(selectedDate, slot)) label = "Zakazano";
+                if (isBooked(selectedDate, slot)) label = `Zakazano: ${formatPublicName(booked[key(selectedDate, slot)]?.clientName)}`;
                 else if (isBlocked(selectedDate, slot)) label = "Zaključano";
                 else if (isPending(selectedDate, slot)) label = "Čeka potvrdu";
 
@@ -862,13 +938,13 @@ export default function MassageBookingSite() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 14,
-                    border: "1px solid #1d4ed8",
+                    border: isReady ? "1px solid #15803d" : "1px solid #d1d5db",
                     borderRadius: 14,
                     padding: "10px 12px",
                     background: isReady
                       ? isHoverBooking
-                        ? "#2563eb"
-                        : "#1d4ed8"
+                        ? "#16a34a"
+                        : "#15803d"
                       : "#e5e7eb",
                     color: isReady ? "white" : "#9ca3af",
                     fontWeight: 800,
