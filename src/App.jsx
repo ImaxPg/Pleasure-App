@@ -617,28 +617,38 @@ export default function MassageBookingSite() {
             {adminAppointments.length === 0 ? (
               <p className="text-zinc-500">Nema termina.</p>
             ) : (
-              <div className="grid gap-3">
+              <div style={{ display: "grid", gap: 10 }}>
                 {adminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
-                    className="rounded-2xl border border-zinc-200 p-4 flex flex-wrap md:flex-nowrap items-start md:items-center gap-3"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      background: appointment.status === "pending" ? "#fff7ed" : "#ffffff",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
                   >
-                    <div className="font-bold text-lg min-w-[70px]">{appointment.time}</div>
+                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
 
-                    <div className="text-sm text-zinc-700 min-w-[120px]">{appointment.date}</div>
+                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
 
-                    <div className="flex-1 min-w-[150px]">
-                      <p className="font-semibold">{appointment.client_name}</p>
+                    <div style={{ minWidth: 180, fontWeight: 700 }}>
+                      {appointment.client_name}
                       {appointment.client_phone && (
-                        <p className="text-xs text-zinc-500">{appointment.client_phone}</p>
+                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
                       )}
                     </div>
 
-                    <div className="text-sm text-zinc-500 min-w-[120px]">
+                    <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>
                       {appointment.status === "pending" ? "Čeka potvrdu" : "Potvrđen"}
                     </div>
 
-                    <div className="flex gap-2 justify-start md:justify-end">
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
                       {appointment.status === "pending" && (
                         <>
                           <button
@@ -653,7 +663,7 @@ export default function MassageBookingSite() {
                                 )
                               );
                             }}
-                            className="rounded-xl bg-zinc-900 text-white px-4 py-2 hover:bg-zinc-700"
+                            style={{ border: 0, borderRadius: 10, background: "#18181b", color: "white", padding: "8px 12px", cursor: "pointer" }}
                           >
                             Potvrdi
                           </button>
@@ -665,7 +675,7 @@ export default function MassageBookingSite() {
                               });
                               setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
                             }}
-                            className="rounded-xl border border-zinc-300 px-4 py-2 hover:bg-zinc-100"
+                            style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
                           >
                             Odbij
                           </button>
@@ -681,7 +691,7 @@ export default function MassageBookingSite() {
                             });
                             setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
                           }}
-                          className="rounded-xl border border-zinc-300 px-4 py-2 hover:bg-zinc-100"
+                          style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
                         >
                           Otkaži
                         </button>
