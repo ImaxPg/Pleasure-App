@@ -804,19 +804,7 @@ export default function MassageBookingSite() {
               />
             </label>
 
-            <label className="block mb-5">
-              <span className="text-sm font-medium text-zinc-700">Datum</span>
-              <input
-                type="date"
-                min={todayISO()}
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setSelectedSlot("");
-                }}
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 outline-none focus:ring-2 focus:ring-zinc-900"
-              />
-            </label>
+            
 
             <div style={{ display: "grid", gap: 10 }}>
               {slots.map((slot) => {
@@ -874,15 +862,15 @@ export default function MassageBookingSite() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 14,
-                    border: isReady ? "1px solid #18181b" : "1px solid #e5e7eb",
+                    border: "1px solid #1d4ed8",
                     borderRadius: 14,
                     padding: "10px 12px",
                     background: isReady
                       ? isHoverBooking
-                        ? "#27272a"
-                        : "#18181b"
-                      : "#f4f4f5",
-                    color: isReady ? "white" : "#71717a",
+                        ? "#2563eb"
+                        : "#1d4ed8"
+                      : "#e5e7eb",
+                    color: isReady ? "white" : "#9ca3af",
                     fontWeight: 800,
                     fontSize: 16,
                     cursor: isReady ? "pointer" : "not-allowed",
