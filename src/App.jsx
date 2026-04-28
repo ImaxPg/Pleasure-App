@@ -785,22 +785,51 @@ export default function MassageBookingSite() {
             padding: 16,
           }}
         >
-          <div
-            style={{
-              background: "white",
-              borderRadius: 24,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-              padding: 28,
-              width: "100%",
-              maxWidth: 440,
-              textAlign: "center",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>{userPopup.title}</h2>
-            <p style={{ fontSize: 16, marginBottom: 20 }}>{userPopup.message}</p>
-            <button
-              onClick={() => setUserPopup(null)}
+          {(() => {
+            const isSuccess = userPopup.title.toLowerCase().includes("potvrđen");
+            const isError = userPopup.title.toLowerCase().includes("odbijen");
+
+            const bgColor = isSuccess ? "#ecfdf5" : isError ? "#fef2f2" : "white";
+            const borderColor = isSuccess ? "#16a34a" : isError ? "#dc2626" : "#e5e7eb";
+            const icon = isSuccess ? "✔️" : isError ? "❌" : "ℹ️";
+            const buttonColor = isSuccess ? "#16a34a" : isError ? "#dc2626" : "#18181b";
+
+            return (
+              <div
+                style={{
+                  background: bgColor,
+                  borderRadius: 24,
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+                  padding: 28,
+                  width: "100%",
+                  maxWidth: 440,
+                  textAlign: "center",
+                  border: `2px solid ${borderColor}`,
+                }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 10 }}>{icon}</div>
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16, color: "#18181b" }}>{userPopup.title}</h2>
+                <p style={{ fontSize: 16, marginBottom: 20, color: "#374151" }}>{userPopup.message}</p>
+                <button
+                  onClick={() => setUserPopup(null)}
+                  style={{
+                    width: "100%",
+                    border: 0,
+                    borderRadius: 16,
+                    background: buttonColor,
+                    color: "white",
+                    padding: "14px 18px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  U redu
+                </button>
+              </div>
+            );
+          })()}
+        </div>
+      )}
               style={{
                 width: "100%",
                 border: 0,
