@@ -151,7 +151,7 @@ export default function MassageBookingSite() {
           knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
           adminFirstLoadRef.current = false;
 
-          setAdminAppointments(data);
+          setAdminAppointments(sortAdminAppointments(data));
           setAdminLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
         .catch(() => {
@@ -165,6 +165,31 @@ export default function MassageBookingSite() {
 
     return () => clearInterval(interval);
   }, [isAdminPage, isAdminAuth]);
+
+  const sortAdminAppointments = (items) => {
+    return [...items].sort((a, b) => {
+      if (a.status === "pending" && b.status !== "pending") return -1;
+      if (a.status !== "pending" && b.status === "pending") return 1;
+
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.time.localeCompare(b.time);
+    });
+  };
+
+  const getDateColorMap = (items) => {
+    const colors = ["#f0f9ff", "#fef9c3", "#ecfccb", "#fce7f3", "#ede9fe", "#fff7ed"];
+    const map = {};
+    let index = 0;
+
+    sortAdminAppointments(items).forEach((item) => {
+      if (!map[item.date]) {
+        map[item.date] = colors[index % colors.length];
+        index += 1;
+      }
+    });
+
+    return map;
+  };
 
   const key = (date, slot) => `${date}_${slot}`;
 
@@ -619,25 +644,8 @@ export default function MassageBookingSite() {
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 {(() => {
-                const colors = ["#f0f9ff","#fef9c3","#ecfccb","#fce7f3","#ede9fe"];
-                const dateOrder = [];
-                const dateColorMap = {};
-
-                adminAppointments.forEach((a) => {
-                  if (!dateColorMap[a.date]) {
-                    const color = colors[dateOrder.length % colors.length];
-                    dateColorMap[a.date] = color;
-                    dateOrder.push(a.date);
-                  }
-                });
-
-                const sorted = [...adminAppointments].sort((a, b) => {
-                  if (a.status === "pending" && b.status !== "pending") return -1;
-                  if (a.status !== "pending" && b.status === "pending") return 1;
-
-                  if (a.date !== b.date) return a.date.localeCompare(b.date);
-                  return a.time.localeCompare(b.time);
-                });
+                const dateColorMap = getDateColorMap(adminAppointments);
+                const sorted = sortAdminAppointments(adminAppointments);
 
                 return sorted.map((appointment) => (
                   <div
@@ -651,7 +659,8 @@ export default function MassageBookingSite() {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: appointment.status === "pending" ? "#fff7ed" : dateColorMap[appointment.date] || "#ffffff",
+                      background: dateColorMap[appointment.date] || "#ffffff",
+                      borderLeft: appointment.status === "pending" ? "6px solid #f97316" : "6px solid transparent",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
                     }}
@@ -681,8 +690,10 @@ export default function MassageBookingSite() {
                                 headers: getAdminHeaders(),
                               });
                               setAdminAppointments((current) =>
-                                current.map((item) =>
-                                  item.id === appointment.id ? { ...item, status: "confirmed" } : item
+                                sortAdminAppointments(
+                                  current.map((item) =>
+                                    item.id === appointment.id ? { ...item, status: "confirmed" } : item
+                                  )
                                 )
                               );
                             }}
