@@ -1,9 +1,9 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, Mail, ShieldCheck } from "lucide-react";
 
 const START_HOUR = 9;
 const END_HOUR = 20;
-const API = "http://localhost:4000";
+const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function makeSlots() {
   const slots = [];
@@ -30,6 +30,9 @@ export default function MassageBookingSite() {
   const [userMessage, setUserMessage] = useState("");
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
+  const [adminPopup, setAdminPopup] = useState(null);
+  const knownPendingIdsRef = useRef(new Set());
+  const adminFirstLoadRef = useRef(true);
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
@@ -138,6 +141,16 @@ export default function MassageBookingSite() {
           return res.json();
         })
         .then((data) => {
+          const pendingNow = data.filter((item) => item.status === "pending");
+          const newPending = pendingNow.find((item) => !knownPendingIdsRef.current.has(item.id));
+
+          if (!adminFirstLoadRef.current && newPending) {
+            setAdminPopup(newPending);
+          }
+
+          knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
+          adminFirstLoadRef.current = false;
+
           setAdminAppointments(data);
           setAdminLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
@@ -445,6 +458,31 @@ export default function MassageBookingSite() {
     return (
       <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8">
         <div className="max-w-5xl mx-auto grid gap-6">
+          {adminPopup && (
+            <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl shadow-xl border border-zinc-200 p-6 w-full max-w-md">
+                <h2 className="text-2xl font-bold mb-3">Novi zahtjev za termin</h2>
+                <p className="text-zinc-700 mb-1">
+                  <strong>{adminPopup.client_name}</strong>
+                </p>
+                <p className="text-zinc-700 mb-1">
+                  Datum: <strong>{adminPopup.date}</strong>
+                </p>
+                <p className="text-zinc-700 mb-4">
+                  Vrijeme: <strong>{adminPopup.time}</strong>
+                </p>
+                {adminPopup.client_phone && (
+                  <p className="text-sm text-zinc-500 mb-4">Telefon: {adminPopup.client_phone}</p>
+                )}
+                <button
+                  onClick={() => setAdminPopup(null)}
+                  className="w-full rounded-2xl bg-zinc-900 text-white py-3 font-bold hover:bg-zinc-700"
+                >
+                  U redu
+                </button>
+              </div>
+            </div>
+          )}
           <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
             <div className="flex justify-end mb-2">
               <button onClick={handleAdminLogout} className="text-sm underline">Logout</button>
