@@ -35,6 +35,7 @@ export default function MassageBookingSite() {
   const adminFirstLoadRef = useRef(true);
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [isHoverBooking, setIsHoverBooking] = useState(false);
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   const handleAdminLogin = async () => {
@@ -574,16 +575,7 @@ export default function MassageBookingSite() {
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
             <h2 className="text-2xl font-semibold mb-4">Blokiranje termina</h2>
 
-            <label className="block mb-5">
-              <span className="text-sm font-medium text-zinc-700">Datum koji blokiraš</span>
-              <input
-                type="date"
-                min={todayISO()}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 outline-none focus:ring-2 focus:ring-zinc-900"
-              />
-            </label>
+            
 
             <p className="text-sm text-zinc-600 mb-3">
               Izabrani datum: <strong>{selectedDate}</strong>
@@ -868,26 +860,40 @@ export default function MassageBookingSite() {
               })}
             </div>
 
-            <button
-              onClick={requestBooking}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 14,
-                border: "1px solid #18181b",
-                borderRadius: 14,
-                padding: "10px 12px",
-                background: "#18181b",
-                color: "white",
-                fontWeight: 800,
-                fontSize: 16,
-                cursor: "pointer",
-              }}
-            >
-              ZAKAŽI
-            </button>
+            {(() => {
+              const isReady = clientName.trim() && selectedSlot;
+              return (
+                <button
+                  onClick={requestBooking}
+                  disabled={!isReady}
+                  onMouseEnter={() => setIsHoverBooking(true)}
+                  onMouseLeave={() => setIsHoverBooking(false)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 14,
+                    border: isReady ? "1px solid #18181b" : "1px solid #e5e7eb",
+                    borderRadius: 14,
+                    padding: "10px 12px",
+                    background: isReady
+                      ? isHoverBooking
+                        ? "#27272a"
+                        : "#18181b"
+                      : "#f4f4f5",
+                    color: isReady ? "white" : "#71717a",
+                    fontWeight: 800,
+                    fontSize: 16,
+                    cursor: isReady ? "pointer" : "not-allowed",
+                    marginTop: 32,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  ZAKAŽI
+                </button>
+              );
+            })()}
           </section>
         </main>
       </div>
