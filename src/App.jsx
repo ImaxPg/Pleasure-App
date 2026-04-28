@@ -623,6 +623,8 @@ export default function MassageBookingSite() {
                     key={appointment.id}
                     style={{
                       display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
                       alignItems: "center",
                       gap: 14,
                       border: "1px solid #e5e7eb",
