@@ -870,7 +870,21 @@ export default function MassageBookingSite() {
 
             <button
               onClick={requestBooking}
-              className="mt-6 w-full rounded-2xl bg-zinc-900 text-white py-4 font-bold hover:bg-zinc-700 transition"
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 14,
+                border: "1px solid #18181b",
+                borderRadius: 14,
+                padding: "10px 12px",
+                background: "#18181b",
+                color: "white",
+                fontWeight: 800,
+                fontSize: 16,
+                cursor: "pointer",
+              }}
             >
               ZAKAŽI
             </button>
