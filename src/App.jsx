@@ -166,23 +166,25 @@ export default function MassageBookingSite() {
     return () => clearInterval(interval);
   }, [isAdminPage, isAdminAuth]);
 
-  const normalizeStatus = (s) => (s || "").toLowerCase().trim();
+  const normalizeStatus = (status) => (status || "").toLowerCase().trim();
 
-const sortAdminAppointments = (items) => {
-  return [...items].sort((a, b) => {
-    const aStatus = normalizeStatus(a.status);
-    const bStatus = normalizeStatus(b.status);
+  const sortAdminAppointments = (items) => {
+    return [...items].sort((a, b) => {
+      const aStatus = normalizeStatus(a.status);
+      const bStatus = normalizeStatus(b.status);
 
-    if (aStatus === "pending" && bStatus !== "pending") return -1;
-    if (aStatus !== "pending" && bStatus === "pending") return 1;
+      // 1. Svi pending zahtjevi uvijek idu na vrh
+      if (aStatus === "pending" && bStatus !== "pending") return -1;
+      if (aStatus !== "pending" && bStatus === "pending") return 1;
 
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return a.time.localeCompare(b.time);
-  });
-};
+      // 2. Unutar iste grupe sortiramo po datumu, pa po vremenu
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.time.localeCompare(b.time);
+    });
+  };
 
   const getDateColorMap = (items) => {
-    const colors = ["#f0f9ff", "#fef9c3", "#ecfccb", "#fce7f3", "#ede9fe", "#fff7ed"];
+    const colors = ["#dbeafe", "#fef3c7", "#dcfce7", "#fce7f3", "#ede9fe", "#cffafe"];
     const map = {};
     let index = 0;
 
@@ -665,7 +667,7 @@ const sortAdminAppointments = (items) => {
                       borderRadius: 14,
                       padding: "10px 12px",
                       background: dateColorMap[appointment.date] || "#ffffff",
-                      borderLeft: appointment.status === "pending" ? "6px solid #f97316" : "6px solid transparent",
+                      borderLeft: normalizeStatus(appointment.status) === "pending" ? "6px solid #f97316" : "6px solid transparent",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
                     }}
@@ -682,11 +684,11 @@ const sortAdminAppointments = (items) => {
                     </div>
 
                     <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>
-                      {appointment.status === "pending" ? "Čeka potvrdu" : "Potvrđen"}
+                      {normalizeStatus(appointment.status) === "pending" ? "Čeka potvrdu" : "Potvrđen"}
                     </div>
 
                     <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                      {appointment.status === "pending" && (
+                      {normalizeStatus(appointment.status) === "pending" && (
                         <>
                           <button
                             onClick={async () => {
@@ -721,7 +723,7 @@ const sortAdminAppointments = (items) => {
                         </>
                       )}
 
-                      {appointment.status === "confirmed" && (
+                      {normalizeStatus(appointment.status) === "confirmed" && (
                         <button
                           onClick={async () => {
                             await fetch(`${API}/appointments/${appointment.id}`, {
