@@ -621,20 +621,20 @@ export default function MassageBookingSite() {
                 {adminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
-                    className="rounded-2xl border border-zinc-200 p-4 grid grid-cols-1 md:grid-cols-[90px_140px_1fr_120px_auto] gap-3 md:items-center"
+                    className="rounded-2xl border border-zinc-200 p-4 flex flex-wrap md:flex-nowrap items-start md:items-center gap-3"
                   >
-                    <div className="font-bold text-lg">{appointment.time}</div>
+                    <div className="font-bold text-lg min-w-[70px]">{appointment.time}</div>
 
-                    <div className="text-sm text-zinc-700">{appointment.date}</div>
+                    <div className="text-sm text-zinc-700 min-w-[120px]">{appointment.date}</div>
 
-                    <div>
+                    <div className="flex-1 min-w-[150px]">
                       <p className="font-semibold">{appointment.client_name}</p>
                       {appointment.client_phone && (
                         <p className="text-xs text-zinc-500">{appointment.client_phone}</p>
                       )}
                     </div>
 
-                    <div className="text-sm text-zinc-500">
+                    <div className="text-sm text-zinc-500 min-w-[120px]">
                       {appointment.status === "pending" ? "Čeka potvrdu" : "Potvrđen"}
                     </div>
 
