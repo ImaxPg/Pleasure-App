@@ -30,7 +30,7 @@ export default function MassageBookingSite() {
   const [userMessage, setUserMessage] = useState("");
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
-  const [adminPopup, setAdminPopup] = useState(null);
+  const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
   const isAdminPage = window.location.pathname.startsWith("/admin");
@@ -142,10 +142,10 @@ export default function MassageBookingSite() {
         })
         .then((data) => {
           const pendingNow = data.filter((item) => item.status === "pending");
-          const newPending = pendingNow.find((item) => !knownPendingIdsRef.current.has(item.id));
+          const newPendingItems = pendingNow.filter((item) => !knownPendingIdsRef.current.has(item.id));
 
-          if (!adminFirstLoadRef.current && newPending) {
-            setAdminPopup(newPending);
+          if (!adminFirstLoadRef.current && newPendingItems.length > 0) {
+            setAdminPopups((current) => [...current, ...newPendingItems]);
           }
 
           knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
@@ -458,25 +458,65 @@ export default function MassageBookingSite() {
     return (
       <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8">
         <div className="max-w-5xl mx-auto grid gap-6">
-          {adminPopup && (
-            <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl shadow-xl border border-zinc-200 p-6 w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-3">Novi zahtjev za termin</h2>
-                <p className="text-zinc-700 mb-1">
-                  <strong>{adminPopup.client_name}</strong>
+          {adminPopups.length > 0 && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.45)",
+                zIndex: 9999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 16,
+              }}
+            >
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: 24,
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+                  padding: 28,
+                  width: "100%",
+                  maxWidth: 440,
+                  textAlign: "center",
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>
+                  Novi zahtjev za termin
+                </h2>
+                <p style={{ fontSize: 18, marginBottom: 8 }}>
+                  <strong>{adminPopups[0].client_name}</strong>
                 </p>
-                <p className="text-zinc-700 mb-1">
-                  Datum: <strong>{adminPopup.date}</strong>
+                <p style={{ fontSize: 16, marginBottom: 8 }}>
+                  Datum: <strong>{adminPopups[0].date}</strong>
                 </p>
-                <p className="text-zinc-700 mb-4">
-                  Vrijeme: <strong>{adminPopup.time}</strong>
+                <p style={{ fontSize: 16, marginBottom: 16 }}>
+                  Vrijeme: <strong>{adminPopups[0].time}</strong>
                 </p>
-                {adminPopup.client_phone && (
-                  <p className="text-sm text-zinc-500 mb-4">Telefon: {adminPopup.client_phone}</p>
+                {adminPopups[0].client_phone && (
+                  <p style={{ fontSize: 14, color: "#71717a", marginBottom: 16 }}>
+                    Telefon: {adminPopups[0].client_phone}
+                  </p>
+                )}
+                {adminPopups.length > 1 && (
+                  <p style={{ fontSize: 13, color: "#71717a", marginBottom: 16 }}>
+                    Još novih zahtjeva: {adminPopups.length - 1}
+                  </p>
                 )}
                 <button
-                  onClick={() => setAdminPopup(null)}
-                  className="w-full rounded-2xl bg-zinc-900 text-white py-3 font-bold hover:bg-zinc-700"
+                  onClick={() => setAdminPopups((current) => current.slice(1))}
+                  style={{
+                    width: "100%",
+                    border: 0,
+                    borderRadius: 16,
+                    background: "#18181b",
+                    color: "white",
+                    padding: "14px 18px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
                 >
                   U redu
                 </button>
