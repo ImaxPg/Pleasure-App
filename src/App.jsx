@@ -619,18 +619,26 @@ export default function MassageBookingSite() {
             ) : (
               <div className="grid gap-3">
                 {adminAppointments.map((appointment) => (
-                  <div key={appointment.id} className="rounded-2xl border border-zinc-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div
+                    key={appointment.id}
+                    className="rounded-2xl border border-zinc-200 p-4 grid grid-cols-1 md:grid-cols-[90px_140px_1fr_120px_auto] gap-3 md:items-center"
+                  >
+                    <div className="font-bold text-lg">{appointment.time}</div>
+
+                    <div className="text-sm text-zinc-700">{appointment.date}</div>
+
                     <div>
-                      <p className="font-semibold">{appointment.date} u {appointment.time}</p>
-                      <p className="text-sm text-zinc-500">
-                        {appointment.client_name} {appointment.client_phone ? `· ${appointment.client_phone}` : ""}
-                      </p>
-                      <p className="text-xs text-zinc-400 mt-1">
-                        Status: {appointment.status === "pending" ? "Čeka potvrdu" : "Potvrđen"}
-                      </p>
+                      <p className="font-semibold">{appointment.client_name}</p>
+                      {appointment.client_phone && (
+                        <p className="text-xs text-zinc-500">{appointment.client_phone}</p>
+                      )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="text-sm text-zinc-500">
+                      {appointment.status === "pending" ? "Čeka potvrdu" : "Potvrđen"}
+                    </div>
+
+                    <div className="flex gap-2 justify-start md:justify-end">
                       {appointment.status === "pending" && (
                         <>
                           <button
