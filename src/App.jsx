@@ -166,15 +166,20 @@ export default function MassageBookingSite() {
     return () => clearInterval(interval);
   }, [isAdminPage, isAdminAuth]);
 
-  const sortAdminAppointments = (items) => {
-    return [...items].sort((a, b) => {
-      if (a.status === "pending" && b.status !== "pending") return -1;
-      if (a.status !== "pending" && b.status === "pending") return 1;
+  const normalizeStatus = (s) => (s || "").toLowerCase().trim();
 
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return a.time.localeCompare(b.time);
-    });
-  };
+const sortAdminAppointments = (items) => {
+  return [...items].sort((a, b) => {
+    const aStatus = normalizeStatus(a.status);
+    const bStatus = normalizeStatus(b.status);
+
+    if (aStatus === "pending" && bStatus !== "pending") return -1;
+    if (aStatus !== "pending" && bStatus === "pending") return 1;
+
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
+};
 
   const getDateColorMap = (items) => {
     const colors = ["#f0f9ff", "#fef9c3", "#ecfccb", "#fce7f3", "#ede9fe", "#fff7ed"];
