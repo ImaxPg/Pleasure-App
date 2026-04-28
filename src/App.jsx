@@ -618,7 +618,28 @@ export default function MassageBookingSite() {
               <p className="text-zinc-500">Nema termina.</p>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
-                {adminAppointments.map((appointment) => (
+                {(() => {
+                const colors = ["#f0f9ff","#fef9c3","#ecfccb","#fce7f3","#ede9fe"];
+                const dateOrder = [];
+                const dateColorMap = {};
+
+                adminAppointments.forEach((a) => {
+                  if (!dateColorMap[a.date]) {
+                    const color = colors[dateOrder.length % colors.length];
+                    dateColorMap[a.date] = color;
+                    dateOrder.push(a.date);
+                  }
+                });
+
+                const sorted = [...adminAppointments].sort((a, b) => {
+                  if (a.status === "pending" && b.status !== "pending") return -1;
+                  if (a.status !== "pending" && b.status === "pending") return 1;
+
+                  if (a.date !== b.date) return a.date.localeCompare(b.date);
+                  return a.time.localeCompare(b.time);
+                });
+
+                return sorted.map((appointment) => (
                   <div
                     key={appointment.id}
                     style={{
@@ -630,7 +651,7 @@ export default function MassageBookingSite() {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: appointment.status === "pending" ? "#fff7ed" : "#ffffff",
+                      background: appointment.status === "pending" ? "#fff7ed" : dateColorMap[appointment.date] || "#ffffff",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
                     }}
@@ -700,7 +721,7 @@ export default function MassageBookingSite() {
                       )}
                     </div>
                   </div>
-                ))}
+                ))})();
               </div>
             )}
           </section>
