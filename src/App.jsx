@@ -198,6 +198,9 @@ export default function MassageBookingSite() {
     return map;
   };
 
+  const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
+  const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
+
   const key = (date, slot) => `${date}_${slot}`;
 
   const isBooked = (date, slot) => Boolean(booked[key(date, slot)]);
@@ -650,11 +653,7 @@ export default function MassageBookingSite() {
               <p className="text-zinc-500">Nema termina.</p>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
-                {(() => {
-                const dateColorMap = getDateColorMap(adminAppointments);
-                const sorted = sortAdminAppointments(adminAppointments);
-
-                return sorted.map((appointment) => (
+                {displayedAdminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
                     style={{
@@ -666,7 +665,7 @@ export default function MassageBookingSite() {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: dateColorMap[appointment.date] || "#ffffff",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
                       borderLeft: normalizeStatus(appointment.status) === "pending" ? "6px solid #f97316" : "6px solid transparent",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
@@ -739,7 +738,7 @@ export default function MassageBookingSite() {
                       )}
                     </div>
                   </div>
-                ))})();
+                ))}
               </div>
             )}
           </section>
