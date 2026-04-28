@@ -804,7 +804,7 @@ export default function MassageBookingSite() {
               />
             </label>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div style={{ display: "grid", gap: 10 }}>
               {slots.map((slot) => {
                 const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
@@ -816,20 +816,31 @@ export default function MassageBookingSite() {
                 return (
                   <label
                     key={slot}
-                    className={`rounded-2xl border p-4 cursor-pointer transition ${
-                      checked ? "border-zinc-900 bg-zinc-100" : "border-zinc-200 bg-white"
-                    } ${unavailable ? "opacity-50 cursor-not-allowed" : "hover:border-zinc-900"}`}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: checked ? "2px solid #18181b" : "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      background: unavailable ? "#f4f4f5" : checked ? "#f8fafc" : "white",
+                      opacity: unavailable ? 0.65 : 1,
+                      cursor: unavailable ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{slot}</span>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={unavailable}
-                        onChange={() => setSelectedSlot(checked ? "" : slot)}
-                      />
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1">{label}</p>
+                    <span style={{ minWidth: 70, fontWeight: 800, fontSize: 18 }}>{slot}</span>
+                    <span style={{ flex: 1, color: unavailable ? "#71717a" : "#18181b" }}>{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={unavailable}
+                      onChange={() => setSelectedSlot(checked ? "" : slot)}
+                      style={{ width: 18, height: 18 }}
+                    />
                   </label>
                 );
               })}
