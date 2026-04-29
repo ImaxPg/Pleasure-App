@@ -281,14 +281,32 @@ export default function MassageBookingSite() {
     return slotDate <= now;
   };
 
-  const visibleUserSlots = slots.filter((slot) => !isPastSlot(selectedDate, slot));
+  const getDayFromISO = (date) => {
+    const [year, month, day] = date.split("-").map(Number);
+    return new Date(year, month - 1, day).getDay(); // 0 = nedjelja, 6 = subota
+  };
+
+  const isNonWorkingSlot = (date, slot) => {
+    const day = getDayFromISO(date);
+    const hour = Number(slot.split(":")[0]);
+
+    if (day === 0) return true; // nedjelja - neradno cijeli dan
+    if (day === 6 && hour >= 15) return true; // subota od 15:00 nadalje
+
+    return false;
+  };
+
+  const visibleUserSlots = slots.filter(
+    (slot) => !isPastSlot(selectedDate, slot) && !isNonWorkingSlot(selectedDate, slot)
+  );
 
   const key = (date, slot) => `${date}_${slot}`;
 
   const isBooked = (date, slot) => Boolean(booked[key(date, slot)]);
   const isBlocked = (date, slot) => Boolean(blocked[key(date, slot)]);
   const isPending = (date, slot) => pending.some((p) => p.date === date && p.slot === slot);
-  const isUnavailable = (date, slot) => isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot);
+  const isUnavailable = (date, slot) =>
+    isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot) || isNonWorkingSlot(date, slot);
 
   const requestBooking = async () => {
     if (!clientName.trim()) {
@@ -303,6 +321,12 @@ export default function MassageBookingSite() {
 
     if (!selectedDate || !selectedSlot) {
       setUserMessage("Izaberite datum i termin prije zakazivanja.");
+      return;
+    }
+
+    if (isNonWorkingSlot(selectedDate, selectedSlot)) {
+      setUserMessage("Izabrani termin je neradni i nije moguće zakazivanje.");
+      setSelectedSlot("");
       return;
     }
 
@@ -456,7 +480,7 @@ export default function MassageBookingSite() {
 
   const toggleBlock = async (date, slot) => {
     const slotKey = key(date, slot);
-    if (isBooked(date, slot)) return;
+    if (isBooked(date, slot) || isNonWorkingSlot(date, slot)) return;
 
     if (isBlocked(date, slot)) {
       const blockedSlot = blocked[slotKey];
@@ -521,7 +545,7 @@ export default function MassageBookingSite() {
       for (const slot of slots) {
         const slotKey = key(selectedDate, slot);
 
-        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot)) {
+        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot) || isNonWorkingSlot(selectedDate, slot)) {
           continue;
         }
 
@@ -777,11 +801,12 @@ export default function MassageBookingSite() {
               {slots.map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
+                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot);
 
                 return (
                   <button
                     key={slot}
-                    disabled={bookedNow}
+                    disabled={bookedNow || nonWorkingNow}
                     onClick={() => toggleBlock(selectedDate, slot)}
                     style={{
                       borderRadius: 14,
@@ -789,14 +814,14 @@ export default function MassageBookingSite() {
                       padding: "10px 12px",
                       fontSize: 14,
                       fontWeight: 700,
-                      background: bookedNow ? "#f4f4f5" : blockedNow ? "#1e3a8a" : "white",
-                      color: bookedNow ? "#71717a" : blockedNow ? "white" : "#1e3a8a",
-                      cursor: bookedNow ? "not-allowed" : "pointer",
-                      opacity: bookedNow ? 0.55 : 1,
+                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : blockedNow ? "#1e3a8a" : "white",
+                      color: bookedNow || nonWorkingNow ? "#71717a" : blockedNow ? "white" : "#1e3a8a",
+                      cursor: bookedNow || nonWorkingNow ? "not-allowed" : "pointer",
+                      opacity: bookedNow || nonWorkingNow ? 0.55 : 1,
                       boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
                     }}
                   >
-                    {slot} {bookedNow ? "Zakazano" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
+                    {slot} {bookedNow ? "Zakazano" : nonWorkingNow ? "Neradno" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
                   </button>
                 );
               })}
@@ -813,7 +838,65 @@ export default function MassageBookingSite() {
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 {pendingAdminAppointments.map((appointment) => (
-$1
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                      borderLeft: "6px solid #f97316",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
+                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
+                    <div style={{ minWidth: 180, fontWeight: 700 }}>
+                      {appointment.client_name}
+                      {appointment.client_phone && (
+                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>Čeka potvrdu</div>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                      <button
+                        onClick={async () => {
+                          await fetch(`${API}/appointments/${appointment.id}/approve`, {
+                            method: "POST",
+                            headers: getAdminHeaders(),
+                          });
+                          setAdminAppointments((current) =>
+                            sortAdminAppointments(
+                              current.map((item) =>
+                                item.id === appointment.id ? { ...item, status: "confirmed" } : item
+                              )
+                            )
+                          );
+                        }}
+                        style={{ border: 0, borderRadius: 10, background: "#18181b", color: "white", padding: "8px 12px", cursor: "pointer" }}
+                      >
+                        Potvrdi
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetch(`${API}/appointments/${appointment.id}/reject`, {
+                            method: "POST",
+                            headers: getAdminHeaders(),
+                          });
+                          setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
+                        }}
+                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
+                      >
+                        Odbij
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -1090,6 +1173,11 @@ $1
                   statusBackground = "#fee2e2";
                   statusBorder = "#fecaca";
                   statusColor = "#991b1b";
+                } else if (isNonWorkingSlot(selectedDate, slot)) {
+                  label = "Neradno";
+                  statusBackground = "#f4f4f5";
+                  statusBorder = "#d4d4d8";
+                  statusColor = "#52525b";
                 } else if (isBlocked(selectedDate, slot)) {
                   label = "Zaključano";
                   statusBackground = "#f4f4f5";
@@ -1135,7 +1223,7 @@ $1
               })}
               {visibleUserSlots.length === 0 && (
                 <p style={{ color: "#71717a", marginTop: 12 }}>
-                  Za izabrani datum više nema dostupnih termina.
+                  Za izabrani datum nema dostupnih termina ili je salon neradan.
                 </p>
               )}
             </div>
