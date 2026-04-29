@@ -41,6 +41,9 @@ export default function MassageBookingSite() {
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
   const [focusedField, setFocusedField] = useState("");
+  const pulseStyle = {
+    animation: "pulseStatus 1.6s infinite",
+  };
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
   const [archiveFilterDate, setArchiveFilterDate] = useState(todayISO());
@@ -592,6 +595,13 @@ export default function MassageBookingSite() {
 
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}>
+        <style>{`
+          @keyframes pulseStatus {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.22); opacity: 0.72; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
         <div className="max-w-5xl mx-auto grid gap-6">
           {adminPopups.length > 0 && (
             <div
@@ -672,6 +682,7 @@ export default function MassageBookingSite() {
                   background: isBackendOnline ? "#22c55e" : "#ef4444",
                   display: "inline-block",
                   boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                  ...(isBackendOnline ? pulseStyle : {}),
                 }}
               />
               <h1 className="text-3xl md:text-4xl font-bold">Admin stranica</h1>
@@ -931,6 +942,13 @@ export default function MassageBookingSite() {
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}>
+      <style>{`
+        @keyframes pulseStatus {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.22); opacity: 0.72; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
       {userPopup && (
         <div
           style={{
@@ -1002,16 +1020,30 @@ export default function MassageBookingSite() {
                   background: isBackendOnline ? "#22c55e" : "#ef4444",
                   display: "inline-block",
                   boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                  ...(isBackendOnline ? pulseStyle : {}),
                 }}
               />
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
+                <h1 style={{ fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.18, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
+                  <span style={{ display: "block" }}>Frizerski salon</span>
+                  <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
+                </h1>
                 <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
               </div>
             </div>
             
           </div>
-          <p className="text-zinc-600 max-w-2xl">
+          <p
+            style={{
+              color: "#52525b",
+              maxWidth: 720,
+              marginTop: 18,
+              lineHeight: 1.75,
+              textAlign: "justify",
+              textWrap: "pretty",
+              fontSize: 15,
+            }}
+          >
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
             Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
           </p>
