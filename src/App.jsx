@@ -256,8 +256,18 @@ export default function MassageBookingSite() {
   );
 
   const isValidPhone = (phone) => {
-    return /^06[0-9]{6,7}$/.test(phone.trim());
+    return /^06[0-9]{7}$/.test(phone.trim());
   };
+
+  const formatPhone = (digits) => {
+  const d = (digits || "").replace(/\D/g, "").slice(0, 9);
+
+  const p1 = d.slice(0, 3);
+  const p2 = d.slice(3, 6);
+  const p3 = d.slice(6, 9);
+
+  return [p1, p2, p3].filter(Boolean).join(" ");
+};
 
   const formatPublicName = (fullName) => {
     const parts = (fullName || "").trim().split(" ").filter(Boolean);
@@ -287,7 +297,7 @@ export default function MassageBookingSite() {
     }
 
     if (!isValidPhone(clientPhone)) {
-      setUserMessage("Molimo unesite telefon u formatu 06xxxxxx ili 06xxxxxxx, bez razmaka i crtica.");
+      setUserMessage("Molimo unesite telefon od 9 cifara koji počinje sa 06 (npr. 067123456), bez razmaka i crtica.");
       return;
     }
 
@@ -1028,7 +1038,7 @@ export default function MassageBookingSite() {
                   <span style={{ display: "block" }}>Frizerski salon</span>
                   <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
                 </h1>
-                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina</p>
+                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
               </div>
             </div>
             
@@ -1078,11 +1088,14 @@ export default function MassageBookingSite() {
                 <span style={{ fontWeight: 700 }}>Telefon</span>
                 <input
                   type="text"
-                  placeholder="npr. 067123456"
-                  value={clientPhone}
+                  placeholder="npr. 067 123 456"
+                  value={formatPhone(clientPhone)}
                   onFocus={() => setFocusedField("phone")}
                   onBlur={() => setFocusedField("")}
-                  onChange={(e) => setClientPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                    setClientPhone(digits);
+                  }}
                   style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
                 />
               </label>
