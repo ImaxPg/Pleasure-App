@@ -14,7 +14,13 @@ function makeSlots() {
   return slots;
 }
 
-const todayISO = () => new Date().toISOString().split("T")[0];
+const todayISO = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
@@ -53,6 +59,13 @@ export default function MassageBookingSite() {
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!isAdminPage && selectedDate < todayISO()) {
+      setSelectedDate(todayISO());
+      setSelectedSlot("");
+    }
+  }, [selectedDate, isAdminPage]);
 
   const handleAdminLogin = async () => {
     try {
