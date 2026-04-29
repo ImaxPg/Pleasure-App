@@ -33,6 +33,7 @@ export default function MassageBookingSite() {
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
   const [userLastUpdated, setUserLastUpdated] = useState("");
+  const [isBackendOnline, setIsBackendOnline] = useState(true);
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
@@ -84,7 +85,11 @@ export default function MassageBookingSite() {
   useEffect(() => {
     const fetchData = () => {
       fetch(`${API}/appointments?date=${selectedDate}`)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error("Backend nije dostupan");
+          setIsBackendOnline(true);
+          return res.json();
+        })
         .then((data) => {
           const bookedMap = {};
           const pendingList = [];
@@ -144,6 +149,9 @@ export default function MassageBookingSite() {
           setPending(pendingList);
           setBlocked(blockedMap);
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
+        })
+        .catch(() => {
+          setIsBackendOnline(false);
         });
     };
 
@@ -178,8 +186,10 @@ export default function MassageBookingSite() {
 
           setAdminAppointments(sortAdminAppointments(data));
           setAdminLastUpdated(new Date().toLocaleTimeString("sr-ME"));
+          setIsBackendOnline(true);
         })
         .catch(() => {
+          setIsBackendOnline(false);
           setIsAdminAuth(false);
           sessionStorage.removeItem("adminToken");
         });
@@ -669,9 +679,32 @@ export default function MassageBookingSite() {
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold">Svi termini</h2>
-              {adminLastUpdated && (
-                <span className="text-xs text-zinc-500">Ažurirano: {adminLastUpdated}</span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    color: isBackendOnline ? "#166534" : "#991b1b",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: isBackendOnline ? "#22c55e" : "#ef4444",
+                      display: "inline-block",
+                    }}
+                  />
+                  {isBackendOnline ? "ONLINE" : "OFFLINE"}
+                </span>
+                {adminLastUpdated && (
+                  <span className="text-xs text-zinc-500">Ažurirano: {adminLastUpdated}</span>
+                )}
+              </div>
             </div>
 
             {adminAppointments.length === 0 ? (
@@ -832,22 +865,6 @@ export default function MassageBookingSite() {
           })()}
         </div>
       )}
-              style={{
-                width: "100%",
-                border: 0,
-                borderRadius: 16,
-                background: "#15803d",
-                color: "white",
-                padding: "14px 18px",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              U redu
-            </button>
-          </div>
-        </div>
-      )}
       <div className="max-w-6xl mx-auto grid gap-6">
         <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
           <div className="flex items-center justify-between gap-3">
@@ -855,9 +872,32 @@ export default function MassageBookingSite() {
               <Calendar className="w-8 h-8" />
               <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
             </div>
-            {userLastUpdated && (
-              <span className="text-xs text-zinc-500">Ažurirano: {userLastUpdated}</span>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  color: isBackendOnline ? "#166534" : "#991b1b",
+                  fontWeight: 700,
+                }}
+              >
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: isBackendOnline ? "#22c55e" : "#ef4444",
+                    display: "inline-block",
+                  }}
+                />
+                {isBackendOnline ? "ONLINE" : "OFFLINE"}
+              </span>
+              {userLastUpdated && (
+                <span className="text-xs text-zinc-500">Ažurirano: {userLastUpdated}</span>
+              )}
+            </div>
           </div>
           <p className="text-zinc-600 max-w-2xl">
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
