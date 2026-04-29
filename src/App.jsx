@@ -40,7 +40,14 @@ export default function MassageBookingSite() {
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
+  const [now, setNow] = useState(new Date());
+  const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAdminLogin = async () => {
     try {
@@ -235,6 +242,12 @@ export default function MassageBookingSite() {
 
   const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
   const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
+  const selectedDateAppointments = displayedAdminAppointments.filter(
+    (appointment) => appointment.date === adminFilterDate
+  );
+  const archivedAppointments = displayedAdminAppointments.filter(
+    (appointment) => appointment.date < todayISO()
+  );
 
   const formatPublicName = (fullName) => {
     const parts = (fullName || "").trim().split(" ").filter(Boolean);
@@ -242,6 +255,13 @@ export default function MassageBookingSite() {
     if (parts.length === 1) return parts[0];
     return `${parts[0]} ${parts[1][0]}.`;
   };
+
+  const isPastSlot = (date, slot) => {
+    const slotDate = new Date(`${date}T${slot}:00`);
+    return slotDate <= now;
+  };
+
+  const visibleUserSlots = slots.filter((slot) => !isPastSlot(selectedDate, slot));
 
   const key = (date, slot) => `${date}_${slot}`;
 
@@ -618,7 +638,16 @@ export default function MassageBookingSite() {
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
             <h2 className="text-2xl font-semibold mb-4">Blokiranje termina</h2>
 
-            
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
+              <input
+                type="date"
+                min={todayISO()}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+              />
+            </label>
 
             <p className="text-sm text-zinc-600 mb-3">
               Izabrani datum: <strong>{selectedDate}</strong>
@@ -656,7 +685,7 @@ export default function MassageBookingSite() {
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {slots.map((slot) => {
+              {visibleUserSlots.map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
 
@@ -707,11 +736,21 @@ export default function MassageBookingSite() {
               </div>
             </div>
 
-            {adminAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema termina.</p>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 160, fontWeight: 700 }}>Prikaži datum</span>
+              <input
+                type="date"
+                value={adminFilterDate}
+                onChange={(e) => setAdminFilterDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+              />
+            </label>
+
+            {selectedDateAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema termina za izabrani datum.</p>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
-                {displayedAdminAppointments.map((appointment) => (
+                {selectedDateAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
                     style={{
@@ -794,6 +833,46 @@ export default function MassageBookingSite() {
                           Otkaži
                         </button>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+            <h2 className="text-2xl font-semibold mb-4">Arhiva prethodnih termina</h2>
+            {archivedAppointments.length === 0 ? (
+              <p className="text-zinc-500">Još nema arhiviranih termina.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 16 }}>
+                {Object.entries(
+                  archivedAppointments.reduce((groups, appointment) => {
+                    if (!groups[appointment.date]) groups[appointment.date] = [];
+                    groups[appointment.date].push(appointment);
+                    return groups;
+                  }, {})
+                ).map(([date, appointments]) => (
+                  <div key={date} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12 }}>
+                    <h3 style={{ fontWeight: 800, marginBottom: 10 }}>{date}</h3>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {appointments.map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          style={{
+                            display: "flex",
+                            gap: 14,
+                            alignItems: "center",
+                            whiteSpace: "nowrap",
+                            overflowX: "auto",
+                            fontSize: 14,
+                          }}
+                        >
+                          <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
+                          <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                          <span style={{ color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -998,6 +1077,11 @@ export default function MassageBookingSite() {
                   </label>
                 );
               })}
+              {visibleUserSlots.length === 0 && (
+                <p style={{ color: "#71717a", marginTop: 12 }}>
+                  Za izabrani datum više nema dostupnih termina.
+                </p>
+              )}
             </div>
 
             {(() => {
