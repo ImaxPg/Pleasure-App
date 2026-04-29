@@ -1177,7 +1177,8 @@ export default function MassageBookingSite() {
             }}
           >
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
-            Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
+            Korisnik bira datum i termin, a administrator potvrđuje zakazivanje. <br>U slučaju da želite da otkažete zakazani termin 
+            pošaljite nam poruku na 067 844 441. 
           </p>
         </header>
 
