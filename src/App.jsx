@@ -260,14 +260,12 @@ export default function MassageBookingSite() {
   };
 
   const formatPhone = (digits) => {
-  const d = (digits || "").replace(/\D/g, "").slice(0, 9);
-
-  const p1 = d.slice(0, 3);
-  const p2 = d.slice(3, 6);
-  const p3 = d.slice(6, 9);
-
-  return [p1, p2, p3].filter(Boolean).join(" ");
-};
+    const d = (digits || "").replace(/\D/g, "").slice(0, 9);
+    const p1 = d.slice(0, 3);
+    const p2 = d.slice(3, 6);
+    const p3 = d.slice(6, 9);
+    return [p1, p2, p3].filter(Boolean).join(" ");
+  };
 
   const formatPublicName = (fullName) => {
     const parts = (fullName || "").trim().split(" ").filter(Boolean);
@@ -1085,7 +1083,12 @@ export default function MassageBookingSite() {
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
-                <span style={{ fontWeight: 700 }}>Telefon</span>
+                <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  Telefon
+                  {isValidPhone(clientPhone) && (
+                    <span style={{ color: "#16a34a", fontWeight: 900 }}>✓</span>
+                  )}
+                </span>
                 <input
                   type="text"
                   placeholder="npr. 067 123 456"
@@ -1093,7 +1096,10 @@ export default function MassageBookingSite() {
                   onFocus={() => setFocusedField("phone")}
                   onBlur={() => setFocusedField("")}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                    let digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                    if (digits.length === 1 && digits !== "0") {
+                      digits = `06${digits}`.slice(0, 9);
+                    }
                     setClientPhone(digits);
                   }}
                   style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
