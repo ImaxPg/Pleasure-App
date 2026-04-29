@@ -743,32 +743,17 @@ export default function MassageBookingSite() {
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold">Novi zahtjevi</h2>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 12,
-                    color: isBackendOnline ? "#166534" : "#991b1b",
-                    fontWeight: 700,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      background: isBackendOnline ? "#22c55e" : "#ef4444",
-                      display: "inline-block",
-                    }}
-                  />
-                  {isBackendOnline ? "ONLINE" : "OFFLINE"}
-                </span>
-                {adminLastUpdated && (
-                  <span className="text-xs text-zinc-500">Ažurirano: {adminLastUpdated}</span>
-                )}
-              </div>
+              <span
+                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
+                style={{
+                  width: 13,
+                  height: 13,
+                  borderRadius: "50%",
+                  background: isBackendOnline ? "#22c55e" : "#ef4444",
+                  display: "inline-block",
+                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                }}
+              />
             </div>
 
             {pendingAdminAppointments.length === 0 ? (
@@ -923,6 +908,11 @@ export default function MassageBookingSite() {
               </div>
             )}
           </section>
+        {adminLastUpdated && (
+          <footer style={{ textAlign: "center", color: "#71717a", fontSize: 12, padding: "8px 0 4px" }}>
+            Ažurirano: {adminLastUpdated}
+          </footer>
+        )}
         </div>
       </div>
     );
@@ -997,37 +987,23 @@ export default function MassageBookingSite() {
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
-                <p style={{ color: "#71717a", marginTop: 4 }}>Online zakazivanje termina <br> Radno vrijeme 09–20h</p>
+                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  color: isBackendOnline ? "#166534" : "#991b1b",
-                  fontWeight: 700,
-                }}
-              >
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    background: isBackendOnline ? "#22c55e" : "#ef4444",
-                    display: "inline-block",
-                  }}
-                />
-                {isBackendOnline ? "ONLINE" : "OFFLINE"}
-              </span>
-              {userLastUpdated && (
-                <span className="text-xs text-zinc-500">Ažurirano: {userLastUpdated}</span>
-              )}
-            </div>
+            <span
+              title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
+              style={{
+                width: 13,
+                height: 13,
+                borderRadius: "50%",
+                background: isBackendOnline ? "#22c55e" : "#ef4444",
+                display: "inline-block",
+                boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+              }}
+            />
           </div>
           <p className="text-zinc-600 max-w-2xl">
+            Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
             Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
           </p>
         </header>
@@ -1076,7 +1052,8 @@ export default function MassageBookingSite() {
                 min={todayISO()}
                 value={selectedDate}
                 onChange={(e) => {
-                  setSelectedDate(e.target.value);
+                  const nextDate = e.target.value < todayISO() ? todayISO() : e.target.value;
+                  setSelectedDate(nextDate);
                   setSelectedSlot("");
                 }}
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
@@ -1185,6 +1162,11 @@ export default function MassageBookingSite() {
             })()}
           </section>
         </main>
+        {userLastUpdated && (
+          <footer style={{ textAlign: "center", color: "#71717a", fontSize: 12, padding: "8px 0 4px" }}>
+            Ažurirano: {userLastUpdated}
+          </footer>
+        )}
       </div>
     </div>
   );
