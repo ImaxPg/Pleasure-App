@@ -405,7 +405,10 @@ export default function MassageBookingSite() {
   };
 
   const visibleUserSlots = slots.filter(
-    (slot) => !isPastSlot(selectedDate, slot) && !isNonWorkingSlot(selectedDate, slot)
+    (slot) =>
+      !isPastSlot(selectedDate, slot) &&
+      !isNonWorkingSlot(selectedDate, slot) &&
+      !isBlocked(selectedDate, slot)
   );
 
   const key = (date, slot) => `${date}_${slot}`;
