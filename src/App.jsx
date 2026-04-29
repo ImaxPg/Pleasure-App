@@ -1028,7 +1028,7 @@ export default function MassageBookingSite() {
                   <span style={{ display: "block" }}>Frizerski salon</span>
                   <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
                 </h1>
-                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
+                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina</p>
               </div>
             </div>
             
