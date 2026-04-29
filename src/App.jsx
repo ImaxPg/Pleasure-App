@@ -1023,8 +1023,11 @@ export default function MassageBookingSite() {
                           border: "1px solid #d4d4d8",
                           borderRadius: 10,
                           background: "white",
+                          color: "#18181b",
                           padding: "8px 12px",
                           cursor: "pointer",
+                          fontWeight: 700,
+                          WebkitTextFillColor: "#18181b",
                         }}
                       >
                         Otkaži
