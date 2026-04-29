@@ -36,6 +36,10 @@ export default function MassageBookingSite() {
   const [userMessage, setUserMessage] = useState("");
   const [userPopup, setUserPopup] = useState(null);
   const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
+  const [userConfirmedBooking, setUserConfirmedBooking] = useState(() => {
+    const saved = localStorage.getItem("userConfirmedBooking");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
   const [userLastUpdated, setUserLastUpdated] = useState("");
@@ -191,6 +195,15 @@ export default function MassageBookingSite() {
                   title: "Termin je potvrđen",
                   message: `Vaš termin ${item.date} u ${item.time} je zakazan.`,
                 });
+                const confirmedBooking = {
+                  id: item.id,
+                  date: item.date,
+                  time: item.time,
+                  client_name: item.client_name,
+                  client_phone: item.client_phone,
+                };
+                localStorage.setItem("userConfirmedBooking", JSON.stringify(confirmedBooking));
+                setUserConfirmedBooking(confirmedBooking);
                 setUserMessage("");
                 localStorage.removeItem("trackedBookingId");
                 setTrackedBookingId(null);
@@ -375,6 +388,39 @@ export default function MassageBookingSite() {
   const isPending = (date, slot) => pending.some((p) => p.date === date && p.slot === slot);
   const isUnavailable = (date, slot) =>
     isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot) || isNonWorkingSlot(date, slot);
+
+  const cancelUserBooking = async () => {
+    if (!userConfirmedBooking) return;
+
+    const confirmed = window.confirm(
+      `Da li ste sigurni da želite da otkažete termin ${userConfirmedBooking.date} u ${userConfirmedBooking.time}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API}/appointments/${userConfirmedBooking.id}/user-cancel`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ client_phone: userConfirmedBooking.client_phone }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Otkazivanje nije uspjelo.");
+      }
+
+      localStorage.removeItem("userConfirmedBooking");
+      setUserConfirmedBooking(null);
+      setUserPopup({
+        title: "Termin je otkazan",
+        message: "Vaš termin je uspješno otkazan. Termin je ponovo slobodan.",
+      });
+    } catch (error) {
+      setUserMessage("Greška: termin nije otkazan. Pokušajte ponovo ili kontaktirajte salon.");
+    }
+  };
 
   const requestBooking = async () => {
     if (isSubmitting) return;
@@ -1177,8 +1223,7 @@ export default function MassageBookingSite() {
             }}
           >
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
-            Korisnik bira datum i termin, a administrator potvrđuje zakazivanje. <br>U slučaju da želite da otkažete zakazani termin 
-            pošaljite nam poruku na 067 844 441. 
+            Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
           </p>
         </header>
 
@@ -1190,6 +1235,32 @@ export default function MassageBookingSite() {
         )}
 
         <main className="grid gap-6">
+          {userConfirmedBooking && !isPastSlot(userConfirmedBooking.date, userConfirmedBooking.time) && (
+            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "#166534" }}>
+                Vaš zakazani termin
+              </h2>
+              <p style={{ color: "#166534", marginBottom: 12 }}>
+                {userConfirmedBooking.date} u {userConfirmedBooking.time}
+              </p>
+              <button
+                onClick={cancelUserBooking}
+                style={{
+                  width: "100%",
+                  border: "1px solid #dc2626",
+                  borderRadius: 14,
+                  background: "white",
+                  color: "#991b1b",
+                  padding: "10px 12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  WebkitTextFillColor: "#991b1b",
+                }}
+              >
+                Otkaži moj termin
+              </button>
+            </section>
+          )}
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
 

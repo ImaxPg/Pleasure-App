@@ -172,6 +172,42 @@ app.post("/admin/block-slot", requireAdmin, (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 
+
+// KORISNIK OTKAZUJE SVOJ TERMIN
+app.delete("/appointments/:id/user-cancel", (req, res) => {
+  const { client_phone } = req.body;
+
+  db.get(
+    "SELECT * FROM appointments WHERE id = ?",
+    [req.params.id],
+    (err, appointment) => {
+      if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
+
+      if (!appointment) {
+        return res.status(404).json({ error: "Termin nije pronađen" });
+      }
+
+      if (appointment.client_phone !== client_phone) {
+        return res.status(403).json({ error: "Nemate dozvolu za otkazivanje ovog termina" });
+      }
+
+      if (appointment.status !== "confirmed") {
+        return res.status(400).json({ error: "Može se otkazati samo potvrđen termin" });
+      }
+
+      db.run(
+        "DELETE FROM appointments WHERE id = ?",
+        [req.params.id],
+        function (err) {
+          if (err) return res.status(500).json({ error: "Greška pri otkazivanju termina" });
+
+          res.json({ success: true });
+        }
+      );
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Backend radi na portu ${PORT}`);
 });
