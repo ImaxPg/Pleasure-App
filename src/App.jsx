@@ -1020,8 +1020,8 @@ export default function MassageBookingSite() {
             <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
-                <span style={{ minWidth: 120, fontWeight: 700 }}>Ime i prezime</span>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+                <span style={{ fontWeight: 700 }}>Ime i prezime</span>
                 <input
                   type="text"
                   placeholder="Unesite ime"
@@ -1031,8 +1031,8 @@ export default function MassageBookingSite() {
                 />
               </label>
 
-              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
-                <span style={{ minWidth: 120, fontWeight: 700 }}>Telefon</span>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+                <span style={{ fontWeight: 700 }}>Telefon</span>
                 <input
                   type="text"
                   placeholder="npr. 067123456"
