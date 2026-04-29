@@ -43,6 +43,27 @@ export default function MassageBookingSite() {
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
+  const playAdminNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audioContext = new AudioContext();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.35);
+    } catch (error) {
+      // Browser može blokirati zvuk dok korisnik ne klikne na stranicu.
+    }
+  };
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
@@ -206,6 +227,7 @@ export default function MassageBookingSite() {
 
           if (!adminFirstLoadRef.current && newPendingItems.length > 0) {
             setAdminPopups((current) => [...current, ...newPendingItems]);
+            playAdminNotificationSound();
           }
 
           knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
