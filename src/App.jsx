@@ -663,8 +663,7 @@ export default function MassageBookingSite() {
                   </p>
                 )}
                 <button
-                  onClick={() => setAdminPopups((current) => current.slice(1                );
-              })}
+                  onClick={() => setAdminPopups((current) => current.slice(1))}
                   style={{
                     width: "100%",
                     border: 0,
@@ -827,12 +826,7 @@ export default function MassageBookingSite() {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: isConfirmed
-                        ? "#ecfdf5"
-                        : isRejected
-                        ? "#f4f4f5"
-                        : adminDateColorMap[appointment.date] || "#ffffff",
-                      opacity: isRejected ? 0.6 : 1,
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
                       borderLeft: normalizeStatus(appointment.status) === "pending" ? "6px solid #f97316" : "6px solid transparent",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
@@ -905,7 +899,8 @@ export default function MassageBookingSite() {
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             )}
           </section>
