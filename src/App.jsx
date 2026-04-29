@@ -726,18 +726,40 @@ export default function MassageBookingSite() {
                   blockWholeDay();
                   setUserMessage(`Zaključani su svi slobodni termini za ${selectedDate}.`);
                 }}
-                className="flex-1 rounded-xl border border-zinc-300 px-3 py-2 hover:bg-zinc-100"
+                style={{
+                  flex: 1,
+                  borderRadius: 16,
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+                  color: "white",
+                  padding: "12px 14px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px rgba(37,99,235,0.22)",
+                  letterSpacing: "0.01em",
+                }}
               >
-                Zaključaj cijeli dan
+                🔒 Zaključaj cijeli dan
               </button>
               <button
                 onClick={() => {
                   unblockWholeDay();
                   setUserMessage(`Otključani su termini za ${selectedDate}.`);
                 }}
-                className="flex-1 rounded-xl border border-zinc-300 px-3 py-2 hover:bg-zinc-100"
+                style={{
+                  flex: 1,
+                  borderRadius: 16,
+                  background: "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+                  color: "white",
+                  padding: "12px 14px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
+                  letterSpacing: "0.01em",
+                }}
               >
-                Otključaj dan
+                🔓 Otključaj dan
               </button>
             </div>
 
@@ -761,11 +783,20 @@ export default function MassageBookingSite() {
                     key={slot}
                     disabled={bookedNow}
                     onClick={() => toggleBlock(selectedDate, slot)}
-                    className={`rounded-xl border px-3 py-2 text-sm ${
-                      blockedNow ? "bg-zinc-900 text-white border-zinc-900" : "bg-white border-zinc-300 hover:bg-zinc-100"
-                    } ${bookedNow ? "opacity-40 cursor-not-allowed" : ""}`}
+                    style={{
+                      borderRadius: 14,
+                      border: blockedNow ? "1px solid #1e3a8a" : "1px solid #dbeafe",
+                      padding: "10px 12px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: bookedNow ? "#f4f4f5" : blockedNow ? "#1e3a8a" : "white",
+                      color: bookedNow ? "#71717a" : blockedNow ? "white" : "#1e3a8a",
+                      cursor: bookedNow ? "not-allowed" : "pointer",
+                      opacity: bookedNow ? 0.55 : 1,
+                      boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
+                    }}
                   >
-                    {slot} {bookedNow ? "Zakazano" : blockedNow ? "Zaključano" : "Slobodno"}
+                    {slot} {bookedNow ? "Zakazano" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
                   </button>
                 );
               })}
@@ -775,17 +806,6 @@ export default function MassageBookingSite() {
           <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold">Novi zahtjevi</h2>
-              <span
-                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
-                style={{
-                  width: 13,
-                  height: 13,
-                  borderRadius: "50%",
-                  background: isBackendOnline ? "#22c55e" : "#ef4444",
-                  display: "inline-block",
-                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
-                }}
-              />
             </div>
 
             {pendingAdminAppointments.length === 0 ? (
