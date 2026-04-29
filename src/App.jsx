@@ -251,6 +251,10 @@ export default function MassageBookingSite() {
       appointment.date === adminFilterDate && normalizeStatus(appointment.status) !== "pending"
   );
 
+  const isValidPhone = (phone) => {
+    return /^06[0-9]{6,7}$/.test(phone.trim());
+  };
+
   const formatPublicName = (fullName) => {
     const parts = (fullName || "").trim().split(" ").filter(Boolean);
     if (parts.length === 0) return "";
@@ -278,6 +282,11 @@ export default function MassageBookingSite() {
       return;
     }
 
+    if (!isValidPhone(clientPhone)) {
+      setUserMessage("Molimo unesite telefon u formatu 06xxxxxx ili 06xxxxxxx, bez razmaka i crtica.");
+      return;
+    }
+
     if (!selectedDate || !selectedSlot) {
       setUserMessage("Izaberite datum i termin prije zakazivanja.");
       return;
@@ -298,7 +307,7 @@ export default function MassageBookingSite() {
           date: selectedDate,
           time: selectedSlot,
           client_name: clientName,
-          client_phone: clientPhone,
+          client_phone: clientPhone.trim(),
         }),
       });
 
@@ -313,7 +322,7 @@ export default function MassageBookingSite() {
         date: selectedDate,
         slot: selectedSlot,
         clientName,
-        clientPhone,
+        clientPhone: clientPhone.trim(),
         createdAt: new Date().toLocaleString("sr-ME"),
       };
 
@@ -1046,9 +1055,9 @@ export default function MassageBookingSite() {
                 <span style={{ minWidth: 120, fontWeight: 700 }}>Telefon</span>
                 <input
                   type="text"
-                  placeholder="(opciono)"
+                  placeholder="npr. 067123456"
                   value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
+                  onChange={(e) => setClientPhone(e.target.value.replace(/[^0-9]/g, ""))}
                   style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
                 />
               </label>
@@ -1120,7 +1129,7 @@ export default function MassageBookingSite() {
             </div>
 
             {(() => {
-              const isReady = clientName.trim() && selectedSlot;
+              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot;
               return (
                 <button
                   onClick={requestBooking}
