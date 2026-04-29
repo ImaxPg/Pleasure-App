@@ -813,92 +813,8 @@ export default function MassageBookingSite() {
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 {pendingAdminAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      flexWrap: "nowrap",
-                      alignItems: "center",
-                      gap: 14,
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
-                      borderLeft: normalizeStatus(appointment.status) === "pending" ? "6px solid #f97316" : "6px solid transparent",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
-                    }}
-                  >
-                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
-
-                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
-
-                    <div style={{ minWidth: 180, fontWeight: 700 }}>
-                      {appointment.client_name}
-                      {appointment.client_phone && (
-                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
-                      )}
-                    </div>
-
-                    <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>
-                      {normalizeStatus(appointment.status) === "pending" ? "Čeka potvrdu" : "Potvrđen"}
-                    </div>
-
-                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                      {normalizeStatus(appointment.status) === "pending" && (
-                        <>
-                          <button
-                            onClick={async () => {
-                              await fetch(`${API}/appointments/${appointment.id}/approve`, {
-                                method: "POST",
-                                headers: getAdminHeaders(),
-                              });
-                              setAdminAppointments((current) =>
-                                sortAdminAppointments(
-                                  current.map((item) =>
-                                    item.id === appointment.id ? { ...item, status: "confirmed" } : item
-                                  )
-                                )
-                              );
-                            }}
-                            style={{ border: 0, borderRadius: 10, background: "#18181b", color: "white", padding: "8px 12px", cursor: "pointer" }}
-                          >
-                            Potvrdi
-                          </button>
-                          <button
-                            onClick={async () => {
-                              await fetch(`${API}/appointments/${appointment.id}/reject`, {
-                                method: "POST",
-                                headers: getAdminHeaders(),
-                              });
-                              setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
-                            }}
-                            style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
-                          >
-                            Odbij
-                          </button>
-                        </>
-                      )}
-
-                      {normalizeStatus(appointment.status) === "confirmed" && (
-                        <button
-                          onClick={async () => {
-                            await fetch(`${API}/appointments/${appointment.id}`, {
-                              method: "DELETE",
-                              headers: getAdminHeaders(),
-                            });
-                            setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
-                          }}
-                          style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
-                        >
-                          Otkaži
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+$1
+                ))}
               </div>
             )}
           </section>
@@ -920,7 +836,9 @@ export default function MassageBookingSite() {
               <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
-                {selectedDateAppointments.map((appointment) => {
+                {selectedDateAppointments
+                  .filter((appointment) => normalizeStatus(appointment.status) !== "blocked")
+                  .map((appointment) => {
                 const status = normalizeStatus(appointment.status);
                 if (status === "blocked") return null;
                 const isConfirmed = status === "confirmed";
