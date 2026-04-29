@@ -254,7 +254,9 @@ export default function MassageBookingSite() {
   );
   const selectedDateAppointments = displayedAdminAppointments.filter(
     (appointment) =>
-      appointment.date === adminFilterDate && normalizeStatus(appointment.status) !== "pending"
+      appointment.date === adminFilterDate &&
+      normalizeStatus(appointment.status) !== "pending" &&
+      normalizeStatus(appointment.status) !== "blocked"
   );
 
   const isValidPhone = (phone) => {
@@ -661,7 +663,8 @@ export default function MassageBookingSite() {
                   </p>
                 )}
                 <button
-                  onClick={() => setAdminPopups((current) => current.slice(1))}
+                  onClick={() => setAdminPopups((current) => current.slice(1                );
+              })}
                   style={{
                     width: "100%",
                     border: 0,
@@ -824,7 +827,12 @@ export default function MassageBookingSite() {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                      background: isConfirmed
+                        ? "#ecfdf5"
+                        : isRejected
+                        ? "#f4f4f5"
+                        : adminDateColorMap[appointment.date] || "#ffffff",
+                      opacity: isRejected ? 0.6 : 1,
                       borderLeft: normalizeStatus(appointment.status) === "pending" ? "6px solid #f97316" : "6px solid transparent",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
@@ -919,7 +927,11 @@ export default function MassageBookingSite() {
               <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
-                {selectedDateAppointments.map((appointment) => (
+                {selectedDateAppointments.map((appointment) => {
+                const isConfirmed = normalizeStatus(appointment.status) === "confirmed";
+                const isRejected = normalizeStatus(appointment.status) === "rejected";
+
+                return (
                   <div
                     key={appointment.id}
                     style={{
@@ -938,7 +950,7 @@ export default function MassageBookingSite() {
                     <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
                     <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
                     <span style={{ color: "#71717a", minWidth: 100 }}>
-                      {normalizeStatus(appointment.status) === "confirmed" ? "Potvrđen" : appointment.status}
+                      {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
                     </span>
                     {normalizeStatus(appointment.status) === "confirmed" && !isPastSlot(appointment.date, appointment.time) && (
                       <button
