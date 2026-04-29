@@ -43,25 +43,52 @@ export default function MassageBookingSite() {
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
-  const playAdminNotificationSound = () => {
+  const audioContextRef = useRef(null);
+
+  const unlockAdminSound = () => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const audioContext = new AudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
+      if (!AudioContext) return;
 
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-      gain.gain.setValueAtTime(0.001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
 
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.35);
+      if (audioContextRef.current.state === "suspended") {
+        audioContextRef.current.resume();
+      }
     } catch (error) {
       // Browser može blokirati zvuk dok korisnik ne klikne na stranicu.
+    }
+  };
+
+  const playAdminNotificationSound = () => {
+    try {
+      unlockAdminSound();
+
+      const audioContext = audioContextRef.current;
+      if (!audioContext) return;
+
+      const playTone = (frequency, start, duration) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + start);
+        gain.gain.setValueAtTime(0.001, audioContext.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.22, audioContext.currentTime + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + start + duration);
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start(audioContext.currentTime + start);
+        oscillator.stop(audioContext.currentTime + start + duration);
+      };
+
+      playTone(880, 0, 0.22);
+      playTone(1175, 0.24, 0.24);
+    } catch (error) {
+      // Zvuk nije presudan za rad aplikacije.
     }
   };
   const isAdminPage = window.location.pathname.startsWith("/admin");
@@ -89,6 +116,8 @@ export default function MassageBookingSite() {
   }, [selectedDate, isAdminPage]);
 
   const handleAdminLogin = async () => {
+    unlockAdminSound();
+
     try {
       const response = await fetch(`${API}/admin/login`, {
         method: "POST",
@@ -663,7 +692,10 @@ export default function MassageBookingSite() {
     }
 
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}>
+      <div
+        onClick={unlockAdminSound}
+        style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}
+      >
         <style>{`
           @keyframes pulseStatus {
             0% { transform: scale(1); opacity: 1; }
@@ -926,7 +958,7 @@ export default function MassageBookingSite() {
                           });
                           setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
                         }}
-                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", padding: "8px 12px", cursor: "pointer" }}
+                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
                       >
                         Odbij
                       </button>
@@ -1084,25 +1116,14 @@ export default function MassageBookingSite() {
       <div className="max-w-6xl mx-auto grid gap-6">
         <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span
-                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: "50%",
-                  background: isBackendOnline ? "#22c55e" : "#ef4444",
-                  display: "inline-block",
-                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
-                  ...(isBackendOnline ? pulseStyle : {}),
-                }}
-              />
+            <div style={{ width: "100%", textAlign: "center" }}>
               <div>
                 <h1 style={{ fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.18, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
                   <span style={{ display: "block" }}>Frizerski salon</span>
                   <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
                 </h1>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 }}>
+                  <p style={{ color: "#71717a", margin: 0 }}>Zakazivanje termina</p>
                   <span
                     title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
                     style={{
@@ -1111,10 +1132,10 @@ export default function MassageBookingSite() {
                       borderRadius: "50%",
                       background: isBackendOnline ? "#22c55e" : "#ef4444",
                       display: "inline-block",
+                      boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
                       ...(isBackendOnline ? pulseStyle : {}),
                     }}
                   />
-                  <p style={{ color: "#71717a" }}>Zakazivanje termina</p>
                 </div>
               </div>
             </div>
