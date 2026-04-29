@@ -49,18 +49,39 @@ app.post("/admin/login", (req, res) => {
 });
 
 // KORISNIK ŠALJE ZAHTJEV
+// KORISNIK ŠALJE ZAHTJEV
 app.post("/appointments", (req, res) => {
   const { date, time, client_name, client_phone } = req.body;
 
-  db.run(
-    `INSERT INTO appointments 
-    (date, time, client_name, client_phone, status) 
-    VALUES (?, ?, ?, ?, ?)`,
-    [date, time, client_name, client_phone, "pending"],
-    function (err) {
-      if (err) return res.status(500).json({ error: "Greška pri upisu u bazu" });
+  db.get(
+    "SELECT * FROM appointments WHERE client_phone = ? AND status = 'pending'",
+    [client_phone],
+    (err, existing) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Greška pri provjeri postojećeg zahtjeva" });
+      }
 
-      res.json({ id: this.lastID });
+      if (existing) {
+        return res.status(409).json({
+          error: "Već imate poslat zahtjev. Sačekajte odgovor administratora.",
+        });
+      }
+
+      db.run(
+        `INSERT INTO appointments 
+        (date, time, client_name, client_phone, status) 
+        VALUES (?, ?, ?, ?, ?)`,
+        [date, time, client_name, client_phone, "pending"],
+        function (err) {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Greška pri upisu u bazu" });
+          }
+
+          res.json({ id: this.lastID });
+        }
+      );
     }
   );
 });
