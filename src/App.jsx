@@ -124,6 +124,7 @@ export default function MassageBookingSite() {
                   title: "Termin je potvrđen",
                   message: `Vaš termin ${item.date} u ${item.time} je zakazan.`,
                 });
+                setUserMessage("");
                 localStorage.removeItem("trackedBookingId");
                 setTrackedBookingId(null);
               }
@@ -133,6 +134,7 @@ export default function MassageBookingSite() {
                   title: "Termin je odbijen",
                   message: `Vaš zahtjev za ${item.date} u ${item.time} je odbijen. Molimo izaberite drugi termin.`,
                 });
+                setUserMessage("");
                 localStorage.removeItem("trackedBookingId");
                 setTrackedBookingId(null);
               }
