@@ -662,8 +662,18 @@ export default function MassageBookingSite() {
             <div className="flex justify-end mb-2">
               <button onClick={handleAdminLogout} className="text-sm underline">Logout</button>
             </div>
-            <div className="flex items-center gap-3 mb-3">
-              <ShieldCheck className="w-8 h-8" />
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <span
+                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  background: isBackendOnline ? "#22c55e" : "#ef4444",
+                  display: "inline-block",
+                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                }}
+              />
               <h1 className="text-3xl md:text-4xl font-bold">Admin stranica</h1>
             </div>
             <p className="text-zinc-600">
@@ -983,25 +993,23 @@ export default function MassageBookingSite() {
         <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div style={{ width: 44, height: 44, borderRadius: 16, background: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Calendar className="w-7 h-7" />
-              </div>
+              <span
+                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: "50%",
+                  background: isBackendOnline ? "#22c55e" : "#ef4444",
+                  display: "inline-block",
+                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                }}
+              />
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
                 <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
               </div>
             </div>
-            <span
-              title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
-              style={{
-                width: 13,
-                height: 13,
-                borderRadius: "50%",
-                background: isBackendOnline ? "#22c55e" : "#ef4444",
-                display: "inline-block",
-                boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
-              }}
-            />
+            
           </div>
           <p className="text-zinc-600 max-w-2xl">
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
