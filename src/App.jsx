@@ -47,6 +47,7 @@ export default function MassageBookingSite() {
 
   const unlockAdminSound = () => {
     try {
+      setIsSubmitting(true);
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) return;
 
@@ -58,6 +59,7 @@ export default function MassageBookingSite() {
         audioContextRef.current.resume();
       }
     } catch (error) {
+      setIsSubmitting(false);
       // Browser može blokirati zvuk dok korisnik ne klikne na stranicu.
     }
   };
@@ -94,6 +96,7 @@ export default function MassageBookingSite() {
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState("");
   const pulseStyle = {
     animation: "pulseStatus 1.6s infinite",
@@ -112,6 +115,7 @@ export default function MassageBookingSite() {
     if (!isAdminPage && selectedDate < todayISO()) {
       setSelectedDate(todayISO());
       setSelectedSlot("");
+      setIsSubmitting(false);
     }
   }, [selectedDate, isAdminPage]);
 
@@ -373,6 +377,12 @@ export default function MassageBookingSite() {
     isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot) || isNonWorkingSlot(date, slot);
 
   const requestBooking = async () => {
+    if (isSubmitting) return;
+
+    if (trackedBookingId) {
+      setUserMessage("Već imate poslat zahtjev. Sačekajte odgovor prije novog zakazivanja.");
+      return;
+    }
     if (!clientName.trim()) {
       setUserMessage("Molimo unesite ime i prezime.");
       return;
@@ -952,6 +962,11 @@ export default function MassageBookingSite() {
                       </button>
                       <button
                         onClick={async () => {
+                          const confirmed = window.confirm(
+                            `Da li ste sigurni da želite da odbijete zahtjev za ${appointment.date} u ${appointment.time}?`
+                          );
+                          if (!confirmed) return;
+
                           await fetch(`${API}/appointments/${appointment.id}/reject`, {
                             method: "POST",
                             headers: getAdminHeaders(),
@@ -1017,7 +1032,13 @@ export default function MassageBookingSite() {
                     </span>
                     {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
                       <button
-                        onClick={() => cancelAdminAppointment(appointment)}
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
+                          );
+                          if (!confirmed) return;
+                          cancelAdminAppointment(appointment);
+                        }}
                         style={{
                           marginLeft: "auto",
                           border: "1px solid #d4d4d8",
@@ -1305,7 +1326,7 @@ export default function MassageBookingSite() {
               return (
                 <button
                   onClick={requestBooking}
-                  disabled={!isReady}
+                  disabled={!isReady || isSubmitting || trackedBookingId}
                   onMouseEnter={() => setIsHoverBooking(true)}
                   onMouseLeave={() => setIsHoverBooking(false)}
                   style={{
@@ -1330,7 +1351,7 @@ export default function MassageBookingSite() {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  ZAKAŽI
+                  {isSubmitting ? "Slanje..." : "ZAKAŽI"}
                 </button>
               );
             })()}
