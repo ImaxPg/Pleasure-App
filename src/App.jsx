@@ -42,6 +42,7 @@ export default function MassageBookingSite() {
   const [isHoverBooking, setIsHoverBooking] = useState(false);
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
+  const [archiveFilterDate, setArchiveFilterDate] = useState(todayISO());
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   useEffect(() => {
@@ -247,6 +248,9 @@ export default function MassageBookingSite() {
   );
   const archivedAppointments = displayedAdminAppointments.filter(
     (appointment) => appointment.date < todayISO()
+  );
+  const archiveDateAppointments = displayedAdminAppointments.filter(
+    (appointment) => appointment.date === archiveFilterDate
   );
 
   const formatPublicName = (fullName) => {
@@ -685,7 +689,7 @@ export default function MassageBookingSite() {
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {visibleUserSlots.map((slot) => {
+              {slots.map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
 
@@ -841,6 +845,47 @@ export default function MassageBookingSite() {
           </section>
 
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+            <h2 className="text-2xl font-semibold mb-4">Pregled termina po datumu</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
+              <input
+                type="date"
+                value={archiveFilterDate}
+                onChange={(e) => setArchiveFilterDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+              />
+            </label>
+
+            {archiveDateAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema termina za izabrani datum.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 8, marginBottom: 24 }}>
+                {archiveDateAppointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      alignItems: "center",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
+                    <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                    <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                    <span style={{ color: "#71717a" }}>
+                      {normalizeStatus(appointment.status) === "pending" ? "Čeka potvrdu" : normalizeStatus(appointment.status) === "confirmed" ? "Potvrđen" : appointment.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <h2 className="text-2xl font-semibold mb-4">Arhiva prethodnih termina</h2>
             {archivedAppointments.length === 0 ? (
               <p className="text-zinc-500">Još nema arhiviranih termina.</p>
@@ -1038,7 +1083,7 @@ export default function MassageBookingSite() {
             
 
             <div style={{ display: "grid", gap: 10 }}>
-              {slots.map((slot) => {
+              {visibleUserSlots.map((slot) => {
                 const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
                 let label = "Slobodno";
