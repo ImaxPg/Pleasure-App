@@ -1080,7 +1080,20 @@ export default function MassageBookingSite() {
                   <span style={{ display: "block" }}>Frizerski salon</span>
                   <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
                 </h1>
-                <p style={{ color: "#71717a", marginTop: 4 }}>Zakazivanje termina · Radno vrijeme 09–20h</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  <span
+                    title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: isBackendOnline ? "#22c55e" : "#ef4444",
+                      display: "inline-block",
+                      ...(isBackendOnline ? pulseStyle : {}),
+                    }}
+                  />
+                  <p style={{ color: "#71717a" }}>Zakazivanje termina</p>
+                </div>
               </div>
             </div>
             
