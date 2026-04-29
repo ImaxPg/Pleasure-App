@@ -1245,12 +1245,12 @@ export default function MassageBookingSite() {
           <div className="flex items-center justify-between gap-3">
             <div style={{ width: "100%", textAlign: "center" }}>
               <div>
-                <h1 style={{ fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.18, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
+                <h1 style={{ fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.18, fontWeight: 900, letterSpacing: "-0.03em", margin: 0, color: "#111827", WebkitTextFillColor: "#111827" }}>
                   <span style={{ display: "block" }}>Frizerski salon</span>
                   <span style={{ display: "block", marginTop: 8 }}>"Pleasure"</span>
                 </h1>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 }}>
-                  <p style={{ color: "#71717a", margin: 0 }}>Zakazivanje termina</p>
+                  <p style={{ color: "#374151", WebkitTextFillColor: "#374151", margin: 0 }}>Zakazivanje termina</p>
                   <span
                     title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
                     style={{
@@ -1319,7 +1319,7 @@ export default function MassageBookingSite() {
             </section>
           )}
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827" }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
@@ -1360,7 +1360,7 @@ export default function MassageBookingSite() {
               </label>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-4">Izaberite termin</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827" }}>Izaberite termin</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
               <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
