@@ -404,13 +404,6 @@ export default function MassageBookingSite() {
     return false;
   };
 
-  const visibleUserSlots = slots.filter(
-    (slot) =>
-      !isPastSlot(selectedDate, slot) &&
-      !isNonWorkingSlot(selectedDate, slot) &&
-      !isBlocked(selectedDate, slot)
-  );
-
   const key = (date, slot) => `${date}_${slot}`;
 
   const isBooked = (date, slot) => Boolean(booked[key(date, slot)]);
@@ -418,6 +411,13 @@ export default function MassageBookingSite() {
   const isPending = (date, slot) => pending.some((p) => p.date === date && p.slot === slot);
   const isUnavailable = (date, slot) =>
     isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot) || isNonWorkingSlot(date, slot);
+
+  const visibleUserSlots = slots.filter(
+    (slot) =>
+      !isPastSlot(selectedDate, slot) &&
+      !isNonWorkingSlot(selectedDate, slot) &&
+      !isBlocked(selectedDate, slot)
+  );
 
   const cancelUserBooking = async () => {
     if (!userConfirmedBooking) return;
