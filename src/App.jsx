@@ -590,7 +590,7 @@ export default function MassageBookingSite() {
     }
 
     return (
-      <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8">
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}>
         <div className="max-w-5xl mx-auto grid gap-6">
           {adminPopups.length > 0 && (
             <div
@@ -657,7 +657,7 @@ export default function MassageBookingSite() {
               </div>
             </div>
           )}
-          <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
+          <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
             <div className="flex justify-end mb-2">
               <button onClick={handleAdminLogout} className="text-sm underline">Logout</button>
             </div>
@@ -670,7 +670,7 @@ export default function MassageBookingSite() {
             </p>
           </header>
 
-          <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4">Blokiranje termina</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
@@ -740,7 +740,7 @@ export default function MassageBookingSite() {
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold">Novi zahtjevi</h2>
               <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
@@ -865,7 +865,7 @@ export default function MassageBookingSite() {
             )}
           </section>
 
-          <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4">Pregled termina po datumu</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
@@ -929,7 +929,7 @@ export default function MassageBookingSite() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8">
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "16px" }}>
       {userPopup && (
         <div
           style={{
@@ -989,11 +989,16 @@ export default function MassageBookingSite() {
         </div>
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
-        <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
+        <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Calendar className="w-8 h-8" />
-              <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
+              <div style={{ width: 44, height: 44, borderRadius: 16, background: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Calendar className="w-7 h-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
+                <p style={{ color: "#71717a", marginTop: 4 }}>Online zakazivanje termina · Radno vrijeme 09–20h</p>
+              </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
               <span
@@ -1036,7 +1041,7 @@ export default function MassageBookingSite() {
         )}
 
         <main className="grid gap-6">
-          <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
@@ -1086,9 +1091,26 @@ export default function MassageBookingSite() {
                 const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
                 let label = "Slobodno";
-                if (isBooked(selectedDate, slot)) label = `Zakazano: ${formatPublicName(booked[key(selectedDate, slot)]?.clientName)}`;
-                else if (isBlocked(selectedDate, slot)) label = "Zaključano";
-                else if (isPending(selectedDate, slot)) label = "Čeka potvrdu";
+                let statusBackground = "#ecfdf5";
+                let statusBorder = "#bbf7d0";
+                let statusColor = "#166534";
+
+                if (isBooked(selectedDate, slot)) {
+                  label = `Zakazano: ${formatPublicName(booked[key(selectedDate, slot)]?.clientName)}`;
+                  statusBackground = "#fee2e2";
+                  statusBorder = "#fecaca";
+                  statusColor = "#991b1b";
+                } else if (isBlocked(selectedDate, slot)) {
+                  label = "Zaključano";
+                  statusBackground = "#f4f4f5";
+                  statusBorder = "#d4d4d8";
+                  statusColor = "#52525b";
+                } else if (isPending(selectedDate, slot)) {
+                  label = "Čeka potvrdu";
+                  statusBackground = "#fef3c7";
+                  statusBorder = "#fde68a";
+                  statusColor = "#92400e";
+                }
 
                 return (
                   <label
@@ -1099,10 +1121,10 @@ export default function MassageBookingSite() {
                       flexWrap: "nowrap",
                       alignItems: "center",
                       gap: 14,
-                      border: checked ? "2px solid #18181b" : "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      background: unavailable ? "#f4f4f5" : checked ? "#f8fafc" : "white",
+                      border: checked ? "2px solid #be185d" : `1px solid ${statusBorder}`,
+                      borderRadius: 16,
+                      padding: "11px 13px",
+                      background: unavailable ? "#f8fafc" : checked ? "#fdf2f8" : statusBackground,
                       opacity: unavailable ? 0.65 : 1,
                       cursor: unavailable ? "not-allowed" : "pointer",
                       whiteSpace: "nowrap",
@@ -1110,7 +1132,7 @@ export default function MassageBookingSite() {
                     }}
                   >
                     <span style={{ minWidth: 70, fontWeight: 800, fontSize: 18 }}>{slot}</span>
-                    <span style={{ flex: 1, color: unavailable ? "#71717a" : "#18181b" }}>{label}</span>
+                    <span style={{ flex: 1, color: statusColor, fontWeight: 700 }}>{label}</span>
                     <input
                       type="checkbox"
                       checked={checked}
