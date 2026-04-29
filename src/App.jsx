@@ -243,14 +243,12 @@ export default function MassageBookingSite() {
 
   const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
   const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
+  const pendingAdminAppointments = displayedAdminAppointments.filter(
+    (appointment) => normalizeStatus(appointment.status) === "pending"
+  );
   const selectedDateAppointments = displayedAdminAppointments.filter(
-    (appointment) => appointment.date === adminFilterDate
-  );
-  const archivedAppointments = displayedAdminAppointments.filter(
-    (appointment) => appointment.date < todayISO()
-  );
-  const archiveDateAppointments = displayedAdminAppointments.filter(
-    (appointment) => appointment.date === archiveFilterDate
+    (appointment) =>
+      appointment.date === adminFilterDate && normalizeStatus(appointment.status) !== "pending"
   );
 
   const formatPublicName = (fullName) => {
@@ -711,7 +709,7 @@ export default function MassageBookingSite() {
 
           <section className="rounded-3xl bg-white shadow-sm border border-zinc-100 p-6">
             <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 className="text-2xl font-semibold">Svi termini</h2>
+              <h2 className="text-2xl font-semibold">Novi zahtjevi</h2>
               <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
                 <span
                   style={{
@@ -740,21 +738,11 @@ export default function MassageBookingSite() {
               </div>
             </div>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 160, fontWeight: 700 }}>Prikaži datum</span>
-              <input
-                type="date"
-                value={adminFilterDate}
-                onChange={(e) => setAdminFilterDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
-              />
-            </label>
-
-            {selectedDateAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema termina za izabrani datum.</p>
+            {pendingAdminAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema novih zahtjeva.</p>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
-                {selectedDateAppointments.map((appointment) => (
+                {pendingAdminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
                     style={{
@@ -851,17 +839,17 @@ export default function MassageBookingSite() {
               <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
               <input
                 type="date"
-                value={archiveFilterDate}
-                onChange={(e) => setArchiveFilterDate(e.target.value)}
+                value={adminFilterDate}
+                onChange={(e) => setAdminFilterDate(e.target.value)}
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
               />
             </label>
 
-            {archiveDateAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema termina za izabrani datum.</p>
+            {selectedDateAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
             ) : (
-              <div style={{ display: "grid", gap: 8, marginBottom: 24 }}>
-                {archiveDateAppointments.map((appointment) => (
+              <div style={{ display: "grid", gap: 8 }}>
+                {selectedDateAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
                     style={{
@@ -873,52 +861,15 @@ export default function MassageBookingSite() {
                       padding: "10px 12px",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
                     }}
                   >
                     <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
                     <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
                     <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
                     <span style={{ color: "#71717a" }}>
-                      {normalizeStatus(appointment.status) === "pending" ? "Čeka potvrdu" : normalizeStatus(appointment.status) === "confirmed" ? "Potvrđen" : appointment.status}
+                      {normalizeStatus(appointment.status) === "confirmed" ? "Potvrđen" : appointment.status}
                     </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <h2 className="text-2xl font-semibold mb-4">Arhiva prethodnih termina</h2>
-            {archivedAppointments.length === 0 ? (
-              <p className="text-zinc-500">Još nema arhiviranih termina.</p>
-            ) : (
-              <div style={{ display: "grid", gap: 16 }}>
-                {Object.entries(
-                  archivedAppointments.reduce((groups, appointment) => {
-                    if (!groups[appointment.date]) groups[appointment.date] = [];
-                    groups[appointment.date].push(appointment);
-                    return groups;
-                  }, {})
-                ).map(([date, appointments]) => (
-                  <div key={date} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 12 }}>
-                    <h3 style={{ fontWeight: 800, marginBottom: 10 }}>{date}</h3>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {appointments.map((appointment) => (
-                        <div
-                          key={appointment.id}
-                          style={{
-                            display: "flex",
-                            gap: 14,
-                            alignItems: "center",
-                            whiteSpace: "nowrap",
-                            overflowX: "auto",
-                            fontSize: 14,
-                          }}
-                        >
-                          <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
-                          <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
-                          <span style={{ color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 ))}
               </div>
