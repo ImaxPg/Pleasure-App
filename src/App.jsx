@@ -27,8 +27,9 @@ export default function MassageBookingSite() {
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [selectedSlot, setSelectedSlot] = useState("");
 
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
+  const [clientName, setClientName] = useState(() => localStorage.getItem("savedName") || "");
+  const [clientPhone, setClientPhone] = useState(() => localStorage.getItem("savedPhone") || "");
+  const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getItem("savedName")));
 
   const [booked, setBooked] = useState({});
   const [pending, setPending] = useState([]);
@@ -513,6 +514,14 @@ export default function MassageBookingSite() {
       };
 
       setPending((current) => [...current, request]);
+
+      if (rememberData) {
+        localStorage.setItem("savedName", clientName);
+        localStorage.setItem("savedPhone", clientPhone);
+      } else {
+        localStorage.removeItem("savedName");
+        localStorage.removeItem("savedPhone");
+      }
       localStorage.setItem("trackedBookingId", String(request.id));
       setTrackedBookingId(String(request.id));
       setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
@@ -1357,6 +1366,15 @@ export default function MassageBookingSite() {
                   }}
                   style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
                 />
+              </label>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={rememberData}
+                  onChange={(e) => setRememberData(e.target.checked)}
+                />
+                <span style={{ fontSize: 14, color: "#374151" }}>Zapamti moje podatke</span>
               </label>
             </div>
 
