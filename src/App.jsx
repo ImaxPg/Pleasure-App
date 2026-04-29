@@ -997,7 +997,7 @@ export default function MassageBookingSite() {
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
-                <p style={{ color: "#71717a", marginTop: 4 }}>Online zakazivanje termina · Radno vrijeme 09–20h</p>
+                <p style={{ color: "#71717a", marginTop: 4 }}>Online zakazivanje termina <br> Radno vrijeme 09–20h</p>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
@@ -1028,7 +1028,6 @@ export default function MassageBookingSite() {
             </div>
           </div>
           <p className="text-zinc-600 max-w-2xl">
-            Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
             Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
           </p>
         </header>
