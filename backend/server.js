@@ -54,36 +54,39 @@ app.post("/appointments", (req, res) => {
   const { date, time, client_name, client_phone } = req.body;
 
   db.get(
-    "SELECT * FROM appointments WHERE client_phone = ? AND status = 'pending'",
-    [client_phone],
-    (err, existing) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Greška pri provjeri postojećeg zahtjeva" });
-      }
-
-      if (existing) {
-        return res.status(409).json({
-          error: "Već imate poslat zahtjev. Sačekajte odgovor administratora.",
-        });
-      }
-
-      db.run(
-        `INSERT INTO appointments 
-        (date, time, client_name, client_phone, status) 
-        VALUES (?, ?, ?, ?, ?)`,
-        [date, time, client_name, client_phone, "pending"],
-        function (err) {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Greška pri upisu u bazu" });
-          }
-
-          res.json({ id: this.lastID });
-        }
-      );
+  `
+  SELECT * FROM appointments
+  WHERE client_phone = ?
+  AND date = ?
+  AND status IN ('pending', 'confirmed')
+  `,
+  [client_phone, date],
+  (err, existing) => {
+    if (err) {
+      return res.status(500).json({ error: "Greška pri provjeri termina" });
     }
-  );
+
+    if (existing) {
+      return res.status(409).json({
+        error: "Već imate zakazan ili poslat zahtjev za ovaj datum.",
+      });
+    }
+
+    // INSERT ostaje isti
+    db.run(
+      `INSERT INTO appointments (date, time, client_name, client_phone, status)
+       VALUES (?, ?, ?, ?, ?)`,
+      [date, time, client_name, client_phone, "pending"],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: "Greška pri čuvanju termina" });
+        }
+
+        res.json({ id: this.lastID });
+      }
+    );
+  }
+);
 });
 
 // KORISNIK UČITAVA TERMINE ZA DATUM
