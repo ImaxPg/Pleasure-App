@@ -1331,7 +1331,7 @@ export default function MassageBookingSite() {
                   onFocus={() => setFocusedField("name")}
                   onBlur={() => setFocusedField("")}
                   onChange={(e) => setClientName(e.target.value)}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
                 />
               </label>
 
@@ -1355,7 +1355,7 @@ export default function MassageBookingSite() {
                     }
                     setClientPhone(digits);
                   }}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
                 />
               </label>
             </div>
