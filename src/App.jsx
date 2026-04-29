@@ -40,6 +40,7 @@ export default function MassageBookingSite() {
   const isAdminPage = window.location.pathname.startsWith("/admin");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
+  const [focusedField, setFocusedField] = useState("");
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
   const [archiveFilterDate, setArchiveFilterDate] = useState(todayISO());
@@ -673,7 +674,7 @@ export default function MassageBookingSite() {
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4">Blokiranje termina</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
               <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
               <input
                 type="date"
@@ -1020,25 +1021,29 @@ export default function MassageBookingSite() {
             <h2 className="text-2xl font-semibold mb-4">Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700 }}>Ime i prezime</span>
                 <input
                   type="text"
                   placeholder="Unesite ime"
                   value={clientName}
+                  onFocus={() => setFocusedField("name")}
+                  onBlur={() => setFocusedField("")}
                   onChange={(e) => setClientName(e.target.value)}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
                 />
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700 }}>Telefon</span>
                 <input
                   type="text"
                   placeholder="npr. 067123456"
                   value={clientPhone}
+                  onFocus={() => setFocusedField("phone")}
+                  onBlur={() => setFocusedField("")}
                   onChange={(e) => setClientPhone(e.target.value.replace(/[^0-9]/g, ""))}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent" }}
                 />
               </label>
             </div>
@@ -1051,6 +1056,8 @@ export default function MassageBookingSite() {
                 type="date"
                 min={todayISO()}
                 value={selectedDate}
+                onFocus={() => setFocusedField("date")}
+                onBlur={() => setFocusedField("")}
                 onChange={(e) => {
                   const nextDate = e.target.value < todayISO() ? todayISO() : e.target.value;
                   setSelectedDate(nextDate);
