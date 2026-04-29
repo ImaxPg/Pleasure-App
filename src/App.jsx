@@ -50,9 +50,7 @@ export default function MassageBookingSite() {
   const audioContextRef = useRef(null);
 
   const unlockAdminSound = () => {
-    try {
-      setIsSubmitting(true);
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
+    try {      const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) return;
 
       if (!audioContextRef.current) {
@@ -62,9 +60,7 @@ export default function MassageBookingSite() {
       if (audioContextRef.current.state === "suspended") {
         audioContextRef.current.resume();
       }
-    } catch (error) {
-      setIsSubmitting(false);
-      // Browser može blokirati zvuk dok korisnik ne klikne na stranicu.
+    } catch (error) {      // Browser može blokirati zvuk dok korisnik ne klikne na stranicu.
     }
   };
 
@@ -424,11 +420,6 @@ export default function MassageBookingSite() {
 
   const requestBooking = async () => {
     if (isSubmitting) return;
-
-    if (trackedBookingId) {
-      setUserMessage("Već imate poslat zahtjev. Sačekajte odgovor prije novog zakazivanja.");
-      return;
-    }
     if (!clientName.trim()) {
       setUserMessage("Molimo unesite ime i prezime.");
       return;
@@ -456,6 +447,8 @@ export default function MassageBookingSite() {
     }
 
     try {
+      setIsSubmitting(true);
+
       const response = await fetch(`${API}/appointments`, {
         method: "POST",
         headers: {
@@ -470,7 +463,8 @@ export default function MassageBookingSite() {
       });
 
       if (!response.ok) {
-        throw new Error("Backend nije prihvatio zahtjev.");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Backend nije prihvatio zahtjev.");
       }
 
       const data = await response.json();
@@ -489,8 +483,10 @@ export default function MassageBookingSite() {
       setTrackedBookingId(String(request.id));
       setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
       setSelectedSlot("");
+      setIsSubmitting(false);
     } catch (error) {
-      setUserMessage("Greška: zahtjev nije poslat backendu. Provjerite da li backend radi i da li postoji ruta POST /appointments.");
+      setIsSubmitting(false);
+      setUserMessage(error.message || "Greška: zahtjev nije poslat backendu.");
     }
   };
 
@@ -1398,7 +1394,7 @@ export default function MassageBookingSite() {
               return (
                 <button
                   onClick={requestBooking}
-                  disabled={!isReady || isSubmitting || trackedBookingId}
+                  disabled={!isReady || isSubmitting}
                   onMouseEnter={() => setIsHoverBooking(true)}
                   onMouseLeave={() => setIsHoverBooking(false)}
                   style={{
