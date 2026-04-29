@@ -896,7 +896,7 @@ export default function MassageBookingSite() {
                   ...(isBackendOnline ? pulseStyle : {}),
                 }}
               />
-              <h1 className="text-3xl md:text-4xl font-bold">Admin stranica</h1>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{color:"#111827"}}>Admin stranica</h1>
             </div>
             <p className="text-zinc-600">
               Pregled svih zahtjeva i zakazanih termina, poređanih po datumu i vremenu.
@@ -904,7 +904,7 @@ export default function MassageBookingSite() {
           </header>
 
           <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4">Blokiranje termina</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{color:"#111827"}}>Blokiranje termina</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
               <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
@@ -1007,7 +1007,7 @@ export default function MassageBookingSite() {
 
           <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 className="text-2xl font-semibold">Novi zahtjevi</h2>
+              <h2 className="text-2xl font-semibold" style={{color:"#111827"}}>Novi zahtjevi</h2>
             </div>
 
             {pendingAdminAppointments.length === 0 ? (
@@ -1085,7 +1085,7 @@ export default function MassageBookingSite() {
           </section>
 
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4">Pregled termina po datumu</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{color:"#111827"}}>Pregled termina po datumu</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
               <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
