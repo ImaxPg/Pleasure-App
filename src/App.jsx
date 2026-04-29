@@ -46,6 +46,8 @@ export default function MassageBookingSite() {
   const [isBackendOnline, setIsBackendOnline] = useState(true);
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
+  const knownConfirmedIdsRef = useRef(new Set());
+  const knownConfirmedAppointmentsRef = useRef(new Map());
   const adminFirstLoadRef = useRef(true);
   const audioContextRef = useRef(null);
 
@@ -265,6 +267,7 @@ export default function MassageBookingSite() {
         })
         .then((data) => {
           const pendingNow = data.filter((item) => item.status === "pending");
+          const confirmedNow = data.filter((item) => item.status === "confirmed");
           const newPendingItems = pendingNow.filter((item) => !knownPendingIdsRef.current.has(item.id));
 
           if (!adminFirstLoadRef.current && newPendingItems.length > 0) {
@@ -272,7 +275,35 @@ export default function MassageBookingSite() {
             playAdminNotificationSound();
           }
 
+          // DETEKCIJA OTKAZANIH TERMINA
+          const previousConfirmed = knownConfirmedIdsRef.current;
+          const currentConfirmedIds = new Set(confirmedNow.map((item) => item.id));
+
+          const cancelledIds = [...previousConfirmed].filter((id) => !currentConfirmedIds.has(id));
+
+          if (!adminFirstLoadRef.current && cancelledIds.length > 0) {
+            const cancelledPopups = cancelledIds.map((id) => {
+              const oldAppointment = knownConfirmedAppointmentsRef.current.get(id);
+
+              return {
+                id,
+                client_name: oldAppointment?.client_name || "Korisnik",
+                client_phone: oldAppointment?.client_phone || "",
+                date: oldAppointment?.date || "",
+                time: oldAppointment?.time || "",
+                cancelled: true,
+              };
+            });
+
+            setAdminPopups((current) => [...current, ...cancelledPopups]);
+            playAdminNotificationSound();
+          }
+
           knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
+          knownConfirmedIdsRef.current = new Set(confirmedNow.map((item) => item.id));
+          knownConfirmedAppointmentsRef.current = new Map(
+            confirmedNow.map((item) => [item.id, item])
+          );
           adminFirstLoadRef.current = false;
 
           setAdminAppointments(sortAdminAppointments(data));
@@ -782,17 +813,44 @@ export default function MassageBookingSite() {
                 }}
               >
                 <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>
-                  Novi zahtjev za termin
+                  {adminPopups[0].cancelled ? "Termin je otkazan" : "Novi zahtjev za termin"}
                 </h2>
+                {!adminPopups[0].cancelled && (
                 <p style={{ fontSize: 18, marginBottom: 8 }}>
                   <strong>{adminPopups[0].client_name}</strong>
                 </p>
+                )}
+                {!adminPopups[0].cancelled && (
                 <p style={{ fontSize: 16, marginBottom: 8 }}>
                   Datum: <strong>{adminPopups[0].date}</strong>
                 </p>
+                )}
+                {!adminPopups[0].cancelled && (
                 <p style={{ fontSize: 16, marginBottom: 16 }}>
                   Vrijeme: <strong>{adminPopups[0].time}</strong>
                 </p>
+                )
+                }
+                {adminPopups[0].cancelled && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 16, marginBottom: 8 }}>
+                      <strong>{adminPopups[0].client_name}</strong> je otkazao/la termin.
+                    </p>
+                    {adminPopups[0].date && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Datum: <strong>{adminPopups[0].date}</strong>
+                      </p>
+                    )}
+                    {adminPopups[0].time && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Vrijeme: <strong>{adminPopups[0].time}</strong>
+                      </p>
+                    )}
+                    <p style={{ fontSize: 14, color: "#71717a" }}>
+                      Termin je ponovo slobodan.
+                    </p>
+                  </div>
+                )}
                 {adminPopups[0].client_phone && (
                   <p style={{ fontSize: 14, color: "#71717a", marginBottom: 16 }}>
                     Telefon: {adminPopups[0].client_phone}
