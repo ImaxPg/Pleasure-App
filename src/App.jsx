@@ -401,7 +401,31 @@ export default function MassageBookingSite() {
         return copy;
       });
 
+      setAdminAppointments((current) => current.filter((item) => item.id !== booking.id));
       setUserMessage(`Termin ${date} u ${slot} je otkazan${booking?.clientName ? ` za korisnika ${booking.clientName}` : ""}. Termin je ponovo slobodan.`);
+    } catch (error) {
+      setUserMessage("Greška: termin nije otkazan u backendu.");
+    }
+  };
+
+  const cancelAdminAppointment = async (appointment) => {
+    if (isPastSlot(appointment.date, appointment.time)) {
+      setUserMessage("Termin je već prošao i ne može se otkazati.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/appointments/${appointment.id}`, {
+        method: "DELETE",
+        headers: getAdminHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Greška pri otkazivanju termina.");
+      }
+
+      setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
+      setUserMessage(`Termin ${appointment.date} u ${appointment.time} je otkazan.`);
     } catch (error) {
       setUserMessage("Greška: termin nije otkazan u backendu.");
     }
@@ -867,9 +891,24 @@ export default function MassageBookingSite() {
                     <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
                     <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
                     <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
-                    <span style={{ color: "#71717a" }}>
+                    <span style={{ color: "#71717a", minWidth: 100 }}>
                       {normalizeStatus(appointment.status) === "confirmed" ? "Potvrđen" : appointment.status}
                     </span>
+                    {normalizeStatus(appointment.status) === "confirmed" && !isPastSlot(appointment.date, appointment.time) && (
+                      <button
+                        onClick={() => cancelAdminAppointment(appointment)}
+                        style={{
+                          marginLeft: "auto",
+                          border: "1px solid #d4d4d8",
+                          borderRadius: 10,
+                          background: "white",
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Otkaži
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
