@@ -32,6 +32,7 @@ export default function MassageBookingSite() {
   const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
   const [adminAppointments, setAdminAppointments] = useState([]);
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
+  const [userLastUpdated, setUserLastUpdated] = useState("");
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
@@ -142,6 +143,7 @@ export default function MassageBookingSite() {
           setBooked(bookedMap);
           setPending(pendingList);
           setBlocked(blockedMap);
+          setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         });
     };
 
@@ -848,9 +850,14 @@ export default function MassageBookingSite() {
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
         <header className="rounded-3xl bg-white shadow-sm p-6 md:p-8 border border-zinc-100">
-          <div className="flex items-center gap-3 mb-3">
-            <Calendar className="w-8 h-8" />
-            <h1 className="text-3xl md:text-4xl font-bold">Zakazivanje masaže</h1>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-8 h-8" />
+              <h1 className="text-3xl md:text-4xl font-bold">Frizerski salon "Pleasure"</h1>
+            </div>
+            {userLastUpdated && (
+              <span className="text-xs text-zinc-500">Ažurirano: {userLastUpdated}</span>
+            )}
           </div>
           <p className="text-zinc-600 max-w-2xl">
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
