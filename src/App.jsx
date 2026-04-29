@@ -252,12 +252,10 @@ export default function MassageBookingSite() {
   const pendingAdminAppointments = displayedAdminAppointments.filter(
     (appointment) => normalizeStatus(appointment.status) === "pending"
   );
-  const selectedDateAppointments = displayedAdminAppointments.filter(
-    (appointment) =>
-      appointment.date === adminFilterDate &&
-      normalizeStatus(appointment.status) !== "pending" &&
-      normalizeStatus(appointment.status) !== "blocked"
-  );
+  const selectedDateAppointments = displayedAdminAppointments.filter((appointment) => {
+    const status = normalizeStatus(appointment.status);
+    return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked";
+  });
 
   const isValidPhone = (phone) => {
     return /^06[0-9]{7}$/.test(phone.trim());
@@ -923,8 +921,10 @@ export default function MassageBookingSite() {
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
                 {selectedDateAppointments.map((appointment) => {
-                const isConfirmed = normalizeStatus(appointment.status) === "confirmed";
-                const isRejected = normalizeStatus(appointment.status) === "rejected";
+                const status = normalizeStatus(appointment.status);
+                if (status === "blocked") return null;
+                const isConfirmed = status === "confirmed";
+                const isRejected = status === "rejected";
 
                 return (
                   <div
@@ -947,7 +947,7 @@ export default function MassageBookingSite() {
                     <span style={{ color: "#71717a", minWidth: 100 }}>
                       {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
                     </span>
-                    {normalizeStatus(appointment.status) === "confirmed" && !isPastSlot(appointment.date, appointment.time) && (
+                    {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
                       <button
                         onClick={() => cancelAdminAppointment(appointment)}
                         style={{
@@ -963,7 +963,8 @@ export default function MassageBookingSite() {
                       </button>
                     )}
                   </div>
-                ))}
+                );
+              })}
               </div>
             )}
           </section>
