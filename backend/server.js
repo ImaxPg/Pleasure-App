@@ -49,44 +49,93 @@ app.post("/admin/login", (req, res) => {
 });
 
 // KORISNIK ŠALJE ZAHTJEV
-// KORISNIK ŠALJE ZAHTJEV
+
+
+function todayISO() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function isValidPhone(phone) {
+  return /^06[0-9]{7}$/.test(String(phone || "").trim());
+}
+
+function isValidTime(time) {
+  return /^([01][0-9]|2[0-3]):(00|30)$/.test(String(time || ""));
+}
+
+function isPastSlot(date, time) {
+  return new Date(`${date}T${time}:00`) <= new Date();
+}
+
 app.post("/appointments", (req, res) => {
   const { date, time, client_name, client_phone } = req.body;
 
-  db.get(
-  `
-  SELECT * FROM appointments
-  WHERE client_phone = ?
-  AND date = ?
-  AND status IN ('pending', 'confirmed')
-  `,
-  [client_phone, date],
-  (err, existing) => {
-    if (err) {
-      return res.status(500).json({ error: "Greška pri provjeri termina" });
-    }
-
-    if (existing) {
-      return res.status(409).json({
-        error: "Već imate zakazan ili poslat zahtjev za ovaj datum.",
-      });
-    }
-
-    // INSERT ostaje isti
-    db.run(
-      `INSERT INTO appointments (date, time, client_name, client_phone, status)
-       VALUES (?, ?, ?, ?, ?)`,
-      [date, time, client_name, client_phone, "pending"],
-      function (err) {
-        if (err) {
-          return res.status(500).json({ error: "Greška pri čuvanju termina" });
-        }
-
-        res.json({ id: this.lastID });
-      }
-    );
+  if (!date || !time || !client_name || !client_phone) {
+    return res.status(400).json({ error: "Nedostaju podaci za zakazivanje." });
   }
-);
+
+  if (!isValidPhone(client_phone)) {
+    return res.status(400).json({ error: "Telefon mora imati 9 cifara i početi sa 06." });
+  }
+
+  if (!isValidTime(time)) {
+    return res.status(400).json({ error: "Neispravno vrijeme termina." });
+  }
+
+  if (date < todayISO() || isPastSlot(date, time)) {
+    return res.status(400).json({ error: "Nije moguće zakazati termin koji je prošao." });
+  }
+
+  db.get(
+    `
+    SELECT * FROM appointments
+    WHERE date = ?
+    AND time = ?
+    AND status IN ('pending', 'confirmed', 'blocked')
+    `,
+    [date, time],
+    (err, takenSlot) => {
+      if (err) return res.status(500).json({ error: "Greška pri provjeri termina." });
+
+      if (takenSlot) {
+        return res.status(409).json({ error: "Ovaj termin više nije dostupan." });
+      }
+
+      db.get(
+        `
+        SELECT * FROM appointments
+        WHERE client_phone = ?
+        AND date = ?
+        AND status IN ('pending', 'confirmed')
+        `,
+        [client_phone, date],
+        (err, existing) => {
+          if (err) return res.status(500).json({ error: "Greška pri provjeri korisnika." });
+
+          if (existing) {
+            return res.status(409).json({
+              error: "Već imate zakazan ili poslat zahtjev za ovaj datum.",
+            });
+          }
+
+          db.run(
+            `
+            INSERT INTO appointments 
+            (date, time, client_name, client_phone, status)
+            VALUES (?, ?, ?, ?, ?)
+            `,
+            [date, time, client_name.trim(), client_phone.trim(), "pending"],
+            function (err) {
+              if (err) return res.status(500).json({ error: "Greška pri čuvanju termina." });
+
+              res.json({ id: this.lastID });
+            }
+          );
+        }
+      );
+    }
+  );
 });
 
 // KORISNIK UČITAVA TERMINE ZA DATUM
