@@ -20,6 +20,15 @@ const transporter = nodemailer.createTransport({
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_TOKEN = "tajni-admin-token";
 
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const db = new sqlite3.Database("./database.db");
+
+
+
 
 function generateNext7DaysReport(callback) {
   const today = new Date();
@@ -61,32 +70,7 @@ function generateNext7DaysReport(callback) {
 }
 
 
-cron.schedule("0 20 * * *", () => {
-  console.log("Šaljem dnevni email izvještaj...");
 
-  generateNext7DaysReport((err, report) => {
-    if (err) {
-      console.error("Greška pri generisanju izvještaja:", err);
-      return;
-    }
-
-    transporter.sendMail(
-      {
-        from: EMAIL_USER,
-        to: EMAIL_TO,
-        subject: "Termini za narednih 7 dana",
-        text: report,
-      },
-      (error, info) => {
-        if (error) {
-          console.error("Greška pri slanju emaila:", error);
-        } else {
-          console.log("Email poslat:", info.response);
-        }
-      }
-    );
-  });
-});
 
 
 
@@ -102,12 +86,7 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: "Nije autorizovano" });
 }
 
-const app = express();
 
-app.use(cors());
-app.use(express.json());
-
-const db = new sqlite3.Database("./database.db");
 
 db.run(`
   CREATE TABLE IF NOT EXISTS appointments (
@@ -394,6 +373,37 @@ app.get("/appointments/my-booking", (req, res) => {
     }
   );
 });
+
+
+cron.schedule("0 20 * * *", () => {
+  console.log("Šaljem dnevni email izvještaj...");
+
+  generateNext7DaysReport((err, report) => {
+    if (err) {
+      console.error("Greška pri generisanju izvještaja:", err);
+      return;
+    }
+
+    transporter.sendMail(
+      {
+        from: EMAIL_USER,
+        to: EMAIL_TO,
+        subject: "Termini za narednih 7 dana",
+        text: report,
+      },
+      (error, info) => {
+        if (error) {
+          console.error("Greška pri slanju emaila:", error);
+        } else {
+          console.log("Email poslat:", info.response);
+        }
+      }
+    );
+  });
+}, {
+  timezone: "Europe/Podgorica",
+});
+
 
 app.listen(PORT, () => {
   console.log(`Backend radi na portu ${PORT}`);
