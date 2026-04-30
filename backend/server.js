@@ -211,6 +211,24 @@ app.delete("/appointments/:id/user-cancel", (req, res) => {
   );
 });
 
+
+// ADMIN RUČNO OTVARA NERADNI TERMIN
+app.post("/admin/open-slot", requireAdmin, (req, res) => {
+  const { date, time } = req.body;
+
+  db.run(
+    `INSERT INTO appointments 
+    (date, time, client_name, client_phone, status) 
+    VALUES (?, ?, ?, ?, ?)`,
+    [date, time, "ADMIN", "", "open"],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Greška pri otvaranju termina" });
+
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Backend radi na portu ${PORT}`);
 });
