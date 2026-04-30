@@ -1667,24 +1667,32 @@ export default function MassageBookingSite() {
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
             <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: "#166534" }}>
-                Vaši zakazani termini
+                Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
-              <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {userConfirmedBookings
                   .filter((booking) => !isPastSlot(booking.date, booking.time))
-                  .map((booking) => (
+                  .map((booking, index) => (
                     <div
-                      key={booking.id}
+                      key={`${booking.id}-${booking.date}-${booking.time}`}
                       style={{
+                        display: "block",
+                        width: "100%",
                         background: "white",
                         border: "1px solid #bbf7d0",
-                        borderRadius: 16,
-                        padding: 12,
+                        borderRadius: 18,
+                        padding: 14,
+                        boxShadow: "0 8px 20px rgba(22,101,52,0.08)",
                       }}
                     >
-                      <p style={{ color: "#166534", marginBottom: 10, fontWeight: 800 }}>
-                        {booking.date} u {booking.time}
-                      </p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+                        <span style={{ color: "#166534", fontWeight: 900 }}>
+                          Termin {index + 1}
+                        </span>
+                        <span style={{ color: "#166534", fontWeight: 900 }}>
+                          {booking.date} · {booking.time}
+                        </span>
+                      </div>
                       <button
                         onClick={() => cancelUserBooking(booking)}
                         style={{
