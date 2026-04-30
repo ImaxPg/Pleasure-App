@@ -338,8 +338,12 @@ export default function MassageBookingSite() {
           return res.json();
         })
         .then((data) => {
-          const pendingNow = data.filter((item) => item.status === "pending");
-          const confirmedNow = data.filter((item) => item.status === "confirmed");
+          const activeData = data.filter(
+            (item) => !(item.status === "pending" && isPastAppointment(item))
+          );
+
+          const pendingNow = activeData.filter((item) => item.status === "pending");
+          const confirmedNow = activeData.filter((item) => item.status === "confirmed");
           const newPendingItems = pendingNow.filter((item) => !knownPendingIdsRef.current.has(item.id));
 
           if (!adminFirstLoadRef.current && newPendingItems.length > 0) {
@@ -378,7 +382,7 @@ export default function MassageBookingSite() {
           );
           adminFirstLoadRef.current = false;
 
-          setAdminAppointments(sortAdminAppointments(data));
+          setAdminAppointments(sortAdminAppointments(activeData));
           setAdminLastUpdated(new Date().toLocaleTimeString("sr-ME"));
           setIsBackendOnline(true);
         })
@@ -507,13 +511,11 @@ export default function MassageBookingSite() {
     isBooked(date, slot) || isBlocked(date, slot) || isPending(date, slot) || isNonWorkingSlot(date, slot);
 
   const visibleUserSlots = slots.filter(
-  (slot) =>
-    !isPastSlot(selectedDate, slot) &&
-    !isNonWorkingSlot(selectedDate, slot) &&
-    !isBlocked(selectedDate, slot) &&
-    !isBooked(selectedDate, slot) &&
-    !isPending(selectedDate, slot)
-);
+    (slot) =>
+      !isPastSlot(selectedDate, slot) &&
+      !isNonWorkingSlot(selectedDate, slot) &&
+      !isBlocked(selectedDate, slot)
+  );
 
   const cancelUserBooking = async () => {
     if (!userConfirmedBooking) return;
