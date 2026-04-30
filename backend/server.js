@@ -2,8 +2,95 @@ const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
 
+const nodemailer = require("nodemailer");
+const cron = require("node-cron");
+
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_TO = process.env.EMAIL_TO;
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
+  },
+});
+
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_TOKEN = "tajni-admin-token";
+
+
+function generateNext7DaysReport(callback) {
+  const today = new Date();
+  const end = new Date();
+  end.setDate(today.getDate() + 7);
+
+  db.all(
+    `
+    SELECT * FROM appointments
+    WHERE status = 'confirmed'
+    AND datetime(date || 'T' || time) >= datetime('now')
+    ORDER BY date ASC, time ASC
+    `,
+    [],
+    (err, rows) => {
+      if (err) return callback(err);
+
+      let text = "FRIZERSKI SALON PLEASURE\n";
+      text += "TERMINI ZA NAREDNIH 7 DANA\n\n";
+
+      let currentDate = "";
+
+      rows.forEach((r) => {
+        const appointmentDate = new Date(`${r.date}T00:00:00`);
+
+        if (appointmentDate > end) return;
+
+        if (r.date !== currentDate) {
+          currentDate = r.date;
+          text += `\n${r.date}\n-------------------\n`;
+        }
+
+        text += `${r.time} - ${r.client_name} - ${r.client_phone}\n`;
+      });
+
+      callback(null, text);
+    }
+  );
+}
+
+
+cron.schedule("0 20 * * *", () => {
+  console.log("Šaljem dnevni email izvještaj...");
+
+  generateNext7DaysReport((err, report) => {
+    if (err) {
+      console.error("Greška pri generisanju izvještaja:", err);
+      return;
+    }
+
+    transporter.sendMail(
+      {
+        from: EMAIL_USER,
+        to: EMAIL_TO,
+        subject: "Termini za narednih 7 dana",
+        text: report,
+      },
+      (error, info) => {
+        if (error) {
+          console.error("Greška pri slanju emaila:", error);
+        } else {
+          console.log("Email poslat:", info.response);
+        }
+      }
+    );
+  });
+});
+
+
+
+
 
 function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
