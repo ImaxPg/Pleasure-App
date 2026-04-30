@@ -193,7 +193,9 @@ export default function MassageBookingSite() {
       if (!response.ok) {
         localStorage.setItem("userConfirmedBookings", JSON.stringify([]));
         localStorage.removeItem("userConfirmedBooking");
-        setUserConfirmedBookings([]);
+        // Ne brišemo lokalnu listu ako backend trenutno ne vrati rezultat,
+        // da ne izgubimo već prikazane termine zbog cache/deploy kašnjenja.
+        setUserConfirmedBookings((current) => current.filter((booking) => !isPastSlot(booking.date, booking.time)));
         return;
       }
 
@@ -213,9 +215,24 @@ export default function MassageBookingSite() {
           return a.time.localeCompare(b.time);
         });
 
-      localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
-      localStorage.removeItem("userConfirmedBooking");
-      setUserConfirmedBookings(confirmedBookings);
+      setUserConfirmedBookings((current) => {
+        const mergedMap = new Map();
+
+        current
+          .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
+          .forEach((booking) => mergedMap.set(String(booking.id), booking));
+
+        confirmedBookings.forEach((booking) => mergedMap.set(String(booking.id), booking));
+
+        const merged = Array.from(mergedMap.values()).sort((a, b) => {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return a.time.localeCompare(b.time);
+        });
+
+        localStorage.setItem("userConfirmedBookings", JSON.stringify(merged));
+        localStorage.removeItem("userConfirmedBooking");
+        return merged;
+      });
     } catch (error) {
       // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
     }
