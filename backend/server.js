@@ -22,7 +22,20 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "https://pleasure-app.vercel.app",
+  "https://perofrizer.me"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS nije dozvoljen"));
+    }
+  }
+}));
 app.use(express.json());
 
 const db = new sqlite3.Database("./database.db");
