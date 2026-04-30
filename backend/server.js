@@ -352,28 +352,22 @@ app.get("/appointments/my-booking", (req, res) => {
     return res.status(400).json({ error: "Neispravan telefon" });
   }
 
-  db.get(
+  db.all(
     `
     SELECT * FROM appointments
     WHERE client_phone = ?
     AND status = 'confirmed'
     AND datetime(date || 'T' || time) > datetime('now')
     ORDER BY date ASC, time ASC
-    LIMIT 1
     `,
     [phone],
-    (err, appointment) => {
+    (err, rows) => {
       if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
 
-      if (!appointment) {
-        return res.status(404).json({ error: "Nema aktivnog termina" });
-      }
-
-      res.json(appointment);
+      res.json(rows); // 🔥 sada vraća LISTU, ne jedan termin
     }
   );
 });
-
 
 cron.schedule("0 20 * * *", () => {
   console.log("Šaljem dnevni email izvještaj...");
