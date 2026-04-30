@@ -182,35 +182,47 @@ export default function MassageBookingSite() {
     sessionStorage.removeItem("adminToken");
   };
 
-  useEffect(() => {
+  const syncUserConfirmedBookings = async () => {
     if (isAdminPage || !isValidPhone(clientPhone)) return;
 
-    const fetchMyBooking = async () => {
-      try {
-        const response = await fetch(`${API}/appointments/my-booking?phone=${clientPhone}`);
-        if (!response.ok) return;
+    try {
+      const response = await fetch(`${API}/appointments/my-booking?phone=${clientPhone}&t=${Date.now()}`, {
+        cache: "no-store",
+      });
 
-        const result = await response.json();
-        const bookings = Array.isArray(result) ? result : [result];
-        const confirmedBookings = bookings
-          .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
-          .map((booking) => ({
-            id: booking.id,
-            date: booking.date,
-            time: booking.time,
-            client_name: booking.client_name,
-            client_phone: booking.client_phone,
-          }));
-
-        localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
+      if (!response.ok) {
+        localStorage.setItem("userConfirmedBookings", JSON.stringify([]));
         localStorage.removeItem("userConfirmedBooking");
-        setUserConfirmedBookings(confirmedBookings);
-      } catch (error) {
-        // Ako nema konekcije ili rute, aplikacija nastavlja normalno.
+        setUserConfirmedBookings([]);
+        return;
       }
-    };
 
-    fetchMyBooking();
+      const result = await response.json();
+      const bookings = Array.isArray(result) ? result : [result];
+      const confirmedBookings = bookings
+        .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
+        .map((booking) => ({
+          id: booking.id,
+          date: booking.date,
+          time: booking.time,
+          client_name: booking.client_name,
+          client_phone: booking.client_phone,
+        }))
+        .sort((a, b) => {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return a.time.localeCompare(b.time);
+        });
+
+      localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
+      localStorage.removeItem("userConfirmedBooking");
+      setUserConfirmedBookings(confirmedBookings);
+    } catch (error) {
+      // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
+    }
+  };
+
+  useEffect(() => {
+    syncUserConfirmedBookings();
   }, [clientPhone, isAdminPage]);
 
   // UCITAVANJE TERMINA IZ BACKENDA (auto refresh svakih 3s)
@@ -342,29 +354,7 @@ export default function MassageBookingSite() {
           }
 
           if (!isAdminPage && isValidPhone(clientPhone)) {
-            fetch(`${API}/appointments/my-booking?phone=${clientPhone}`)
-              .then((res) => (res.ok ? res.json() : []))
-              .then((result) => {
-                const bookings = Array.isArray(result) ? result : [result];
-                const confirmedBookings = bookings
-                  .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
-                  .map((booking) => ({
-                    id: booking.id,
-                    date: booking.date,
-                    time: booking.time,
-                    client_name: booking.client_name,
-                    client_phone: booking.client_phone,
-                  }))
-                  .sort((a, b) => {
-                    if (a.date !== b.date) return a.date.localeCompare(b.date);
-                    return a.time.localeCompare(b.time);
-                  });
-
-                localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
-                localStorage.removeItem("userConfirmedBooking");
-                setUserConfirmedBookings(confirmedBookings);
-              })
-              .catch(() => {});
+            syncUserConfirmedBookings();
           }
 
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
@@ -1044,8 +1034,7 @@ export default function MassageBookingSite() {
       });
     }
 
-    const blob = new Blob([lines.join("
-")], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
