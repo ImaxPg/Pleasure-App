@@ -274,6 +274,9 @@ export default function MassageBookingSite() {
                   localStorage.removeItem("userConfirmedBooking");
                   return next;
                 });
+                setTimeout(() => {
+                  syncUserConfirmedBookings();
+                }, 500);
                 setUserMessage("");
                 localStorage.removeItem("trackedBookingId");
                 setTrackedBookingId(null);
@@ -368,7 +371,7 @@ export default function MassageBookingSite() {
     const interval = setInterval(fetchData, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, trackedBookingId, userConfirmedBookings]);
+  }, [selectedDate, trackedBookingId, clientPhone]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
