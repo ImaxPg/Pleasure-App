@@ -408,10 +408,10 @@ export default function MassageBookingSite() {
 
           // DETEKCIJA OTKAZANIH TERMINA
           const previousConfirmed = knownConfirmedIdsRef.current;
-          const currentConfirmedIds = new Set(confirmedNow.map((item) => item.id));
+          const currentConfirmedIds = new Set(confirmedNow.map((item) => String(item.id)));
 
           const cancelledIds = [...previousConfirmed].filter(
-            (id) => !currentConfirmedIds.has(id) && !adminCancelledIdsRef.current.has(id)
+            (id) => !currentConfirmedIds.has(String(id)) && !adminCancelledIdsRef.current.has(String(id))
           );
 
           adminCancelledIdsRef.current.forEach((id) => {
@@ -439,9 +439,9 @@ export default function MassageBookingSite() {
           }
 
           knownPendingIdsRef.current = new Set(pendingNow.map((item) => item.id));
-          knownConfirmedIdsRef.current = new Set(confirmedNow.map((item) => item.id));
+          knownConfirmedIdsRef.current = new Set(confirmedNow.map((item) => String(item.id)));
           knownConfirmedAppointmentsRef.current = new Map(
-            confirmedNow.map((item) => [item.id, item])
+            confirmedNow.map((item) => [String(item.id), item])
           );
           adminFirstLoadRef.current = false;
 
@@ -776,17 +776,17 @@ export default function MassageBookingSite() {
       setAdminAppointments((current) => current.filter((item) => item.id !== booking.id));
       setUserMessage(`Termin ${date} u ${slot} je otkazan${booking?.clientName ? ` za korisnika ${booking.clientName}` : ""}. Termin je ponovo slobodan.`);
     } catch (error) {
-      adminCancelledIdsRef.current.delete(appointment.id);
+      adminCancelledIdsRef.current.delete(String(appointment.id));
       setUserMessage("Greška: termin nije otkazan u backendu.");
     }
   };
 
   const cancelAdminAppointment = async (appointment) => {
-    adminCancelledIdsRef.current.add(appointment.id);
+    adminCancelledIdsRef.current.add(String(appointment.id));
 
     if (isPastSlot(appointment.date, appointment.time)) {
       setUserMessage("Termin je već prošao i ne može se otkazati.");
-      adminCancelledIdsRef.current.delete(appointment.id);
+      adminCancelledIdsRef.current.delete(String(appointment.id));
       return;
     }
 
@@ -801,6 +801,17 @@ export default function MassageBookingSite() {
       }
 
       setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
+      setAdminPopups((current) => [
+        ...current,
+        {
+          id: `admin-cancel-${appointment.id}`,
+          adminCancelled: true,
+          client_name: appointment.client_name,
+          client_phone: appointment.client_phone,
+          date: appointment.date,
+          time: appointment.time,
+        },
+      ]);
       setUserMessage(`Termin ${appointment.date} u ${appointment.time} je otkazan.`);
     } catch (error) {
       setUserMessage("Greška: termin nije otkazan u backendu.");
@@ -1109,25 +1120,51 @@ export default function MassageBookingSite() {
                 }}
               >
                 <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>
-                  {adminPopups[0].cancelled ? "Termin je otkazan" : "Novi zahtjev za termin"}
+                  {adminPopups[0].adminCancelled
+                    ? "Uspješno ste otkazali termin"
+                    : adminPopups[0].cancelled
+                    ? "Termin je otkazan"
+                    : "Novi zahtjev za termin"}
                 </h2>
-                {!adminPopups[0].cancelled && (
+                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                 <p style={{ fontSize: 18, marginBottom: 8 }}>
                   <strong>{adminPopups[0].client_name}</strong>
                 </p>
                 )}
-                {!adminPopups[0].cancelled && (
+                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                 <p style={{ fontSize: 16, marginBottom: 8 }}>
                   Datum: <strong>{adminPopups[0].date}</strong>
                 </p>
                 )}
-                {!adminPopups[0].cancelled && (
+                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                 <p style={{ fontSize: 16, marginBottom: 16 }}>
                   Vrijeme: <strong>{adminPopups[0].time}</strong>
                 </p>
                 )
                 }
-                {adminPopups[0].cancelled && (
+                {adminPopups[0].adminCancelled && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 16, marginBottom: 8 }}>
+                      Uspješno ste otkazali termin.
+                    </p>
+                    {adminPopups[0].client_name && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Korisnik: <strong>{adminPopups[0].client_name}</strong>
+                      </p>
+                    )}
+                    {adminPopups[0].date && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Datum: <strong>{adminPopups[0].date}</strong>
+                      </p>
+                    )}
+                    {adminPopups[0].time && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Vrijeme: <strong>{adminPopups[0].time}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                   <div style={{ marginBottom: 16 }}>
                     <p style={{ fontSize: 16, marginBottom: 8 }}>
                       <strong>{adminPopups[0].client_name}</strong> je otkazao/la termin.
