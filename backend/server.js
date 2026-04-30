@@ -17,8 +17,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const ADMIN_PASSWORD = "admin123";
-const ADMIN_TOKEN = "tajni-admin-token";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 const app = express();
 
