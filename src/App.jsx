@@ -340,6 +340,32 @@ export default function MassageBookingSite() {
             }
           }
 
+          if (!isAdminPage && isValidPhone(clientPhone)) {
+            fetch(`${API}/appointments/my-booking?phone=${clientPhone}`)
+              .then((res) => (res.ok ? res.json() : []))
+              .then((result) => {
+                const bookings = Array.isArray(result) ? result : [result];
+                const confirmedBookings = bookings
+                  .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
+                  .map((booking) => ({
+                    id: booking.id,
+                    date: booking.date,
+                    time: booking.time,
+                    client_name: booking.client_name,
+                    client_phone: booking.client_phone,
+                  }))
+                  .sort((a, b) => {
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return a.time.localeCompare(b.time);
+                  });
+
+                localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
+                localStorage.removeItem("userConfirmedBooking");
+                setUserConfirmedBookings(confirmedBookings);
+              })
+              .catch(() => {});
+          }
+
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
         .catch(() => {
