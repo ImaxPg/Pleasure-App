@@ -1105,7 +1105,7 @@ export default function MassageBookingSite() {
                 type="date"
                 value={adminFilterDate}
                 onChange={(e) => setAdminFilterDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
               />
             </label>
 
@@ -1183,7 +1183,7 @@ export default function MassageBookingSite() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
@@ -1277,21 +1277,23 @@ export default function MassageBookingSite() {
             </div>
             
           </div>
-          <p
+          <div
             style={{
-              color: "#52525b",
-              maxWidth: 720,
+              color: "#374151",
               marginTop: 18,
-              lineHeight: 1.75,
-              textAlign: "left",
-              textWrap: "pretty",
-              fontSize: 16,
-              WebkitTextFillColor: "#52525b",
+              lineHeight: 1.55,
+              textAlign: "center",
+              fontSize: 17,
+              fontWeight: 500,
+              WebkitTextFillColor: "#374151",
+              wordSpacing: 0,
+              letterSpacing: 0,
             }}
           >
-            Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
-            Korisnik bira datum i termin, a administrator potvrđuje zakazivanje.
-          </p>
+            <div>Radno vrijeme salona: <strong>09:00–20:00</strong></div>
+            <div>Termini su na 30 minuta.</div>
+            <div>Administrator potvrđuje zakazivanje.</div>
+          </div>
         </header>
 
         {userMessage && (
@@ -1329,7 +1331,7 @@ export default function MassageBookingSite() {
             </section>
           )}
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827" }}>Podaci korisnika</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
@@ -1346,7 +1348,7 @@ export default function MassageBookingSite() {
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
-                <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#111827", WebkitTextFillColor: "#111827", fontSize: 16 }}>
                   Telefon
                   {isValidPhone(clientPhone) && (
                     <span style={{ color: "#16a34a", fontWeight: 900 }}>✓</span>
@@ -1379,7 +1381,7 @@ export default function MassageBookingSite() {
               </label>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827" }}>Izaberite termin</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
               <span style={{ minWidth: 80, fontWeight: 800, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
