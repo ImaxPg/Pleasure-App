@@ -925,7 +925,7 @@ export default function MassageBookingSite() {
                 min={todayISO()}
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 34 }}
               />
             </label>
 
@@ -1283,9 +1283,10 @@ export default function MassageBookingSite() {
               maxWidth: 720,
               marginTop: 18,
               lineHeight: 1.75,
-              textAlign: "justify",
+              textAlign: "left",
               textWrap: "pretty",
-              fontSize: 15,
+              fontSize: 16,
+              WebkitTextFillColor: "#52525b",
             }}
           >
             Radno vrijeme salona je od 09:00 do 20:00. Termini su podijeljeni na slotove od 30 minuta.
@@ -1374,14 +1375,14 @@ export default function MassageBookingSite() {
                   checked={rememberData}
                   onChange={(e) => setRememberData(e.target.checked)}
                 />
-                <span style={{ fontSize: 14, color: "#374151" }}>Zapamti moje podatke</span>
+                <span style={{ fontSize: 16, color: "#374151", WebkitTextFillColor: "#374151" }}>Zapamti moje podatke</span>
               </label>
             </div>
 
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827" }}>Izaberite termin</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 120, fontWeight: 700 }}>Datum</span>
+              <span style={{ minWidth: 80, fontWeight: 800, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
               <input
                 type="date"
                 min={todayISO()}
