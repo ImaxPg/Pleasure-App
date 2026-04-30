@@ -68,6 +68,7 @@ export default function MassageBookingSite() {
   const knownConfirmedIdsRef = useRef(new Set());
   const knownConfirmedAppointmentsRef = useRef(new Map());
   const adminCancelledIdsRef = useRef(new Set());
+  const userAdminCancelledNotifiedIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
   const audioContextRef = useRef(null);
 
@@ -215,24 +216,9 @@ export default function MassageBookingSite() {
           return a.time.localeCompare(b.time);
         });
 
-      setUserConfirmedBookings((current) => {
-        const mergedMap = new Map();
-
-        current
-          .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
-          .forEach((booking) => mergedMap.set(String(booking.id), booking));
-
-        confirmedBookings.forEach((booking) => mergedMap.set(String(booking.id), booking));
-
-        const merged = Array.from(mergedMap.values()).sort((a, b) => {
-          if (a.date !== b.date) return a.date.localeCompare(b.date);
-          return a.time.localeCompare(b.time);
-        });
-
-        localStorage.setItem("userConfirmedBookings", JSON.stringify(merged));
-        localStorage.removeItem("userConfirmedBooking");
-        return merged;
-      });
+      localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
+      localStorage.removeItem("userConfirmedBooking");
+      setUserConfirmedBookings(confirmedBookings);
     } catch (error) {
       // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
     }
@@ -352,10 +338,15 @@ export default function MassageBookingSite() {
             const removedBookings = userConfirmedBookings.filter(
               (booking) =>
                 booking.date === selectedDate &&
-                !confirmedIdsForSelectedDate.has(String(booking.id))
+                !confirmedIdsForSelectedDate.has(String(booking.id)) &&
+                !userAdminCancelledNotifiedIdsRef.current.has(String(booking.id))
             );
 
             if (removedBookings.length > 0) {
+              removedBookings.forEach((booking) => {
+                userAdminCancelledNotifiedIdsRef.current.add(String(booking.id));
+              });
+
               const nextBookings = userConfirmedBookings.filter(
                 (booking) =>
                   booking.date !== selectedDate ||
@@ -1682,12 +1673,12 @@ export default function MassageBookingSite() {
 
         <main className="grid gap-6">
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
+            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16, width: "100%", boxSizing: "border-box" }}>
                 {userConfirmedBookings
                   .filter((booking) => !isPastSlot(booking.date, booking.time))
                   .map((booking, index) => (
@@ -1698,6 +1689,9 @@ export default function MassageBookingSite() {
                         gridTemplateColumns: "1fr",
                         gap: 10,
                         width: "100%",
+                        maxWidth: "100%",
+                        minWidth: 0,
+                        boxSizing: "border-box",
                         background: "#ffffff",
                         border: "1px solid #86efac",
                         borderRadius: 18,
@@ -1714,6 +1708,8 @@ export default function MassageBookingSite() {
                         onClick={() => cancelUserBooking(booking)}
                         style={{
                           width: "100%",
+                          maxWidth: "100%",
+                          boxSizing: "border-box",
                           border: "1px solid #dc2626",
                           borderRadius: 14,
                           background: "#ffffff",
