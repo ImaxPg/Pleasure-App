@@ -22,6 +22,19 @@ const todayISO = () => {
   return `${year}-${month}-${day}`;
 };
 
+// FIX za iPhone zoom / mala slova
+if (typeof document !== "undefined") {
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) {
+    const m = document.createElement("meta");
+    m.name = "viewport";
+    m.content = "width=device-width, initial-scale=1, maximum-scale=1";
+    document.head.appendChild(m);
+  } else {
+    meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+  }
+}
+
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -34,6 +47,7 @@ export default function MassageBookingSite() {
   const [booked, setBooked] = useState({});
   const [pending, setPending] = useState([]);
   const [blocked, setBlocked] = useState({});
+  const [overrideOpen, setOverrideOpen] = useState({});
   const [userMessage, setUserMessage] = useState("");
   const [userPopup, setUserPopup] = useState(null);
   const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
@@ -176,6 +190,7 @@ export default function MassageBookingSite() {
           const bookedMap = {};
           const pendingList = [];
           const blockedMap = {};
+          const overrideMap = {};
 
           data.forEach((item) => {
             if (item.status === "confirmed") {
@@ -236,11 +251,20 @@ export default function MassageBookingSite() {
                 slot: item.time,
               };
             }
+
+            if (item.status === "open") {
+              overrideMap[`${item.date}_${item.time}`] = {
+                id: item.id,
+                date: item.date,
+                slot: item.time,
+              };
+            }
           });
 
           setBooked(bookedMap);
           setPending(pendingList);
           setBlocked(blockedMap);
+          setOverrideOpen(overrideMap);
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
         .catch(() => {
@@ -363,7 +387,7 @@ export default function MassageBookingSite() {
   );
   const selectedDateAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
-    return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked";
+    return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked" && status !== "open";
   });
 
   const isValidPhone = (phone) => {
@@ -396,11 +420,14 @@ export default function MassageBookingSite() {
   };
 
   const isNonWorkingSlot = (date, slot) => {
+    const slotKey = `${date}_${slot}`;
+    if (overrideOpen[slotKey]) return false;
+
     const day = getDayFromISO(date);
     const hour = Number(slot.split(":")[0]);
 
-    if (day === 0) return true; // nedjelja - neradno cijeli dan
-    if (day === 6 && hour >= 15) return true; // subota od 15:00 nadalje
+    if (day === 0) return true;
+    if (day === 6 && hour >= 15) return true;
 
     return false;
   };
@@ -639,7 +666,38 @@ export default function MassageBookingSite() {
 
   const toggleBlock = async (date, slot) => {
     const slotKey = key(date, slot);
-    if (isBooked(date, slot) || isNonWorkingSlot(date, slot)) return;
+    if (isBooked(date, slot)) return;
+
+    const slotKeyOverride = key(date, slot);
+
+    // ako je neradni termin -> klik ga otključava (override)
+    if (isNonWorkingSlot(date, slot)) {
+      try {
+        const response = await fetch(`${API}/admin/open-slot`, {
+          method: "POST",
+          headers: getAdminJsonHeaders(),
+          body: JSON.stringify({ date, time: slot }),
+        });
+
+        if (!response.ok) throw new Error("Greška pri ručnom otvaranju termina.");
+
+        const data = await response.json();
+
+        setOverrideOpen((current) => ({
+          ...current,
+          [slotKeyOverride]: {
+            id: data.id,
+            date,
+            slot,
+          },
+        }));
+
+        setUserMessage(`Termin ${date} u ${slot} je ručno otvoren za zakazivanje.`);
+      } catch (error) {
+        setUserMessage("Greška: termin nije ručno otvoren u backendu.");
+      }
+      return;
+    }
 
     if (isBlocked(date, slot)) {
       const blockedSlot = blocked[slotKey];
@@ -991,11 +1049,12 @@ export default function MassageBookingSite() {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
                 const nonWorkingNow = isNonWorkingSlot(selectedDate, slot);
+                const manuallyOpenNow = Boolean(overrideOpen[key(selectedDate, slot)]);
 
                 return (
                   <button
                     key={slot}
-                    disabled={bookedNow || nonWorkingNow}
+                    disabled={bookedNow}
                     onClick={() => toggleBlock(selectedDate, slot)}
                     style={{
                       borderRadius: 14,
@@ -1003,14 +1062,14 @@ export default function MassageBookingSite() {
                       padding: "10px 12px",
                       fontSize: 14,
                       fontWeight: 700,
-                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : blockedNow ? "#1e3a8a" : "white",
-                      color: bookedNow || nonWorkingNow ? "#71717a" : blockedNow ? "white" : "#1e3a8a",
-                      cursor: bookedNow || nonWorkingNow ? "not-allowed" : "pointer",
-                      opacity: bookedNow || nonWorkingNow ? 0.55 : 1,
+                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#1e3a8a" : "white",
+                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#1e3a8a",
+                      cursor: bookedNow ? "not-allowed" : "pointer",
+                      opacity: bookedNow ? 0.55 : 1,
                       boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
                     }}
                   >
-                    {slot} {bookedNow ? "Zakazano" : nonWorkingNow ? "Neradno" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
+                    {slot} {bookedNow ? "Zakazano" : nonWorkingNow ? "Neradno (klik za otvaranje)" : manuallyOpenNow ? "✅ Ručno otvoreno" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
                   </button>
                 );
               })}
