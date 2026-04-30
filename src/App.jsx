@@ -293,6 +293,25 @@ export default function MassageBookingSite() {
           setPending(pendingList);
           setBlocked(blockedMap);
           setOverrideOpen(overrideMap);
+
+          if (userConfirmedBooking?.id) {
+            const stillExists = data.some(
+              (item) =>
+                String(item.id) === String(userConfirmedBooking.id) &&
+                item.status === "confirmed"
+            );
+
+            if (!stillExists && selectedDate === userConfirmedBooking.date) {
+              localStorage.removeItem("userConfirmedBooking");
+              setUserConfirmedBooking(null);
+              setUserMessage("");
+              setUserPopup({
+                title: "Termin je otkazan",
+                message: "Vaš termin je otkazan od strane administratora.",
+              });
+            }
+          }
+
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
         .catch(() => {
@@ -304,7 +323,7 @@ export default function MassageBookingSite() {
     const interval = setInterval(fetchData, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, trackedBookingId]);
+  }, [selectedDate, trackedBookingId, userConfirmedBooking]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
