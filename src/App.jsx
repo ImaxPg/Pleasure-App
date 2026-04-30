@@ -398,6 +398,17 @@ export default function MassageBookingSite() {
     return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked" && status !== "open";
   });
 
+  const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
+  const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
+
+  const stats = {
+    pending: displayedAdminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
+    confirmedToday: todayAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
+    confirmedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
+    blockedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "blocked").length,
+    openedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "open").length,
+  };
+
   const isValidPhone = (phone) => {
     return /^06[0-9]{7}$/.test(phone.trim());
   };
@@ -1193,65 +1204,33 @@ export default function MassageBookingSite() {
             )}
           </section>
 
-          {expiredPendingAppointments.length > 0 && (
-            <section style={{ background: "rgba(254,242,242,0.96)", border: "1px solid #fecaca", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-              <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
-                Zaostali zahtjevi
-              </h2>
-              <p style={{ color: "#7f1d1d", marginBottom: 14 }}>
-                Ovo su zahtjevi kojima je termin već prošao, a nisu potvrđeni ni odbijeni.
-              </p>
-              <div style={{ display: "grid", gap: 10 }}>
-                {expiredPendingAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      flexWrap: "nowrap",
-                      alignItems: "center",
-                      gap: 14,
-                      border: "1px solid #fecaca",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      background: "white",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
-                    }}
-                  >
-                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
-                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
-                    <div style={{ minWidth: 180, fontWeight: 700 }}>
-                      {appointment.client_name}
-                      {appointment.client_phone && (
-                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
-                      )}
-                    </div>
-                    <div style={{ minWidth: 120, fontSize: 14, color: "#991b1b", fontWeight: 700 }}>
-                      Propušten zahtjev
-                    </div>
-                    <button
-                      onClick={async () => {
-                        const confirmed = window.confirm(
-                          `Da li želite da uklonite zaostali zahtjev za ${appointment.date} u ${appointment.time}?`
-                        );
-                        if (!confirmed) return;
-
-                        await fetch(`${API}/appointments/${appointment.id}/reject`, {
-                          method: "POST",
-                          headers: getAdminHeaders(),
-                        });
-                        setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
-                      }}
-                      style={{ marginLeft: "auto", border: "1px solid #991b1b", borderRadius: 10, background: "white", color: "#991b1b", padding: "8px 12px", cursor: "pointer", fontWeight: 800, WebkitTextFillColor: "#991b1b" }}
-                    >
-                      Ukloni
-                    </button>
-                  </div>
-                ))}
+          <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
+              Statistika
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+              <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Novi zahtjevi</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#111827" }}>{stats.pending}</div>
               </div>
-            </section>
-          )}
+              <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Potvrđeno danas</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#166534" }}>{stats.confirmedToday}</div>
+              </div>
+              <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Potvrđeno za izabrani datum</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#166534" }}>{stats.confirmedSelectedDate}</div>
+              </div>
+              <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Zaključano za izabrani datum</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#1e3a8a" }}>{stats.blockedSelectedDate}</div>
+              </div>
+              <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Ručno otvoreno</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#7c3aed" }}>{stats.openedSelectedDate}</div>
+              </div>
+            </div>
+          </section>
 
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
