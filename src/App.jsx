@@ -177,6 +177,34 @@ export default function MassageBookingSite() {
     sessionStorage.removeItem("adminToken");
   };
 
+  useEffect(() => {
+    if (isAdminPage || !isValidPhone(clientPhone)) return;
+
+    const fetchMyBooking = async () => {
+      try {
+        const response = await fetch(`${API}/appointments/my-booking?phone=${clientPhone}`);
+        if (!response.ok) return;
+
+        const booking = await response.json();
+        if (booking?.id && !isPastSlot(booking.date, booking.time)) {
+          const confirmedBooking = {
+            id: booking.id,
+            date: booking.date,
+            time: booking.time,
+            client_name: booking.client_name,
+            client_phone: booking.client_phone,
+          };
+          localStorage.setItem("userConfirmedBooking", JSON.stringify(confirmedBooking));
+          setUserConfirmedBooking(confirmedBooking);
+        }
+      } catch (error) {
+        // Ako nema konekcije ili rute, aplikacija nastavlja normalno.
+      }
+    };
+
+    fetchMyBooking();
+  }, [clientPhone, isAdminPage]);
+
   // UCITAVANJE TERMINA IZ BACKENDA (auto refresh svakih 3s)
   useEffect(() => {
     const fetchData = () => {

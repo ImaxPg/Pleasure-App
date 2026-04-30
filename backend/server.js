@@ -278,6 +278,36 @@ app.post("/admin/open-slot", requireAdmin, (req, res) => {
   );
 });
 
+// KORISNIK PRONALAZI SVOJ AKTIVNI TERMIN PO TELEFONU
+app.get("/appointments/my-booking", (req, res) => {
+  const { phone } = req.query;
+
+  if (!/^06[0-9]{7}$/.test(String(phone || "").trim())) {
+    return res.status(400).json({ error: "Neispravan telefon" });
+  }
+
+  db.get(
+    `
+    SELECT * FROM appointments
+    WHERE client_phone = ?
+    AND status = 'confirmed'
+    AND datetime(date || 'T' || time) > datetime('now')
+    ORDER BY date ASC, time ASC
+    LIMIT 1
+    `,
+    [phone],
+    (err, appointment) => {
+      if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
+
+      if (!appointment) {
+        return res.status(404).json({ error: "Nema aktivnog termina" });
+      }
+
+      res.json(appointment);
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Backend radi na portu ${PORT}`);
 });
