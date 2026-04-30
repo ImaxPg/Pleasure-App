@@ -364,7 +364,7 @@ app.get("/appointments/my-booking", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
 
-      res.json(rows); // 🔥 sada vraća LISTU, ne jedan termin
+      res.json(rows);
     }
   );
 });
