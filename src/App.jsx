@@ -382,8 +382,16 @@ export default function MassageBookingSite() {
 
   const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
   const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
+  const isPastAppointment = (appointment) => {
+    return new Date(`${appointment.date}T${appointment.time}:00`) <= new Date();
+  };
+
   const pendingAdminAppointments = displayedAdminAppointments.filter(
-    (appointment) => normalizeStatus(appointment.status) === "pending"
+    (appointment) => normalizeStatus(appointment.status) === "pending" && !isPastAppointment(appointment)
+  );
+
+  const expiredPendingAppointments = displayedAdminAppointments.filter(
+    (appointment) => normalizeStatus(appointment.status) === "pending" && isPastAppointment(appointment)
   );
   const selectedDateAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
@@ -669,6 +677,36 @@ export default function MassageBookingSite() {
     if (isBooked(date, slot)) return;
 
     const slotKeyOverride = key(date, slot);
+
+    // ako je termin ručno otvoren -> novi klik ga vraća u neradno stanje
+    if (overrideOpen[slotKeyOverride]) {
+      const openSlot = overrideOpen[slotKeyOverride];
+
+      if (!openSlot?.id) {
+        setUserMessage("Greška: ne mogu da pronađem ID ručno otvorenog termina.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API}/appointments/${openSlot.id}`, {
+          method: "DELETE",
+          headers: getAdminHeaders(),
+        });
+
+        if (!response.ok) throw new Error("Greška pri ponovnom zaključavanju termina.");
+
+        setOverrideOpen((current) => {
+          const copy = { ...current };
+          delete copy[slotKeyOverride];
+          return copy;
+        });
+
+        setUserMessage(`Termin ${date} u ${slot} je ponovo vraćen kao neradni.`);
+      } catch (error) {
+        setUserMessage("Greška: termin nije vraćen kao neradni u backendu.");
+      }
+      return;
+    }
 
     // ako je neradni termin -> klik ga otključava (override)
     if (isNonWorkingSlot(date, slot)) {
@@ -1069,7 +1107,7 @@ export default function MassageBookingSite() {
                       boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
                     }}
                   >
-                    {slot} {bookedNow ? "Zakazano" : nonWorkingNow ? "Neradno (klik za otvaranje)" : manuallyOpenNow ? "✅ Ručno otvoreno" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
+                    {slot} {bookedNow ? "Zakazano" : manuallyOpenNow ? "✅ Ručno otvoreno (klik za neradno)" : nonWorkingNow ? "Neradno (klik za otvaranje)" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
                   </button>
                 );
               })}
@@ -1154,6 +1192,66 @@ export default function MassageBookingSite() {
               </div>
             )}
           </section>
+
+          {expiredPendingAppointments.length > 0 && (
+            <section style={{ background: "rgba(254,242,242,0.96)", border: "1px solid #fecaca", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+              <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
+                Zaostali zahtjevi
+              </h2>
+              <p style={{ color: "#7f1d1d", marginBottom: 14 }}>
+                Ovo su zahtjevi kojima je termin već prošao, a nisu potvrđeni ni odbijeni.
+              </p>
+              <div style={{ display: "grid", gap: 10 }}>
+                {expiredPendingAppointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: "1px solid #fecaca",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      background: "white",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
+                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
+                    <div style={{ minWidth: 180, fontWeight: 700 }}>
+                      {appointment.client_name}
+                      {appointment.client_phone && (
+                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 120, fontSize: 14, color: "#991b1b", fontWeight: 700 }}>
+                      Propušten zahtjev
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const confirmed = window.confirm(
+                          `Da li želite da uklonite zaostali zahtjev za ${appointment.date} u ${appointment.time}?`
+                        );
+                        if (!confirmed) return;
+
+                        await fetch(`${API}/appointments/${appointment.id}/reject`, {
+                          method: "POST",
+                          headers: getAdminHeaders(),
+                        });
+                        setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
+                      }}
+                      style={{ marginLeft: "auto", border: "1px solid #991b1b", borderRadius: 10, background: "white", color: "#991b1b", padding: "8px 12px", cursor: "pointer", fontWeight: 800, WebkitTextFillColor: "#991b1b" }}
+                    >
+                      Ukloni
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
