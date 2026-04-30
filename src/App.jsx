@@ -67,6 +67,7 @@ export default function MassageBookingSite() {
   const knownPendingIdsRef = useRef(new Set());
   const knownConfirmedIdsRef = useRef(new Set());
   const knownConfirmedAppointmentsRef = useRef(new Map());
+  const adminCancelledIdsRef = useRef(new Set());
   const adminFirstLoadRef = useRef(true);
   const audioContextRef = useRef(null);
 
@@ -409,7 +410,15 @@ export default function MassageBookingSite() {
           const previousConfirmed = knownConfirmedIdsRef.current;
           const currentConfirmedIds = new Set(confirmedNow.map((item) => item.id));
 
-          const cancelledIds = [...previousConfirmed].filter((id) => !currentConfirmedIds.has(id));
+          const cancelledIds = [...previousConfirmed].filter(
+            (id) => !currentConfirmedIds.has(id) && !adminCancelledIdsRef.current.has(id)
+          );
+
+          adminCancelledIdsRef.current.forEach((id) => {
+            if (!currentConfirmedIds.has(id)) {
+              adminCancelledIdsRef.current.delete(id);
+            }
+          });
 
           if (!adminFirstLoadRef.current && cancelledIds.length > 0) {
             const cancelledPopups = cancelledIds.map((id) => {
@@ -767,13 +776,17 @@ export default function MassageBookingSite() {
       setAdminAppointments((current) => current.filter((item) => item.id !== booking.id));
       setUserMessage(`Termin ${date} u ${slot} je otkazan${booking?.clientName ? ` za korisnika ${booking.clientName}` : ""}. Termin je ponovo slobodan.`);
     } catch (error) {
+      adminCancelledIdsRef.current.delete(appointment.id);
       setUserMessage("Greška: termin nije otkazan u backendu.");
     }
   };
 
   const cancelAdminAppointment = async (appointment) => {
+    adminCancelledIdsRef.current.add(appointment.id);
+
     if (isPastSlot(appointment.date, appointment.time)) {
       setUserMessage("Termin je već prošao i ne može se otkazati.");
+      adminCancelledIdsRef.current.delete(appointment.id);
       return;
     }
 
