@@ -919,6 +919,59 @@ export default function MassageBookingSite() {
     }
   };
 
+  const exportNextSevenDaysTxt = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+
+    const confirmed = displayedAdminAppointments
+      .filter((appointment) => {
+        const status = normalizeStatus(appointment.status);
+        const appointmentDate = new Date(`${appointment.date}T00:00:00`);
+        return status === "confirmed" && appointmentDate >= start && appointmentDate < end;
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.time.localeCompare(b.time);
+      });
+
+    const lines = [];
+    lines.push("FRIZERSKI SALON PLEASURE");
+    lines.push("TERMINI ZA NAREDNIH 7 DANA");
+    lines.push(`Export: ${new Date().toLocaleString("sr-ME")}`);
+    lines.push("");
+
+    if (confirmed.length === 0) {
+      lines.push("Nema potvrđenih termina za narednih 7 dana.");
+    } else {
+      let currentDate = "";
+      confirmed.forEach((appointment) => {
+        if (appointment.date !== currentDate) {
+          currentDate = appointment.date;
+          lines.push("");
+          lines.push(currentDate);
+          lines.push("-------------------------");
+        }
+
+        lines.push(
+          `${appointment.time} - ${appointment.client_name || "Bez imena"} - ${appointment.client_phone || "Bez telefona"}`
+        );
+      });
+    }
+
+    const blob = new Blob([lines.join("
+")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `termini-narednih-7-dana-${todayISO()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (isAdminPage) {
     if (!isAdminAuth) {
       return (
@@ -1256,9 +1309,27 @@ export default function MassageBookingSite() {
           </section>
 
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
-              Statistika
-            </h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
+                Statistika
+              </h2>
+              <button
+                onClick={exportNextSevenDaysTxt}
+                style={{
+                  border: "1px solid #7c3aed",
+                  borderRadius: 14,
+                  background: "white",
+                  color: "#5b21b6",
+                  padding: "9px 12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  WebkitTextFillColor: "#5b21b6",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Export 7 dana
+              </button>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Novi zahtjevi</div>
