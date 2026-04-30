@@ -1665,53 +1665,53 @@ export default function MassageBookingSite() {
 
         <main className="grid gap-6">
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", position: "relative" }}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 14, color: "#166534" }}>
+            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
 
-              {userConfirmedBookings
-                .filter((booking) => !isPastSlot(booking.date, booking.time))
-                .map((booking, index) => (
-                  <div
-                    key={`${booking.id}-${booking.date}-${booking.time}`}
-                    style={{
-                      width: "100%",
-                      display: "block",
-                      clear: "both",
-                      boxSizing: "border-box",
-                      background: "white",
-                      border: "1px solid #bbf7d0",
-                      borderRadius: 18,
-                      padding: 14,
-                      marginBottom: 14,
-                      position: "relative",
-                    }}
-                  >
-                    <div style={{ fontWeight: 900, color: "#166534", marginBottom: 6 }}>
-                      Termin {index + 1}
-                    </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#166534", marginBottom: 12 }}>
-                      {booking.date} u {booking.time}
-                    </div>
-                    <button
-                      onClick={() => cancelUserBooking(booking)}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+                {userConfirmedBookings
+                  .filter((booking) => !isPastSlot(booking.date, booking.time))
+                  .map((booking, index) => (
+                    <div
+                      key={`${booking.id}-${booking.date}-${booking.time}`}
                       style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr",
+                        gap: 10,
                         width: "100%",
-                        border: "1px solid #dc2626",
-                        borderRadius: 14,
-                        background: "white",
-                        color: "#991b1b",
-                        padding: "10px 12px",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                        WebkitTextFillColor: "#991b1b",
+                        background: "#ffffff",
+                        border: "1px solid #86efac",
+                        borderRadius: 18,
+                        padding: 16,
                       }}
                     >
-                      Otkaži ovaj termin
-                    </button>
-                  </div>
-                ))}
+                      <div style={{ color: "#166534", fontWeight: 900, fontSize: 16 }}>
+                        Termin {index + 1}
+                      </div>
+                      <div style={{ color: "#166534", fontWeight: 900, fontSize: 20 }}>
+                        {booking.date} u {booking.time}
+                      </div>
+                      <button
+                        onClick={() => cancelUserBooking(booking)}
+                        style={{
+                          width: "100%",
+                          border: "1px solid #dc2626",
+                          borderRadius: 14,
+                          background: "#ffffff",
+                          color: "#991b1b",
+                          padding: "11px 12px",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          WebkitTextFillColor: "#991b1b",
+                        }}
+                      >
+                        Otkaži ovaj termin
+                      </button>
+                    </div>
+                  ))}
+              </div>
             </section>
           )}
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
