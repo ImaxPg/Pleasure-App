@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const BOOKING_PIN = "13579";
+const BOOKING_PIN = process.env.BOOKING_PIN;
 const rateLimit = require("express-rate-limit");
 const express = require("express");
 const cors = require("cors");
