@@ -1350,7 +1350,162 @@ export default function MassageBookingSite() {
             </p>
           </section>
 
-          <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+          <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Novi zahtjevi</h2>
+            </div>
+
+            {pendingAdminAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema novih zahtjeva.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {pendingAdminAppointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                      borderLeft: "6px solid #f97316",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
+                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
+                    <div style={{ minWidth: 180, fontWeight: 700 }}>
+                      {appointment.client_name}
+                      {appointment.client_phone && (
+                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>Čeka potvrdu</div>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                      <button
+                        onClick={async () => {
+                          await fetch(`${API}/appointments/${appointment.id}/approve`, {
+                            method: "POST",
+                            headers: getAdminHeaders(),
+                          });
+                          setAdminAppointments((current) =>
+                            sortAdminAppointments(
+                              current.map((item) =>
+                                item.id === appointment.id ? { ...item, status: "confirmed" } : item
+                              )
+                            )
+                          );
+                        }}
+                        style={{ border: 0, borderRadius: 10, background: "#18181b", color: "white", padding: "8px 12px", cursor: "pointer" }}
+                      >
+                        Potvrdi
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const confirmed = window.confirm(
+                            `Da li ste sigurni da želite da odbijete zahtjev za ${appointment.date} u ${appointment.time}?`
+                          );
+                          if (!confirmed) return;
+
+                          await fetch(`${API}/appointments/${appointment.id}/reject`, {
+                            method: "POST",
+                            headers: getAdminHeaders(),
+                          });
+                          setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
+                        }}
+                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
+                      >
+                        Odbij
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
+              <input
+                type="date"
+                value={adminFilterDate}
+                onChange={(e) => setAdminFilterDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
+              />
+            </label>
+
+            {selectedDateAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 8 }}>
+                {selectedDateAppointments
+                  .filter((appointment) => normalizeStatus(appointment.status) !== "blocked")
+                  .map((appointment) => {
+                const status = normalizeStatus(appointment.status);
+                if (status === "blocked") return null;
+                const isConfirmed = status === "confirmed";
+                const isRejected = status === "rejected";
+
+                return (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      alignItems: "center",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                    }}
+                  >
+                    <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
+                    <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                    <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                    <span style={{ color: "#71717a", minWidth: 100 }}>
+                      {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
+                    </span>
+                    {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
+                      <button
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
+                          );
+                          if (!confirmed) return;
+                          cancelAdminAppointment(appointment);
+                        }}
+                        style={{
+                          marginLeft: "auto",
+                          border: "1px solid #d4d4d8",
+                          borderRadius: 10,
+                          background: "white",
+                          color: "#18181b",
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          WebkitTextFillColor: "#18181b",
+                        }}
+                      >
+                        Otkaži
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              </div>
+            )}
+          </section>
+<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
@@ -1453,85 +1608,6 @@ export default function MassageBookingSite() {
             </div>
           </section>
 
-          <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Novi zahtjevi</h2>
-            </div>
-
-            {pendingAdminAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema novih zahtjeva.</p>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {pendingAdminAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      flexWrap: "nowrap",
-                      alignItems: "center",
-                      gap: 14,
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
-                      borderLeft: "6px solid #f97316",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
-                    }}
-                  >
-                    <div style={{ minWidth: 60, fontWeight: 800, fontSize: 18 }}>{appointment.time}</div>
-                    <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
-                    <div style={{ minWidth: 180, fontWeight: 700 }}>
-                      {appointment.client_name}
-                      {appointment.client_phone && (
-                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
-                      )}
-                    </div>
-                    <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>Čeka potvrdu</div>
-                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                      <button
-                        onClick={async () => {
-                          await fetch(`${API}/appointments/${appointment.id}/approve`, {
-                            method: "POST",
-                            headers: getAdminHeaders(),
-                          });
-                          setAdminAppointments((current) =>
-                            sortAdminAppointments(
-                              current.map((item) =>
-                                item.id === appointment.id ? { ...item, status: "confirmed" } : item
-                              )
-                            )
-                          );
-                        }}
-                        style={{ border: 0, borderRadius: 10, background: "#18181b", color: "white", padding: "8px 12px", cursor: "pointer" }}
-                      >
-                        Potvrdi
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const confirmed = window.confirm(
-                            `Da li ste sigurni da želite da odbijete zahtjev za ${appointment.date} u ${appointment.time}?`
-                          );
-                          if (!confirmed) return;
-
-                          await fetch(`${API}/appointments/${appointment.id}/reject`, {
-                            method: "POST",
-                            headers: getAdminHeaders(),
-                          });
-                          setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
-                        }}
-                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
-                      >
-                        Odbij
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
@@ -1578,83 +1654,7 @@ export default function MassageBookingSite() {
             </div>
           </section>
 
-          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
-
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
-              <input
-                type="date"
-                value={adminFilterDate}
-                onChange={(e) => setAdminFilterDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
-              />
-            </label>
-
-            {selectedDateAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {selectedDateAppointments
-                  .filter((appointment) => normalizeStatus(appointment.status) !== "blocked")
-                  .map((appointment) => {
-                const status = normalizeStatus(appointment.status);
-                if (status === "blocked") return null;
-                const isConfirmed = status === "confirmed";
-                const isRejected = status === "rejected";
-
-                return (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
-                    }}
-                  >
-                    <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
-                    <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
-                    <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
-                    <span style={{ color: "#71717a", minWidth: 100 }}>
-                      {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
-                    </span>
-                    {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
-                      <button
-                        onClick={() => {
-                          const confirmed = window.confirm(
-                            `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
-                          );
-                          if (!confirmed) return;
-                          cancelAdminAppointment(appointment);
-                        }}
-                        style={{
-                          marginLeft: "auto",
-                          border: "1px solid #d4d4d8",
-                          borderRadius: 10,
-                          background: "white",
-                          color: "#18181b",
-                          padding: "8px 12px",
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          WebkitTextFillColor: "#18181b",
-                        }}
-                      >
-                        Otkaži
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              </div>
-            )}
-          </section>
-        {adminLastUpdated && (
+                  {adminLastUpdated && (
           <footer style={{ textAlign: "center", color: "#71717a", fontSize: 12, padding: "8px 0 4px" }}>
             Ažurirano: {adminLastUpdated}
           </footer>
