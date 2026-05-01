@@ -532,7 +532,7 @@ export default function MassageBookingSite() {
     { key: "today", label: "Danas" },
     { key: "tomorrow", label: "Sjutra" },
     { key: "week", label: "7 dana" },
-    { key: "pending", label: "Pending" },
+    { key: "pending", label: "Nepotvrdjeni" },
     { key: "confirmed", label: "Potvrđeni" },
     { key: "rejected", label: "Odbijeni" },
     { key: "blocked", label: "Blokirani termini" },
