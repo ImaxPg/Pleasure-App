@@ -51,6 +51,7 @@ export default function MassageBookingSite() {
 
   const [clientName, setClientName] = useState(() => localStorage.getItem("savedName") || "");
   const [clientPhone, setClientPhone] = useState(() => localStorage.getItem("savedPhone") || "");
+  const [bookingPin, setBookingPin] = useState("");
   const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getItem("savedName")));
 
   const [booked, setBooked] = useState({});
@@ -739,6 +740,11 @@ export default function MassageBookingSite() {
       return;
     }
 
+    if (!bookingPin.trim()) {
+      setUserMessage("Molimo unesite PIN za zakazivanje.");
+      return;
+    }
+
     if (!selectedDate || !selectedSlot) {
       setUserMessage("Izaberite datum i termin prije zakazivanja.");
       return;
@@ -768,6 +774,7 @@ export default function MassageBookingSite() {
           time: selectedSlot,
           client_name: clientName,
           client_phone: clientPhone.trim(),
+          booking_pin: bookingPin.trim(),
         }),
       });
 
@@ -800,6 +807,7 @@ export default function MassageBookingSite() {
       setTrackedBookingId(String(request.id));
       setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
       setSelectedSlot("");
+      setBookingPin("");
       setIsSubmitting(false);
     } catch (error) {
       setIsSubmitting(false);
@@ -1943,12 +1951,19 @@ export default function MassageBookingSite() {
               </label>
 
 
-              <input
-  type="password"
-  placeholder="Unesite PIN"
-  value={bookingPin}
-  onChange={(e) => setBookingPin(e.target.value)}
-/>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "pin" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "pin" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>PIN za zakazivanje</span>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="Unesite PIN"
+                  value={bookingPin}
+                  onFocus={() => setFocusedField("pin")}
+                  onBlur={() => setFocusedField("")}
+                  onChange={(e) => setBookingPin(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
+                />
+              </label>
 
               <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
                 <input
@@ -2051,7 +2066,7 @@ export default function MassageBookingSite() {
             </div>
 
             {(() => {
-              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot;
+              const isReady = clientName.trim() && isValidPhone(clientPhone) && bookingPin.trim() && selectedSlot;
               return (
                 <button
                   onClick={requestBooking}
