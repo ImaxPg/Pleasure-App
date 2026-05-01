@@ -140,6 +140,16 @@ export default function MassageBookingSite() {
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   useEffect(() => {
+    if (adminQuickFilter === "today") {
+      setAdminFilterDate(todayISO());
+    }
+
+    if (adminQuickFilter === "tomorrow") {
+      setAdminFilterDate(addDaysISO(1));
+    }
+  }, [adminQuickFilter]);
+
+  useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
@@ -569,10 +579,26 @@ export default function MassageBookingSite() {
   const expiredPendingAppointments = displayedAdminAppointments.filter(
     (appointment) => normalizeStatus(appointment.status) === "pending" && isPastAppointment(appointment)
   );
-  const selectedDateAppointments = displayedAdminAppointments.filter((appointment) => {
+  const overviewAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
-    return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked" && status !== "open";
+
+    if (status === "pending" || status === "blocked" || status === "open") return false;
+
+    if (adminQuickFilter === "today") return appointment.date === todayISO();
+    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
+    if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+
+    return appointment.date === adminFilterDate;
   });
+
+  const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
+    if (!groups[appointment.date]) groups[appointment.date] = [];
+    groups[appointment.date].push(appointment);
+    return groups;
+  }, {});
+
+  const overviewDates = Object.keys(overviewGroupedByDate).sort();
+  const isOverviewRangeMode = adminQuickFilter === "week";
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
@@ -1432,76 +1458,89 @@ export default function MassageBookingSite() {
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
-              <input
-                type="date"
-                value={adminFilterDate}
-                onChange={(e) => setAdminFilterDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
-              />
-            </label>
-
-            {selectedDateAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
+            {isOverviewRangeMode ? (
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
+                Prikaz: narednih 7 dana ({todayISO()} – {addDaysISO(7)})
+              </div>
             ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {selectedDateAppointments
-                  .filter((appointment) => normalizeStatus(appointment.status) !== "blocked")
-                  .map((appointment) => {
-                const status = normalizeStatus(appointment.status);
-                if (status === "blocked") return null;
-                const isConfirmed = status === "confirmed";
-                const isRejected = status === "rejected";
+              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+                <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
+                <input
+                  type="date"
+                  value={adminFilterDate}
+                  onChange={(e) => setAdminFilterDate(e.target.value)}
+                  style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
+                />
+              </label>
+            )}
 
-                return (
-                  <div
-                    key={appointment.id}
-                    style={{
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
-                    }}
-                  >
-                    <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
-                    <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
-                    <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
-                    <span style={{ color: "#71717a", minWidth: 100 }}>
-                      {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
-                    </span>
-                    {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
-                      <button
-                        onClick={() => {
-                          const confirmed = window.confirm(
-                            `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
-                          );
-                          if (!confirmed) return;
-                          cancelAdminAppointment(appointment);
-                        }}
-                        style={{
-                          marginLeft: "auto",
-                          border: "1px solid #d4d4d8",
-                          borderRadius: 10,
-                          background: "white",
-                          color: "#18181b",
-                          padding: "8px 12px",
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          WebkitTextFillColor: "#18181b",
-                        }}
-                      >
-                        Otkaži
-                      </button>
+            {overviewAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani prikaz.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 14 }}>
+                {overviewDates.map((date) => (
+                  <div key={date} style={{ display: "grid", gap: 8 }}>
+                    {isOverviewRangeMode && (
+                      <h3 style={{ margin: "4px 0", color: "#166534", fontSize: 18, fontWeight: 900 }}>{date}</h3>
                     )}
+
+                    {overviewGroupedByDate[date].map((appointment) => {
+                      const status = normalizeStatus(appointment.status);
+                      const isConfirmed = status === "confirmed";
+                      const isRejected = status === "rejected";
+
+                      return (
+                        <div
+                          key={appointment.id}
+                          style={{
+                            display: "flex",
+                            gap: 14,
+                            alignItems: "center",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: 14,
+                            padding: "10px 12px",
+                            whiteSpace: "nowrap",
+                            overflowX: "auto",
+                            background: adminDateColorMap[appointment.date] || "#ffffff",
+                          }}
+                        >
+                          <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
+                          <span style={{ minWidth: 100 }}>{appointment.date}</span>
+                          <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                          <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                          <span style={{ color: "#71717a", minWidth: 100 }}>
+                            {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
+                          </span>
+
+                          {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
+                            <button
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
+                                );
+                                if (!confirmed) return;
+                                cancelAdminAppointment(appointment);
+                              }}
+                              style={{
+                                marginLeft: "auto",
+                                border: "1px solid #d4d4d8",
+                                borderRadius: 10,
+                                background: "white",
+                                color: "#18181b",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                fontWeight: 700,
+                                WebkitTextFillColor: "#18181b",
+                              }}
+                            >
+                              Otkaži
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                ))}
               </div>
             )}
           </section>
