@@ -145,7 +145,7 @@ console.log("Input password length:", password?.length);
     const token = jwt.sign(
   { role: "admin" },
   JWT_SECRET,
-  { expiresIn: "2h" }
+  { expiresIn: "14h" }
 );
 
 return res.json({ token });

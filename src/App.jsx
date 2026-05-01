@@ -454,6 +454,7 @@ export default function MassageBookingSite() {
           setIsBackendOnline(false);
           setIsAdminAuth(false);
           sessionStorage.removeItem("adminToken");
+          setUserMessage("Sesija je istekla. Molimo prijavite se ponovo.");
         });
     };
 
