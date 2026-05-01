@@ -135,7 +135,7 @@ export default function MassageBookingSite() {
   };
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
-  const [adminQuickFilter, setAdminQuickFilter] = useState("all");
+  const [adminQuickFilter, setAdminQuickFilter] = useState("today");
   const [adminSearch, setAdminSearch] = useState("");
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
@@ -582,25 +582,39 @@ export default function MassageBookingSite() {
   const overviewAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
 
-    if (status === "blocked" || status === "open") return false;
+    // Pending zahtjevi se prikazuju samo u sekciji "Novi zahtjevi",
+    // da se ne bi duplirali u pregledu po datumima.
+    if (status === "pending" || status === "blocked" || status === "open") return false;
 
-    if (adminQuickFilter === "today") return appointment.date === todayISO();
-    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
-    if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+    if (adminQuickFilter === "today") {
+      return status === "confirmed" && appointment.date === todayISO();
+    }
+
+    if (adminQuickFilter === "tomorrow") {
+      return status === "confirmed" && appointment.date === addDaysISO(1);
+    }
+
+    if (adminQuickFilter === "week") {
+      return status === "confirmed" && appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+    }
 
     if (adminQuickFilter === "all") {
-        return ["pending", "confirmed"].includes(status) && appointment.date >= todayISO();
-      }
+      return status === "confirmed" && appointment.date >= todayISO();
+    }
 
-      if (adminQuickFilter === "pending") {
-        return status === "pending" && appointment.date >= todayISO();
-      }
+    if (adminQuickFilter === "confirmed") {
+      return status === "confirmed" && appointment.date >= todayISO();
+    }
 
-      if (adminQuickFilter === "confirmed") {
-        return status === "confirmed" && appointment.date >= todayISO();
-      }
+    if (adminQuickFilter === "rejected") {
+      return status === "rejected" && appointment.date >= todayISO();
+    }
 
-      return appointment.date === adminFilterDate;
+    if (adminQuickFilter === "pending") {
+      return false;
+    }
+
+    return status === "confirmed" && appointment.date === adminFilterDate;
   });
 
   const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
@@ -610,7 +624,7 @@ export default function MassageBookingSite() {
   }, {});
 
   const overviewDates = Object.keys(overviewGroupedByDate).sort();
-  const isOverviewRangeMode = ["all", "week", "pending", "confirmed"].includes(adminQuickFilter);
+  const isOverviewRangeMode = ["all", "week", "confirmed", "rejected"].includes(adminQuickFilter);
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
@@ -1342,7 +1356,7 @@ export default function MassageBookingSite() {
               </h2>
               <button
                 onClick={() => {
-                  setAdminQuickFilter("all");
+                  setAdminQuickFilter("today");
                   setAdminSearch("");
                 }}
                 style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
@@ -1472,7 +1486,15 @@ export default function MassageBookingSite() {
 
             {isOverviewRangeMode ? (
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
-                Prikaz: narednih 7 dana ({todayISO()} – {addDaysISO(7)})
+                {adminQuickFilter === "week"
+                  ? `Prikaz: potvrdjeni termini za narednih 7 dana (${todayISO()} - ${addDaysISO(7)})`
+                  : adminQuickFilter === "all"
+                    ? "Prikaz: svi buduci potvrdjeni termini"
+                    : adminQuickFilter === "confirmed"
+                      ? "Prikaz: svi buduci potvrdjeni termini"
+                      : adminQuickFilter === "rejected"
+                        ? "Prikaz: odbijeni zahtjevi"
+                        : "Prikaz po datumima"}
               </div>
             ) : (
               <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
@@ -1487,7 +1509,7 @@ export default function MassageBookingSite() {
             )}
 
             {overviewAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani prikaz.</p>
+              <p className="text-zinc-500">Nema termina za izabrani prikaz.</p>
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
                 {overviewDates.map((date) => (
