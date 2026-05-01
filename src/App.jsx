@@ -42,7 +42,7 @@ export default function MassageBookingSite() {
 
   const userDateCards = useMemo(() => {
     const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
-    return Array.from({ length: 7 }, (_, index) => {
+    return Array.from({ length: 21 }, (_, index) => {
       const date = new Date();
       date.setDate(date.getDate() + index);
       const year = date.getFullYear();
@@ -1823,7 +1823,7 @@ export default function MassageBookingSite() {
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
                 <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
-                <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Narednih 7 dana</span>
+                <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
               </div>
               <div
                 style={{
