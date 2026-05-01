@@ -134,6 +134,13 @@ db.run(`
   )
 `);
 
+
+db.run(`
+  CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot
+  ON appointments(date, time)
+  WHERE status IN ('pending', 'confirmed', 'blocked')
+`);
+
 app.get("/", (req, res) => {
   res.send("Backend radi ✅");
 });
@@ -242,7 +249,13 @@ app.post("/appointments", bookingLimiter, (req, res) => {
             `,
             [date, time, client_name.trim(), client_phone.trim(), "pending"],
             function (err) {
-              if (err) return res.status(500).json({ error: "Greška pri čuvanju termina." });
+              if (err) {
+                if (err.code === "SQLITE_CONSTRAINT") {
+                  return res.status(409).json({ error: "Ovaj termin je upravo zauzet. Izaberite drugi termin." });
+                }
+
+                return res.status(500).json({ error: "Greška pri čuvanju termina." });
+              }
 
               res.json({ id: this.lastID });
             }
