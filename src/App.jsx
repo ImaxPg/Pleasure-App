@@ -66,7 +66,7 @@ const COLOR_THEMES = {
 };
 
 // Promijeni u "green", "blue" ili "gold".
-const ACTIVE_THEME = "gold";
+const ACTIVE_THEME = "blue";
 
 function makeSlots() {
   const slots = [];
