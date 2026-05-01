@@ -141,6 +141,29 @@ db.run(`
   WHERE status IN ('pending', 'confirmed', 'blocked')
 `);
 
+
+function cleanupExpiredPending() {
+  db.run(
+    `
+    UPDATE appointments
+    SET status = 'expired'
+    WHERE status = 'pending'
+    AND datetime(date || 'T' || time) <= datetime('now')
+    `,
+    [],
+    (err) => {
+      if (err) console.error("Greška pri čišćenju starih pending zahtjeva:", err);
+    }
+  );
+}
+
+cleanupExpiredPending();
+
+setInterval(cleanupExpiredPending, 10 * 60 * 1000);
+
+
+
+
 app.get("/", (req, res) => {
   res.send("Backend radi ✅");
 });
@@ -323,7 +346,7 @@ app.delete("/appointments/:id", requireAdmin, (req, res) => {
 // ADMIN - SVI TERMINI
 app.get("/admin/appointments", requireAdmin, (req, res) => {
   db.all(
-    "SELECT * FROM appointments WHERE status != 'rejected' ORDER BY date ASC, time ASC",
+    "SELECT * FROM appointments WHERE status NOT IN ('rejected', 'expired') ORDER BY date ASC, time ASC",
     [],
     (err, rows) => {
       if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
