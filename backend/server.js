@@ -138,8 +138,17 @@ const adminLoginLimiter = rateLimit({
 app.post("/admin/login", adminLoginLimiter, (req, res) => {
   const { password } = req.body;
 
+  console.log("ENV password length:", ADMIN_PASSWORD?.length);
+console.log("Input password length:", password?.length);
+
   if (password === ADMIN_PASSWORD) {
-    return res.json({ token: ADMIN_TOKEN });
+    const token = jwt.sign(
+  { role: "admin" },
+  JWT_SECRET,
+  { expiresIn: "2h" }
+);
+
+return res.json({ token });
   }
 
   res.status(401).json({ error: "Pogrešna lozinka" });
