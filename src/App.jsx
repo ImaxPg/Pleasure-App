@@ -40,10 +40,27 @@ export default function MassageBookingSite() {
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [selectedSlot, setSelectedSlot] = useState("");
 
+  const userDateCards = useMemo(() => {
+    const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() + index);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const iso = `${year}-${month}-${day}`;
+      return {
+        iso,
+        label: index === 0 ? "Danas" : index === 1 ? "Sjutra" : dayLabels[date.getDay()],
+        day,
+      };
+    });
+  }, []);
+
   const [clientName, setClientName] = useState(() => localStorage.getItem("savedName") || "");
   const [clientPhone, setClientPhone] = useState(() => localStorage.getItem("savedPhone") || "");
   const [bookingPin, setBookingPin] = useState("");
-  const [bookingPinError, setBookingPinError] = useState(false);
+  const [bookingPinError, setBookingPinError] = useState("");
   const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getItem("savedName")));
 
   const [booked, setBooked] = useState({});
@@ -647,12 +664,10 @@ export default function MassageBookingSite() {
     }
 
     if (!bookingPin.trim()) {
-      setBookingPinError(true);
+      setBookingPinError("Unesite PIN za zakazivanje.");
       setUserMessage("Unesite PIN za zakazivanje.");
       return;
     }
-
-    setBookingPinError(false);
 
     if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       setUserMessage("Izabrani termin je neradni i nije moguće zakazivanje.");
@@ -667,6 +682,7 @@ export default function MassageBookingSite() {
 
     try {
       setIsSubmitting(true);
+      setBookingPinError("");
 
       const response = await fetch(`${API}/appointments`, {
         method: "POST",
@@ -684,17 +700,9 @@ export default function MassageBookingSite() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        const message = errorData?.error || "Backend nije prihvatio zahtjev.";
-
-        if (message.toLowerCase().includes("pin")) {
-          setBookingPinError(true);
-          setBookingPin("");
-        }
-
-        throw new Error(message);
+        throw new Error(errorData?.error || "Backend nije prihvatio zahtjev.");
       }
 
-      setBookingPinError(false);
       const data = await response.json();
 
       const request = {
@@ -720,10 +728,15 @@ export default function MassageBookingSite() {
       setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
       setSelectedSlot("");
       setBookingPin("");
+      setBookingPinError("");
       setIsSubmitting(false);
     } catch (error) {
       setIsSubmitting(false);
-      setUserMessage(error.message || "Greška: zahtjev nije poslat backendu.");
+      const message = error.message || "Greška: zahtjev nije poslat backendu.";
+      if (message.toLowerCase().includes("pin")) {
+        setBookingPinError(message);
+      }
+      setUserMessage(message);
     }
   };
 
@@ -1795,51 +1808,6 @@ export default function MassageBookingSite() {
                 />
               </label>
 
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                  border: bookingPinError
-                    ? "2px solid #dc2626"
-                    : focusedField === "pin"
-                      ? "2px solid #be185d"
-                      : "1px solid #e5e7eb",
-                  borderRadius: 14,
-                  padding: "10px 12px",
-                  background: bookingPinError ? "#fef2f2" : "white",
-                  boxShadow: bookingPinError
-                    ? "0 0 0 4px rgba(220,38,38,0.12)"
-                    : focusedField === "pin"
-                      ? "0 0 0 4px rgba(190,24,93,0.12)"
-                      : "none",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: bookingPinError ? "#b91c1c" : "#111827", WebkitTextFillColor: bookingPinError ? "#b91c1c" : "#111827", fontSize: 16 }}>
-                  PIN za zakazivanje
-                </span>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="Unesite PIN"
-                  value={bookingPin}
-                  onFocus={() => setFocusedField("pin")}
-                  onBlur={() => setFocusedField("")}
-                  onChange={(e) => {
-                    setBookingPin(e.target.value.replace(/\D/g, "").slice(0, 5));
-                    if (bookingPinError) setBookingPinError(false);
-                  }}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
-                />
-                {bookingPinError && (
-                  <span style={{ color: "#b91c1c", WebkitTextFillColor: "#b91c1c", fontSize: 13, fontWeight: 700, textAlign: "center" }}>
-                    Neispravan PIN kod. Pokušajte ponovo.
-                  </span>
-                )}
-              </label>
-
-
               <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
                 <input
                   type="checkbox"
@@ -1852,93 +1820,128 @@ export default function MassageBookingSite() {
 
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 80, fontWeight: 800, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
-              <input
-                type="date"
-                min={todayISO()}
-                value={selectedDate}
-                onFocus={() => setFocusedField("date")}
-                onBlur={() => setFocusedField("")}
-                onChange={(e) => {
-                  const nextDate = e.target.value < todayISO() ? todayISO() : e.target.value;
-                  setSelectedDate(nextDate);
-                  setSelectedSlot("");
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+                <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
+                <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Narednih 7 dana</span>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridAutoFlow: "column",
+                  gridAutoColumns: "minmax(76px, 1fr)",
+                  gap: 10,
+                  overflowX: "auto",
+                  paddingBottom: 6,
                 }}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
-              />
-            </label>
+              >
+                {userDateCards.map((item) => {
+                  const active = selectedDate === item.iso;
+                  return (
+                    <button
+                      key={item.iso}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(item.iso);
+                        setSelectedSlot("");
+                        setUserMessage("");
+                      }}
+                      style={{
+                        border: active ? "2px solid #be185d" : "1px solid #fbcfe8",
+                        borderRadius: 18,
+                        background: active ? "#fdf2f8" : "#fff7fb",
+                        color: active ? "#9d174d" : "#111827",
+                        padding: "11px 8px",
+                        minHeight: 70,
+                        cursor: "pointer",
+                        boxShadow: active ? "0 8px 22px rgba(190,24,93,0.18)" : "0 5px 16px rgba(15,23,42,0.05)",
+                        WebkitTextFillColor: active ? "#9d174d" : "#111827",
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{item.label}</div>
+                      <div style={{ fontSize: 21, fontWeight: 950, lineHeight: 1 }}>{item.day}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-            
-
-            <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
               {visibleUserSlots.map((slot) => {
-                const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
-                let label = "Slobodno";
-                let statusBackground = "#ecfdf5";
-                let statusBorder = "#bbf7d0";
-                let statusColor = "#166534";
-
-                if (isBooked(selectedDate, slot)) {
-                  label = `Zakazano: ${formatPublicName(booked[key(selectedDate, slot)]?.clientName)}`;
-                  statusBackground = "#fee2e2";
-                  statusBorder = "#fecaca";
-                  statusColor = "#991b1b";
-                } else if (isNonWorkingSlot(selectedDate, slot)) {
-                  label = "Neradno";
-                  statusBackground = "#f4f4f5";
-                  statusBorder = "#d4d4d8";
-                  statusColor = "#52525b";
-                } else if (isBlocked(selectedDate, slot)) {
-                  label = "Zaključano";
-                  statusBackground = "#f4f4f5";
-                  statusBorder = "#d4d4d8";
-                  statusColor = "#52525b";
-                } else if (isPending(selectedDate, slot)) {
-                  label = "Čeka potvrdu";
-                  statusBackground = "#fef3c7";
-                  statusBorder = "#fde68a";
-                  statusColor = "#92400e";
-                }
 
                 return (
-                  <label
+                  <button
                     key={slot}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSlot(checked ? "" : slot);
+                      setUserMessage("");
+                    }}
                     style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      flexWrap: "nowrap",
-                      alignItems: "center",
-                      gap: 14,
-                      border: checked ? "2px solid #be185d" : `1px solid ${statusBorder}`,
+                      border: checked ? "2px solid #be185d" : "1px solid #fbcfe8",
                       borderRadius: 16,
-                      padding: "11px 13px",
-                      background: unavailable ? "#f8fafc" : checked ? "#fdf2f8" : statusBackground,
-                      opacity: unavailable ? 0.65 : 1,
-                      cursor: unavailable ? "not-allowed" : "pointer",
-                      whiteSpace: "nowrap",
-                      overflowX: "auto",
+                      padding: "14px 8px",
+                      background: checked ? "#ec4899" : "#fff5f8",
+                      color: checked ? "white" : "#111827",
+                      fontWeight: 900,
+                      fontSize: 15,
+                      cursor: "pointer",
+                      boxShadow: checked ? "0 10px 24px rgba(236,72,153,0.28)" : "0 5px 14px rgba(15,23,42,0.04)",
+                      WebkitTextFillColor: checked ? "white" : "#111827",
                     }}
                   >
-                    <span style={{ minWidth: 70, fontWeight: 800, fontSize: 18 }}>{slot}</span>
-                    <span style={{ flex: 1, color: statusColor, fontWeight: 700 }}>{label}</span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={unavailable}
-                      onChange={() => setSelectedSlot(checked ? "" : slot)}
-                      style={{ width: 18, height: 18 }}
-                    />
-                  </label>
+                    {slot}
+                  </button>
                 );
               })}
               {visibleUserSlots.length === 0 && (
-                <p style={{ color: "#71717a", marginTop: 12 }}>
+                <p style={{ color: "#71717a", marginTop: 12, gridColumn: "1 / -1" }}>
                   Za izabrani datum nema dostupnih termina ili je salon neradan.
                 </p>
               )}
             </div>
+
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? "2px solid #be185d" : "1px solid #e5e7eb",
+                borderRadius: 14,
+                padding: "10px 12px",
+                background: bookingPinError ? "#fef2f2" : "white",
+                boxShadow: bookingPinError
+                  ? "0 0 0 4px rgba(220,38,38,0.12)"
+                  : focusedField === "pin"
+                  ? "0 0 0 4px rgba(190,24,93,0.12)"
+                  : "none",
+                transition: "all 0.2s ease",
+                marginTop: 18,
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 16, color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827" }}>
+                PIN za zakazivanje
+              </span>
+              <input
+                type="password"
+                inputMode="numeric"
+                placeholder="Unesite PIN"
+                value={bookingPin}
+                onFocus={() => setFocusedField("pin")}
+                onBlur={() => setFocusedField("")}
+                onChange={(e) => {
+                  setBookingPin(e.target.value.replace(/\D/g, "").slice(0, 10));
+                  setBookingPinError("");
+                }}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827", caretColor: bookingPinError ? "#991b1b" : "#111827" }}
+              />
+              {bookingPinError && (
+                <span style={{ color: "#dc2626", WebkitTextFillColor: "#dc2626", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+                  {bookingPinError}
+                </span>
+              )}
+            </label>
 
             {(() => {
               const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot && bookingPin.trim();
