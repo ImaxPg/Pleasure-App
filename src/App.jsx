@@ -1849,7 +1849,7 @@ export default function MassageBookingSite() {
                       style={{
                         border: active ? "2px solid #be185d" : "1px solid #fbcfe8",
                         borderRadius: 18,
-                        background: active ? "#fdf2f8" : "#fff7fb",
+                        background: active ? "#dcf5e5" : "#f7fffa",
                         color: active ? "#9d174d" : "#111827",
                         padding: "11px 8px",
                         minHeight: 70,
