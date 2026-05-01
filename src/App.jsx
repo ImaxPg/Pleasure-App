@@ -554,6 +554,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     { key: "confirmed", label: "Potvrđeni" },
     { key: "blocked", label: "Blokirani" },
     { key: "open", label: "Ručno otvoreni" },
+    { key: "archive", label: "Arhiva" },
     { key: "rejected", label: "Odbijeni" },
   ];
 
@@ -565,6 +566,9 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
     if (adminQuickFilter === "week") {
       return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+    }
+    if (adminQuickFilter === "archive") {
+      return status === "confirmed" && isPastAppointment(appointment);
     }
 
     return status === adminQuickFilter;
@@ -614,20 +618,21 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 
     if (["pending", "blocked", "open"].includes(status)) return false;
 
+    if (adminQuickFilter === "archive") {
+      return status === "confirmed" && isPastAppointment(appointment) && appointment.date === adminFilterDate;
+    }
+
+    if (status !== "confirmed" || isPastAppointment(appointment)) return false;
+
     if (adminQuickFilter === "today") return appointment.date === todayISO();
     if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
     if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
 
-    if (adminQuickFilter === "all") {
-        return status === "confirmed" && appointment.date >= todayISO();
-      }
+    if (adminQuickFilter === "all" || adminQuickFilter === "confirmed") {
+      return appointment.date >= todayISO();
+    }
 
-
-      if (adminQuickFilter === "confirmed") {
-        return status === "confirmed" && appointment.date >= todayISO();
-      }
-
-      return appointment.date === adminFilterDate;
+    return appointment.date === adminFilterDate;
   });
 
   const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
@@ -637,7 +642,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   }, {});
 
   const overviewDates = Object.keys(overviewGroupedByDate).sort();
-  const isOverviewRangeMode = ["all", "week", "confirmed"].includes(adminQuickFilter);
+  const isOverviewRangeMode = ["all", "today", "tomorrow", "week", "confirmed"].includes(adminQuickFilter);
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
@@ -1502,23 +1507,24 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               })}
             </div>
 
-            <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: "#71717a" }}>
-              Prikazano: <strong>{displayedAdminAppointments.length}</strong> od ukupno <strong>{adminAppointments.length}</strong> termina.
-            </p>
           </section>
 
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>{adminQuickFilter === "archive" ? "Arhiva završenih termina" : "Pregled termina po datumu"}</h2>
 
             {isOverviewRangeMode ? (
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
-                {adminQuickFilter === "week"
+                {adminQuickFilter === "today"
+                  ? `Prikaz: danas (${todayISO()})`
+                  : adminQuickFilter === "tomorrow"
+                  ? `Prikaz: sjutra (${addDaysISO(1)})`
+                  : adminQuickFilter === "week"
                   ? `Prikaz: narednih 7 dana (${todayISO()} – ${addDaysISO(7)})`
                   : "Prikaz: svi budući potvrđeni termini"}
               </div>
             ) : (
               <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-                <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
+                <span style={{ minWidth: 160, fontWeight: 700 }}>{adminQuickFilter === "archive" ? "Datum arhive" : "Izaberi datum"}</span>
                 <input
                   type="date"
                   value={adminFilterDate}
@@ -1529,7 +1535,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             )}
 
             {overviewAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema potvrđenih termina za izabrani prikaz.</p>
+              <p className="text-zinc-500">{adminQuickFilter === "archive" ? "Nema završenih termina za izabrani datum." : "Nema potvrđenih termina za izabrani prikaz."}</p>
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
                 {overviewDates.map((date) => (
