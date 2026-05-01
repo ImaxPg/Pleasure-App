@@ -44,29 +44,26 @@ const COLOR_THEMES = {
     strong: "#2563eb",
     strongHover: "#1d4ed8",
   },
-  gold: {
-    pageBg: "linear-gradient(135deg, #fffbeb 0%, #ffffff 42%, #fef3c7 100%)",
-    softBorder: "#fde68a",
-    focus: "#d97706",
-    focusRgb: "217,119,6",
-    dateBg: "#fffbeb",
-    dateBgActive: "#fef3c7",
-    dateBorder: "#fde68a",
-    dateBorderActive: "#d97706",
+  red: {
+    pageBg: "linear-gradient(135deg, #fef2f2 0%, #ffffff 42%, #fff1f2 100%)",
+    softBorder: "#fecaca",
+    focus: "#dc2626",
+    focusRgb: "220,38,38",
+    dateBg: "#fef2f2",
+    dateBgActive: "#fee2e2",
+    dateBorder: "#fecaca",
+    dateBorderActive: "#dc2626",
     dateText: "#111827",
-    dateTextActive: "#78350f",
-    slotBg: "#fef3c7",
-    slotBgActive: "#b45309",
-    slotBorder: "#fde68a",
-    slotBorderActive: "#b45309",
-    slotShadowActive: "rgba(180,83,9,0.28)",
-    strong: "#b45309",
-    strongHover: "#d97706",
+    dateTextActive: "#7f1d1d",
+    slotBg: "#fff1f2",
+    slotBgActive: "#be123c",
+    slotBorder: "#fecdd3",
+    slotBorderActive: "#be123c",
+    slotShadowActive: "rgba(190,18,60,0.28)",
+    strong: "#be123c",
+    strongHover: "#dc2626",
   },
 };
-
-// Promijeni u "green", "blue" ili "gold".
-const ACTIVE_THEME = "blue";
 
 function makeSlots() {
   const slots = [];
@@ -109,7 +106,8 @@ if (typeof document !== "undefined") {
 
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
-  const theme = COLOR_THEMES[ACTIVE_THEME] || COLOR_THEMES.green;
+  const [selectedColorTheme, setSelectedColorTheme] = useState(() => localStorage.getItem("pleasureColorTheme") || "green");
+  const theme = COLOR_THEMES[selectedColorTheme] || COLOR_THEMES.green;
 const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
 
@@ -236,6 +234,10 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("pleasureColorTheme", selectedColorTheme);
+  }, [selectedColorTheme]);
 
   useEffect(() => {
     if (!isAdminPage && selectedDate < todayISO()) {
@@ -1938,6 +1940,36 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <div>Radno vrijeme salona: <strong>09:00–20:00</strong></div>
             <div>Termini su na 30 minuta.</div>
             <div>Administrator potvrđuje zakazivanje.</div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 20 }}>
+            {[
+              { key: "green", color: "#16a34a", label: "Zelena tema" },
+              { key: "blue", color: "#2563eb", label: "Plava tema" },
+              { key: "red", color: "#dc2626", label: "Crvena tema" },
+            ].map((item) => {
+              const active = selectedColorTheme === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  aria-label={item.label}
+                  title={item.label}
+                  onClick={() => setSelectedColorTheme(item.key)}
+                  style={{
+                    width: active ? 26 : 22,
+                    height: active ? 26 : 22,
+                    borderRadius: "50%",
+                    border: active ? "3px solid #111827" : "2px solid rgba(17,24,39,0.18)",
+                    background: item.color,
+                    cursor: "pointer",
+                    boxShadow: active ? `0 0 0 5px rgba(${theme.focusRgb},0.14)` : "0 4px 12px rgba(15,23,42,0.10)",
+                    transition: "all 0.18s ease",
+                    padding: 0,
+                  }}
+                />
+              );
+            })}
           </div>
         </header>
 
