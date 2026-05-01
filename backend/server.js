@@ -1,9 +1,13 @@
+const jwt = require("jsonwebtoken");
+const rateLimit = require("express-rate-limit");
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
 
 const nodemailer = require("nodemailer");
 const cron = require("node-cron");
+
+
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -18,7 +22,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const app = express();
 
@@ -92,11 +96,18 @@ function generateNext7DaysReport(callback) {
 function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (authHeader === `Bearer ${ADMIN_TOKEN}`) {
-    return next();
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Nije autorizovano" });
   }
 
-  return res.status(401).json({ error: "Nije autorizovano" });
+  const token = authHeader.split(" ")[1];
+
+  try {
+    jwt.verify(token, JWT_SECRET);
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: "Token nije validan ili je istekao" });
+  }
 }
 
 
@@ -116,8 +127,15 @@ app.get("/", (req, res) => {
   res.send("Backend radi ✅");
 });
 
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Previše pokušaja. Pokušajte ponovo za 15 minuta." },
+});
+
 // ADMIN LOGIN
-app.post("/admin/login", (req, res) => {
+app.post("/admin/login", adminLoginLimiter, (req, res) => {
   const { password } = req.body;
 
   if (password === ADMIN_PASSWORD) {
