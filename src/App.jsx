@@ -5,6 +5,69 @@ const START_HOUR = 9;
 const END_HOUR = 20;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+const COLOR_THEMES = {
+  green: {
+    pageBg: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 42%, #ecfeff 100%)",
+    softBorder: "#bbf7d0",
+    focus: "#16a34a",
+    focusRgb: "22,163,74",
+    dateBg: "#f0fdf4",
+    dateBgActive: "#dcfce7",
+    dateBorder: "#bbf7d0",
+    dateBorderActive: "#16a34a",
+    dateText: "#111827",
+    dateTextActive: "#166534",
+    slotBg: "#ecfdf5",
+    slotBgActive: "#15803d",
+    slotBorder: "#bbf7d0",
+    slotBorderActive: "#15803d",
+    slotShadowActive: "rgba(21,128,61,0.28)",
+    strong: "#15803d",
+    strongHover: "#16a34a",
+  },
+  blue: {
+    pageBg: "linear-gradient(135deg, #eff6ff 0%, #ffffff 42%, #ecfeff 100%)",
+    softBorder: "#bfdbfe",
+    focus: "#2563eb",
+    focusRgb: "37,99,235",
+    dateBg: "#eff6ff",
+    dateBgActive: "#dbeafe",
+    dateBorder: "#bfdbfe",
+    dateBorderActive: "#2563eb",
+    dateText: "#111827",
+    dateTextActive: "#1e3a8a",
+    slotBg: "#e0f2fe",
+    slotBgActive: "#0284c7",
+    slotBorder: "#bae6fd",
+    slotBorderActive: "#0284c7",
+    slotShadowActive: "rgba(2,132,199,0.28)",
+    strong: "#2563eb",
+    strongHover: "#1d4ed8",
+  },
+  gold: {
+    pageBg: "linear-gradient(135deg, #fffbeb 0%, #ffffff 42%, #fef3c7 100%)",
+    softBorder: "#fde68a",
+    focus: "#d97706",
+    focusRgb: "217,119,6",
+    dateBg: "#fffbeb",
+    dateBgActive: "#fef3c7",
+    dateBorder: "#fde68a",
+    dateBorderActive: "#d97706",
+    dateText: "#111827",
+    dateTextActive: "#78350f",
+    slotBg: "#fef3c7",
+    slotBgActive: "#b45309",
+    slotBorder: "#fde68a",
+    slotBorderActive: "#b45309",
+    slotShadowActive: "rgba(180,83,9,0.28)",
+    strong: "#b45309",
+    strongHover: "#d97706",
+  },
+};
+
+// Promijeni u "green", "blue" ili "gold".
+const ACTIVE_THEME = "green";
+
 function makeSlots() {
   const slots = [];
   for (let hour = START_HOUR; hour < END_HOUR; hour++) {
@@ -46,6 +109,7 @@ if (typeof document !== "undefined") {
 
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
+  const theme = COLOR_THEMES[ACTIVE_THEME] || COLOR_THEMES.green;
 const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
 
@@ -1229,7 +1293,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
     return (
       <div
         onClick={unlockAdminSound}
-        style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
+        style={{ minHeight: "100vh", background: theme.pageBg, color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
       >
         <style>{`
           @keyframes pulseStatus {
@@ -1357,7 +1421,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </div>
           )}
-          <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
+          <header style={{ background: "rgba(255,255,255,0.92)", border: `1px solid ${theme.softBorder}`, borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
             <div className="flex justify-end mb-2">
               <button onClick={handleAdminLogout} className="text-sm underline">Logout</button>
             </div>
@@ -1607,7 +1671,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
               <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
               <input
                 type="date"
@@ -1764,7 +1828,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: theme.pageBg, color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
@@ -1831,7 +1895,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         </div>
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
-        <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
+        <header style={{ background: "rgba(255,255,255,0.92)", border: `1px solid ${theme.softBorder}`, borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
           <div className="flex items-center justify-between gap-3">
             <div style={{ width: "100%", textAlign: "center" }}>
               <div>
@@ -1944,7 +2008,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? `2px solid ${theme.focus}` : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Ime i prezime</span>
                 <input
                   type="text"
@@ -1957,7 +2021,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 />
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? `2px solid ${theme.focus}` : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#111827", WebkitTextFillColor: "#111827", fontSize: 16 }}>
                   Telefon
                   {isValidPhone(clientPhone) && (
@@ -2020,15 +2084,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         setUserMessage("");
                       }}
                       style={{
-                        border: active ? "2px solid #be185d" : "1px solid #fbcfe8",
+                        border: active ? `2px solid ${theme.dateBorderActive}` : `1px solid ${theme.dateBorder}`,
                         borderRadius: 18,
-                        background: active ? "#fdf2f8" : "#fff7fb",
-                        color: active ? "#9d174d" : "#111827",
+                        background: active ? theme.dateBgActive : theme.dateBg,
+                        color: active ? theme.dateTextActive : theme.dateText,
                         padding: "11px 8px",
                         minHeight: 70,
                         cursor: "pointer",
-                        boxShadow: active ? "0 8px 22px rgba(190,24,93,0.18)" : "0 5px 16px rgba(15,23,42,0.05)",
-                        WebkitTextFillColor: active ? "#9d174d" : "#111827",
+                        boxShadow: active ? `0 8px 22px rgba(${theme.focusRgb},0.18)` : "0 5px 16px rgba(15,23,42,0.05)",
+                        WebkitTextFillColor: active ? theme.dateTextActive : theme.dateText,
                       }}
                     >
                       <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{item.label}</div>
@@ -2052,15 +2116,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       setUserMessage("");
                     }}
                     style={{
-                      border: checked ? "2px solid #be185d" : "1px solid #fbcfe8",
+                      border: checked ? `2px solid ${theme.slotBorderActive}` : `1px solid ${theme.slotBorder}`,
                       borderRadius: 16,
                       padding: "14px 8px",
-                      background: checked ? "#3d7344" : "#edffee",
+                      background: checked ? theme.slotBgActive : theme.slotBg,
                       color: checked ? "white" : "#111827",
                       fontWeight: 900,
                       fontSize: 15,
                       cursor: "pointer",
-                      boxShadow: checked ? "0 10px 24px rgba(236,72,153,0.28)" : "0 5px 14px rgba(15,23,42,0.04)",
+                      boxShadow: checked ? `0 10px 24px ${theme.slotShadowActive}` : "0 5px 14px rgba(15,23,42,0.04)",
                       WebkitTextFillColor: checked ? "white" : "#111827",
                     }}
                   >
@@ -2080,14 +2144,14 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
-                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? "2px solid #be185d" : "1px solid #e5e7eb",
+                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? `2px solid ${theme.focus}` : "1px solid #e5e7eb",
                 borderRadius: 14,
                 padding: "10px 12px",
                 background: bookingPinError ? "#fef2f2" : "white",
                 boxShadow: bookingPinError
                   ? "0 0 0 4px rgba(220,38,38,0.12)"
                   : focusedField === "pin"
-                  ? "0 0 0 4px rgba(190,24,93,0.12)"
+                  ? `0 0 0 4px rgba(${theme.focusRgb},0.12)`
                   : "none",
                 transition: "all 0.2s ease",
                 marginTop: 18,
@@ -2130,13 +2194,13 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 14,
-                    border: isReady ? "1px solid #15803d" : "1px solid #d1d5db",
+                    border: isReady ? `1px solid ${theme.strong}` : "1px solid #d1d5db",
                     borderRadius: 14,
                     padding: "10px 12px",
                     background: isReady
                       ? isHoverBooking
-                        ? "#16a34a"
-                        : "#15803d"
+                        ? theme.strongHover
+                        : theme.strong
                       : "#e5e7eb",
                     color: isReady ? "white" : "#9ca3af",
                     fontWeight: 800,
