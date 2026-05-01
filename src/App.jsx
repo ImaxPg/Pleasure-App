@@ -4,6 +4,39 @@ import { Calendar, Mail, ShieldCheck } from "lucide-react";
 const START_HOUR = 9;
 const END_HOUR = 20;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const COLOR_THEMES = {
+  green: {
+    name: "Zelena",
+    pageBackground: "linear-gradient(135deg, #f0fdf4 0%, #f8fafc 45%, #ecfeff 100%)",
+    softBorder: "#bbf7d0",
+    primary: "#059669",
+    primarySoft: "#d1fae5",
+    selectedSoft: "#ecfdf5",
+    focusRing: "rgba(5,150,105,0.14)",
+  },
+  blue: {
+    name: "Plava",
+    pageBackground: "linear-gradient(135deg, #eff6ff 0%, #f8fafc 45%, #ecfeff 100%)",
+    softBorder: "#bfdbfe",
+    primary: "#2563eb",
+    primarySoft: "#dbeafe",
+    selectedSoft: "#eff6ff",
+    focusRing: "rgba(37,99,235,0.14)",
+  },
+  gold: {
+    name: "Zlatna",
+    pageBackground: "linear-gradient(135deg, #fffbeb 0%, #f8fafc 45%, #fef3c7 100%)",
+    softBorder: "#fde68a",
+    primary: "#b45309",
+    primarySoft: "#fef3c7",
+    selectedSoft: "#fffbeb",
+    focusRing: "rgba(180,83,9,0.16)",
+  },
+};
+
+// Promijeni u "blue" ili "gold" da odmah dobiješ drugu gotovu temu.
+const ACTIVE_THEME = "green";
+const THEME = COLOR_THEMES[ACTIVE_THEME] || COLOR_THEMES.green;
 
 function makeSlots() {
   const slots = [];
@@ -22,15 +55,6 @@ const todayISO = () => {
   return `${year}-${month}-${day}`;
 };
 
-const addDaysISO = (days) => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
 // FIX za iPhone zoom / mala slova
 if (typeof document !== "undefined") {
   const meta = document.querySelector('meta[name="viewport"]');
@@ -46,31 +70,12 @@ if (typeof document !== "undefined") {
 
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
-const [selectedDate, setSelectedDate] = useState(todayISO());
-const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [selectedSlot, setSelectedSlot] = useState("");
 
-const userDateCards = useMemo(() => {
-  const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
-  return Array.from({ length: 21 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const iso = `${year}-${month}-${day}`;
-    return {
-      iso,
-      label: index === 0 ? "Danas" : index === 1 ? "Sjutra" : dayLabels[date.getDay()],
-      day,
-    };
-  });
-}, []);
-
-const [clientName, setClientName] = useState(() => localStorage.getItem("savedName") || "");
-const [clientPhone, setClientPhone] = useState(() => localStorage.getItem("savedPhone") || "");
-const [bookingPin, setBookingPin] = useState("");
-const [bookingPinError, setBookingPinError] = useState("");
-const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getItem("savedName")));
+  const [clientName, setClientName] = useState(() => localStorage.getItem("savedName") || "");
+  const [clientPhone, setClientPhone] = useState(() => localStorage.getItem("savedPhone") || "");
+  const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getItem("savedName")));
 
   const [booked, setBooked] = useState({});
   const [pending, setPending] = useState([]);
@@ -154,19 +159,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   };
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
-  const [adminQuickFilter, setAdminQuickFilter] = useState("today");
-  const [adminSearch, setAdminSearch] = useState("");
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
-
-  useEffect(() => {
-    if (adminQuickFilter === "today") {
-      setAdminFilterDate(todayISO());
-    }
-
-    if (adminQuickFilter === "tomorrow") {
-      setAdminFilterDate(addDaysISO(1));
-    }
-  }, [adminQuickFilter]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
@@ -528,7 +521,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   };
 
   const getDateColorMap = (items) => {
-    const colors = ["#dbeafe", "#fef3c7", "#dcfce7", "#fce7f3", "#ede9fe", "#cffafe"];
+    const colors = ["#dbeafe", "#fef3c7", "#dcfce7", THEME.primarySoft, "#ede9fe", "#cffafe"];
     const map = {};
     let index = 0;
 
@@ -542,113 +535,29 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     return map;
   };
 
+  const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
+  const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
   const isPastAppointment = (appointment) => {
     return new Date(`${appointment.date}T${appointment.time}:00`) <= new Date();
   };
 
-  const adminQuickFilters = [
-    { key: "all", label: "Svi" },
-    { key: "today", label: "Danas" },
-    { key: "tomorrow", label: "Sjutra" },
-    { key: "week", label: "7 dana" },
-    { key: "confirmed", label: "Potvrđeni" },
-    { key: "blocked", label: "Blokirani" },
-    { key: "open", label: "Ručno otvoreni" },
-    { key: "archive", label: "Arhiva" },
-    { key: "rejected", label: "Odbijeni" },
-  ];
+  const pendingAdminAppointments = displayedAdminAppointments.filter(
+    (appointment) => normalizeStatus(appointment.status) === "pending" && !isPastAppointment(appointment)
+  );
 
-  const matchesAdminQuickFilter = (appointment) => {
+  const expiredPendingAppointments = displayedAdminAppointments.filter(
+    (appointment) => normalizeStatus(appointment.status) === "pending" && isPastAppointment(appointment)
+  );
+  const selectedDateAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
-
-    if (adminQuickFilter === "all") return true;
-    if (adminQuickFilter === "today") return appointment.date === todayISO();
-    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
-    if (adminQuickFilter === "week") {
-      return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
-    }
-    if (adminQuickFilter === "archive") {
-      return status === "confirmed" && isPastAppointment(appointment);
-    }
-
-    return status === adminQuickFilter;
-  };
-
-  const matchesAdminSearch = (appointment) => {
-    const q = adminSearch.trim().toLowerCase();
-    if (!q) return true;
-
-    return [
-      appointment.client_name,
-      appointment.client_phone,
-      appointment.date,
-      appointment.time,
-      appointment.status,
-    ]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(q));
-  };
-
-  const displayedAdminAppointments = sortAdminAppointments(
-    adminAppointments.filter((appointment) => matchesAdminQuickFilter(appointment) && matchesAdminSearch(appointment))
-  );
-  const adminDateColorMap = getDateColorMap(adminAppointments);
-
-  // Novi zahtjevi moraju biti uvijek vidljivi, bez obzira na odabranu karticu.
-  // Search i dalje važi, da admin može brzo pronaći konkretan zahtjev.
-  const pendingAdminAppointments = sortAdminAppointments(
-    adminAppointments.filter(
-      (appointment) =>
-        normalizeStatus(appointment.status) === "pending" &&
-        !isPastAppointment(appointment) &&
-        matchesAdminSearch(appointment)
-    )
-  );
-
-  const expiredPendingAppointments = sortAdminAppointments(
-    adminAppointments.filter(
-      (appointment) =>
-        normalizeStatus(appointment.status) === "pending" &&
-        isPastAppointment(appointment) &&
-        matchesAdminSearch(appointment)
-    )
-  );
-  const overviewAppointments = displayedAdminAppointments.filter((appointment) => {
-    const status = normalizeStatus(appointment.status);
-
-    if (["pending", "blocked", "open"].includes(status)) return false;
-
-    if (adminQuickFilter === "archive") {
-      return status === "confirmed" && isPastAppointment(appointment) && appointment.date === adminFilterDate;
-    }
-
-    if (status !== "confirmed" || isPastAppointment(appointment)) return false;
-
-    if (adminQuickFilter === "today") return appointment.date === todayISO();
-    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
-    if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
-
-    if (adminQuickFilter === "all" || adminQuickFilter === "confirmed") {
-      return appointment.date >= todayISO();
-    }
-
-    return appointment.date === adminFilterDate;
+    return appointment.date === adminFilterDate && status !== "pending" && status !== "blocked" && status !== "open";
   });
-
-  const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
-    if (!groups[appointment.date]) groups[appointment.date] = [];
-    groups[appointment.date].push(appointment);
-    return groups;
-  }, {});
-
-  const overviewDates = Object.keys(overviewGroupedByDate).sort();
-  const isOverviewRangeMode = ["all", "today", "tomorrow", "week", "confirmed"].includes(adminQuickFilter);
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
 
   const stats = {
-    pending: adminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
+    pending: displayedAdminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
     confirmedToday: todayAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
     confirmedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
     blockedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "blocked").length,
@@ -763,18 +672,12 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       return;
     }
 
-if (!selectedDate || !selectedSlot) {
-  setUserMessage("Izaberite datum i termin prije zakazivanja.");
-  return;
-}
+    if (!selectedDate || !selectedSlot) {
+      setUserMessage("Izaberite datum i termin prije zakazivanja.");
+      return;
+    }
 
-if (!bookingPin.trim()) {
-  setBookingPinError("Unesite PIN za zakazivanje.");
-  setUserMessage("Unesite PIN za zakazivanje.");
-  return;
-}
-
-if (isNonWorkingSlot(selectedDate, selectedSlot)) {
+    if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       setUserMessage("Izabrani termin je neradni i nije moguće zakazivanje.");
       setSelectedSlot("");
       return;
@@ -787,7 +690,6 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
     try {
       setIsSubmitting(true);
-      setBookingPinError("");
 
       const response = await fetch(`${API}/appointments`, {
         method: "POST",
@@ -799,7 +701,6 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           time: selectedSlot,
           client_name: clientName,
           client_phone: clientPhone.trim(),
-          booking_pin: bookingPin.trim(),
         }),
       });
 
@@ -830,19 +731,13 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       }
       localStorage.setItem("trackedBookingId", String(request.id));
       setTrackedBookingId(String(request.id));
-  setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
-  setSelectedSlot("");
-  setBookingPin("");
-  setBookingPinError("");
-  setIsSubmitting(false);
-} catch (error) {
-  setIsSubmitting(false);
-  const message = error.message || "Greška: zahtjev nije poslat backendu.";
-  if (message.toLowerCase().includes("pin")) {
-    setBookingPinError(message);
-  }
-  setUserMessage(message);
-}
+      setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
+      setSelectedSlot("");
+      setIsSubmitting(false);
+    } catch (error) {
+      setIsSubmitting(false);
+      setUserMessage(error.message || "Greška: zahtjev nije poslat backendu.");
+    }
   };
 
   const approveBooking = async (request) => {
@@ -1229,7 +1124,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
     return (
       <div
         onClick={unlockAdminSound}
-        style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fdf2f8 0%, #f8fafc 45%, #ecfeff 100%)", color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
+        style={{ minHeight: "100vh", background: THEME.pageBackground, color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
       >
         <style>{`
           @keyframes pulseStatus {
@@ -1357,7 +1252,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </div>
           )}
-          <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
+          <header style={{ background: "rgba(255,255,255,0.92)", border: `1px solid ${THEME.softBorder}`, borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
             <div className="flex justify-end mb-2">
               <button onClick={handleAdminLogout} className="text-sm underline">Logout</button>
             </div>
@@ -1381,13 +1276,118 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             </p>
           </header>
 
-          {pendingAdminAppointments.length > 0 && (
+          <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? `2px solid ${THEME.primary}` : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? `0 0 0 4px ${THEME.focusRing}` : "none", transition: "all 0.2s ease" }}>
+              <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
+              <input
+                type="date"
+                min={todayISO()}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 34 }}
+              />
+            </label>
+
+            <p className="text-sm text-zinc-600 mb-3">
+              Izabrani datum: <strong>{selectedDate}</strong>
+            </p>
+
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => {
+                  blockWholeDay();
+                  setUserMessage(`Zaključani su svi slobodni termini za ${selectedDate}.`);
+                }}
+                style={{
+                  flex: 1,
+                  borderRadius: 16,
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+                  color: "white",
+                  padding: "12px 14px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px rgba(37,99,235,0.22)",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                🔒 Zaključaj cijeli dan
+              </button>
+              <button
+                onClick={() => {
+                  unblockWholeDay();
+                  setUserMessage(`Otključani su termini za ${selectedDate}.`);
+                }}
+                style={{
+                  flex: 1,
+                  borderRadius: 16,
+                  background: "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+                  color: "white",
+                  padding: "12px 14px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                🔓 Otključaj dan
+              </button>
+            </div>
+
+            {userMessage && (
+              <div className="rounded-2xl bg-zinc-50 border border-zinc-200 p-3 mb-4 text-sm">
+                {userMessage}
+              </div>
+            )}
+
+            <p className="text-sm text-zinc-600 mb-3">
+              Pojedinačni termini za izabrani datum:
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {slots.map((slot) => {
+                const blockedNow = isBlocked(selectedDate, slot);
+                const bookedNow = isBooked(selectedDate, slot);
+                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot);
+                const manuallyOpenNow = Boolean(overrideOpen[key(selectedDate, slot)]);
+
+                return (
+                  <button
+                    key={slot}
+                    disabled={bookedNow}
+                    onClick={() => toggleBlock(selectedDate, slot)}
+                    style={{
+                      borderRadius: 14,
+                      border: blockedNow ? "1px solid #1e3a8a" : "1px solid #dbeafe",
+                      padding: "10px 12px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#1e3a8a" : "white",
+                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#1e3a8a",
+                      cursor: bookedNow ? "not-allowed" : "pointer",
+                      opacity: bookedNow ? 0.55 : 1,
+                      boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
+                    }}
+                  >
+                    {slot} {bookedNow ? "Zakazano" : manuallyOpenNow ? "✅ Ručno otvoreno (klik za neradno)" : nonWorkingNow ? "Neradno (klik za otvaranje)" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Novi zahtjevi</h2>
             </div>
 
-            <div style={{ display: "grid", gap: 10 }}>
+            {pendingAdminAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema novih zahtjeva.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
                 {pendingAdminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
@@ -1455,256 +1455,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   </div>
                 ))}
               </div>
-          </section>
-
-          )}
-
-          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
-                Filteri i pretraga
-              </h2>
-              <button
-                onClick={() => {
-                  setAdminQuickFilter("today");
-                  setAdminSearch("");
-                }}
-                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
-              >
-                Reset
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
-              value={adminSearch}
-              onChange={(e) => setAdminSearch(e.target.value)}
-              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
-            />
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {adminQuickFilters.map((item) => {
-                const active = adminQuickFilter === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => setAdminQuickFilter(item.key)}
-                    style={{
-                      border: active ? "1px solid #18181b" : "1px solid #e5e7eb",
-                      borderRadius: 999,
-                      background: active ? "#18181b" : "white",
-                      color: active ? "white" : "#18181b",
-                      padding: "9px 13px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      WebkitTextFillColor: active ? "white" : "#18181b",
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-
-          </section>
-
-          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>{adminQuickFilter === "archive" ? "Arhiva završenih termina" : "Pregled termina po datumu"}</h2>
-
-            {isOverviewRangeMode ? (
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
-                {adminQuickFilter === "today"
-                  ? `Prikaz: danas (${todayISO()})`
-                  : adminQuickFilter === "tomorrow"
-                  ? `Prikaz: sjutra (${addDaysISO(1)})`
-                  : adminQuickFilter === "week"
-                  ? `Prikaz: narednih 7 dana (${todayISO()} – ${addDaysISO(7)})`
-                  : "Prikaz: svi budući potvrđeni termini"}
-              </div>
-            ) : (
-              <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-                <span style={{ minWidth: 160, fontWeight: 700 }}>{adminQuickFilter === "archive" ? "Datum arhive" : "Izaberi datum"}</span>
-                <input
-                  type="date"
-                  value={adminFilterDate}
-                  onChange={(e) => setAdminFilterDate(e.target.value)}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
-                />
-              </label>
             )}
-
-            {overviewAppointments.length === 0 ? (
-              <p className="text-zinc-500">{adminQuickFilter === "archive" ? "Nema završenih termina za izabrani datum." : "Nema potvrđenih termina za izabrani prikaz."}</p>
-            ) : (
-              <div style={{ display: "grid", gap: 14 }}>
-                {overviewDates.map((date) => (
-                  <div key={date} style={{ display: "grid", gap: 8 }}>
-                    {isOverviewRangeMode && (
-                      <h3 style={{ margin: "4px 0", color: "#166534", fontSize: 18, fontWeight: 900 }}>{date}</h3>
-                    )}
-
-                    {overviewGroupedByDate[date].map((appointment) => {
-                      const status = normalizeStatus(appointment.status);
-                      const isConfirmed = status === "confirmed";
-                      const isRejected = status === "rejected";
-
-                      return (
-                        <div
-                          key={appointment.id}
-                          style={{
-                            display: "flex",
-                            gap: 14,
-                            alignItems: "center",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: 14,
-                            padding: "10px 12px",
-                            whiteSpace: "nowrap",
-                            overflowX: "auto",
-                            background: adminDateColorMap[appointment.date] || "#ffffff",
-                          }}
-                        >
-                          <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
-                          <span style={{ minWidth: 100 }}>{appointment.date}</span>
-                          <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
-                          <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
-                          <span style={{ color: "#71717a", minWidth: 100 }}>
-                            {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
-                          </span>
-
-                          {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
-                            <button
-                              onClick={() => {
-                                const confirmed = window.confirm(
-                                  `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
-                                );
-                                if (!confirmed) return;
-                                cancelAdminAppointment(appointment);
-                              }}
-                              style={{
-                                marginLeft: "auto",
-                                border: "1px solid #d4d4d8",
-                                borderRadius: 10,
-                                background: "white",
-                                color: "#18181b",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                fontWeight: 700,
-                                WebkitTextFillColor: "#18181b",
-                              }}
-                            >
-                              Otkaži
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid rgba(94,234,212,0.35)", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
-
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
-              <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
-              <input
-                type="date"
-                min={todayISO()}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 34 }}
-              />
-            </label>
-
-            <p className="text-sm text-zinc-600 mb-3">
-              Izabrani datum: <strong>{selectedDate}</strong>
-            </p>
-
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => {
-                  blockWholeDay();
-                  setUserMessage(`Zaključani su svi slobodni termini za ${selectedDate}.`);
-                }}
-                style={{
-                  flex: 1,
-                  borderRadius: 16,
-                  background: "linear-gradient(135deg, #ccfbf1 0%, #2563eb 100%)",
-                  color: "white",
-                  padding: "12px 14px",
-                  fontWeight: 800,
-                  border: "none",
-                  cursor: "pointer",
-                  boxShadow: "0 10px 25px rgba(37,99,235,0.22)",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                🔒 Zaključaj cijeli dan
-              </button>
-              <button
-                onClick={() => {
-                  unblockWholeDay();
-                  setUserMessage(`Otključani su termini za ${selectedDate}.`);
-                }}
-                style={{
-                  flex: 1,
-                  borderRadius: 16,
-                  background: "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
-                  color: "white",
-                  padding: "12px 14px",
-                  fontWeight: 800,
-                  border: "none",
-                  cursor: "pointer",
-                  boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                🔓 Otključaj dan
-              </button>
-            </div>
-
-            {userMessage && (
-              <div className="rounded-2xl bg-zinc-50 border border-zinc-200 p-3 mb-4 text-sm">
-                {userMessage}
-              </div>
-            )}
-
-            <p className="text-sm text-zinc-600 mb-3">
-              Pojedinačni termini za izabrani datum:
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {slots.map((slot) => {
-                const blockedNow = isBlocked(selectedDate, slot);
-                const bookedNow = isBooked(selectedDate, slot);
-                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot);
-                const manuallyOpenNow = Boolean(overrideOpen[key(selectedDate, slot)]);
-
-                return (
-                  <button
-                    key={slot}
-                    disabled={bookedNow}
-                    onClick={() => toggleBlock(selectedDate, slot)}
-                    style={{
-                      borderRadius: 14,
-                      border: blockedNow ? "1px solid #ccfbf1" : "1px solid #dbeafe",
-                      padding: "10px 12px",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#ccfbf1" : "white",
-                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#ccfbf1",
-                      cursor: bookedNow ? "not-allowed" : "pointer",
-                      opacity: bookedNow ? 0.55 : 1,
-                      boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
-                    }}
-                  >
-                    {slot} {bookedNow ? "Zakazano" : manuallyOpenNow ? "✅ Ručno otvoreno (klik za neradno)" : nonWorkingNow ? "Neradno (klik za otvaranje)" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
-                  </button>
-                );
-              })}
-            </div>
           </section>
 
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
@@ -1744,7 +1495,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Zaključano za izabrani datum</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#ccfbf1" }}>{stats.blockedSelectedDate}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#1e3a8a" }}>{stats.blockedSelectedDate}</div>
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Ručno otvoreno</div>
@@ -1753,7 +1504,83 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             </div>
           </section>
 
-                  {adminLastUpdated && (
+          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Pregled termina po datumu</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 160, fontWeight: 700 }}>Izaberi datum</span>
+              <input
+                type="date"
+                value={adminFilterDate}
+                onChange={(e) => setAdminFilterDate(e.target.value)}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 18, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 36 }}
+              />
+            </label>
+
+            {selectedDateAppointments.length === 0 ? (
+              <p className="text-zinc-500">Nema potvrđenih ili odbijenih termina za izabrani datum.</p>
+            ) : (
+              <div style={{ display: "grid", gap: 8 }}>
+                {selectedDateAppointments
+                  .filter((appointment) => normalizeStatus(appointment.status) !== "blocked")
+                  .map((appointment) => {
+                const status = normalizeStatus(appointment.status);
+                if (status === "blocked") return null;
+                const isConfirmed = status === "confirmed";
+                const isRejected = status === "rejected";
+
+                return (
+                  <div
+                    key={appointment.id}
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      alignItems: "center",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
+                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                    }}
+                  >
+                    <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
+                    <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                    <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                    <span style={{ color: "#71717a", minWidth: 100 }}>
+                      {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
+                    </span>
+                    {isConfirmed && !isPastSlot(appointment.date, appointment.time) && (
+                      <button
+                        onClick={() => {
+                          const confirmed = window.confirm(
+                            `Da li ste sigurni da želite da otkažete termin ${appointment.date} u ${appointment.time}?`
+                          );
+                          if (!confirmed) return;
+                          cancelAdminAppointment(appointment);
+                        }}
+                        style={{
+                          marginLeft: "auto",
+                          border: "1px solid #d4d4d8",
+                          borderRadius: 10,
+                          background: "white",
+                          color: "#18181b",
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          WebkitTextFillColor: "#18181b",
+                        }}
+                      >
+                        Otkaži
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              </div>
+            )}
+          </section>
+        {adminLastUpdated && (
           <footer style={{ textAlign: "center", color: "#71717a", fontSize: 12, padding: "8px 0 4px" }}>
             Ažurirano: {adminLastUpdated}
           </footer>
@@ -1764,21 +1591,13 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.22); opacity: 0.72; }
           100% { transform: scale(1); opacity: 1; }
         }
-        .user-glass-card { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-        .date-choice-card, .time-choice-card, .primary-action-button { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
-        .date-choice-card:hover, .time-choice-card:hover { transform: translateY(-2px); }
-        .primary-action-button:not(:disabled):hover { transform: translateY(-1px); }
-        .date-scroll::-webkit-scrollbar { height: 7px; }
-        .date-scroll::-webkit-scrollbar-track { background: rgba(167, 243, 208, 0.12); border-radius: 999px; }
-        .date-scroll::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.46); border-radius: 999px; }
-        @media (max-width: 520px) { .time-grid-mobile { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
       `}</style>
       {userPopup && (
         <div
@@ -1839,7 +1658,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         </div>
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
-        <header className="user-glass-card" style={{ background: "rgba(6,78,59,0.72)", border: "1px solid rgba(167,243,208,0.22)", borderRadius: 32, padding: 28, boxShadow: "0 24px 70px rgba(2,44,34,0.38)" }}>
+        <header style={{ background: "rgba(255,255,255,0.92)", border: `1px solid ${THEME.softBorder}`, borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
           <div className="flex items-center justify-between gap-3">
             <div style={{ width: "100%", textAlign: "center" }}>
               <div>
@@ -1894,7 +1713,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <main className="grid gap-6">
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section style={{ background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)", border: "1px solid #86efac", borderRadius: 30, padding: 20, boxShadow: "0 18px 48px rgba(22,101,52,0.10)", boxSizing: "border-box", overflow: "hidden" }}>
+            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
@@ -1948,11 +1767,11 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </section>
           )}
-          <section className="user-glass-card" style={{ background: "rgba(240,253,244,0.94)", border: "1px solid rgba(167,243,208,0.38)", borderRadius: 32, padding: 24, boxShadow: "0 22px 60px rgba(15,23,42,0.09)" }}>
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? `2px solid ${THEME.primary}` : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? `0 0 0 4px ${THEME.focusRing}` : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Ime i prezime</span>
                 <input
                   type="text"
@@ -1965,7 +1784,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 />
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? `2px solid ${THEME.primary}` : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? `0 0 0 4px ${THEME.focusRing}` : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#111827", WebkitTextFillColor: "#111827", fontSize: 16 }}>
                   Telefon
                   {isValidPhone(clientPhone) && (
@@ -2001,137 +1820,98 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-                <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
-                <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
-              </div>
-              <div
-                className="date-scroll"
-                style={{
-                  display: "grid",
-                  gridAutoFlow: "column",
-                  gridAutoColumns: "minmax(76px, 1fr)",
-                  gap: 10,
-                  overflowX: "auto",
-                  paddingBottom: 6,
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 80, fontWeight: 800, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
+              <input
+                type="date"
+                min={todayISO()}
+                value={selectedDate}
+                onFocus={() => setFocusedField("date")}
+                onBlur={() => setFocusedField("")}
+                onChange={(e) => {
+                  const nextDate = e.target.value < todayISO() ? todayISO() : e.target.value;
+                  setSelectedDate(nextDate);
+                  setSelectedSlot("");
                 }}
-              >
-                {userDateCards.map((item) => {
-                  const active = selectedDate === item.iso;
-                  return (
-                    <button
-                      key={item.iso}
-                      type="button"
-                      className="date-choice-card"
-                      onClick={() => {
-                        setSelectedDate(item.iso);
-                        setSelectedSlot("");
-                        setUserMessage("");
-                      }}
-                      style={{
-                        border: active ? "2px solid #10b981" : "1px solid rgba(167,243,208,0.45)",
-                        borderRadius: 20,
-                        background: active ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
-                        color: active ? "#ffffff" : "#d1fae5",
-                        padding: "11px 8px",
-                        minHeight: 70,
-                        cursor: "pointer",
-                        boxShadow: active ? "0 12px 28px rgba(16,185,129,0.32)" : "0 7px 18px rgba(16,185,129,0.16)",
-                        WebkitTextFillColor: active ? "#ffffff" : "#d1fae5",
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{item.label}</div>
-                      <div style={{ fontSize: 21, fontWeight: 950, lineHeight: 1 }}>{item.day}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }}
+              />
+            </label>
 
-            <div className="time-grid-mobile" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+            
+
+            <div style={{ display: "grid", gap: 10 }}>
               {visibleUserSlots.map((slot) => {
+                const unavailable = isUnavailable(selectedDate, slot);
                 const checked = selectedSlot === slot;
+                let label = "Slobodno";
+                let statusBackground = "#ecfdf5";
+                let statusBorder = "#bbf7d0";
+                let statusColor = "#166534";
+
+                if (isBooked(selectedDate, slot)) {
+                  label = `Zakazano: ${formatPublicName(booked[key(selectedDate, slot)]?.clientName)}`;
+                  statusBackground = "#fee2e2";
+                  statusBorder = "#fecaca";
+                  statusColor = "#991b1b";
+                } else if (isNonWorkingSlot(selectedDate, slot)) {
+                  label = "Neradno";
+                  statusBackground = "#f4f4f5";
+                  statusBorder = "#d4d4d8";
+                  statusColor = "#52525b";
+                } else if (isBlocked(selectedDate, slot)) {
+                  label = "Zaključano";
+                  statusBackground = "#f4f4f5";
+                  statusBorder = "#d4d4d8";
+                  statusColor = "#52525b";
+                } else if (isPending(selectedDate, slot)) {
+                  label = "Čeka potvrdu";
+                  statusBackground = "#fef3c7";
+                  statusBorder = "#fde68a";
+                  statusColor = "#92400e";
+                }
 
                 return (
-                  <button
+                  <label
                     key={slot}
-                    type="button"
-                    className="time-choice-card"
-                    onClick={() => {
-                      setSelectedSlot(checked ? "" : slot);
-                      setUserMessage("");
-                    }}
                     style={{
-                      border: checked ? "2px solid #0891b2" : "1px solid rgba(94,234,212,0.35)",
-                      borderRadius: 18,
-                      padding: "14px 8px",
-                      background: checked ? "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)" : "linear-gradient(135deg, #134e4a 0%, #115e59 100%)",
-                      color: checked ? "white" : "#ccfbf1",
-                      fontWeight: 900,
-                      fontSize: 15,
-                      cursor: "pointer",
-                      boxShadow: checked ? "0 12px 28px rgba(6,182,212,0.32)" : "0 7px 18px rgba(20,184,166,0.16)",
-                      WebkitTextFillColor: checked ? "white" : "#ccfbf1",
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "nowrap",
+                      alignItems: "center",
+                      gap: 14,
+                      border: checked ? `2px solid ${THEME.primary}` : `1px solid ${statusBorder}`,
+                      borderRadius: 16,
+                      padding: "11px 13px",
+                      background: unavailable ? "#f8fafc" : checked ? THEME.selectedSoft : statusBackground,
+                      opacity: unavailable ? 0.65 : 1,
+                      cursor: unavailable ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                      overflowX: "auto",
                     }}
                   >
-                    {slot}
-                  </button>
+                    <span style={{ minWidth: 70, fontWeight: 800, fontSize: 18 }}>{slot}</span>
+                    <span style={{ flex: 1, color: statusColor, fontWeight: 700 }}>{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={unavailable}
+                      onChange={() => setSelectedSlot(checked ? "" : slot)}
+                      style={{ width: 18, height: 18 }}
+                    />
+                  </label>
                 );
               })}
               {visibleUserSlots.length === 0 && (
-                <p style={{ color: "#71717a", marginTop: 12, gridColumn: "1 / -1" }}>
-                  Nema slobodnih termina za ovaj dan. Pokušajte drugi datum.
+                <p style={{ color: "#71717a", marginTop: 12 }}>
+                  Za izabrani datum nema dostupnih termina ili je salon neradan.
                 </p>
               )}
             </div>
 
-            <label
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? "2px solid #10b981" : "1px solid #e5e7eb",
-                borderRadius: 14,
-                padding: "10px 12px",
-                background: bookingPinError ? "#fef2f2" : "white",
-                boxShadow: bookingPinError
-                  ? "0 0 0 4px rgba(220,38,38,0.12)"
-                  : focusedField === "pin"
-                  ? "0 0 0 4px rgba(16,185,129,0.16)"
-                  : "none",
-                transition: "all 0.2s ease",
-                marginTop: 18,
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: 16, color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827" }}>
-                PIN za zakazivanje
-              </span>
-              <input
-                type="password"
-                inputMode="numeric"
-                placeholder="Unesite PIN"
-                value={bookingPin}
-                onFocus={() => setFocusedField("pin")}
-                onBlur={() => setFocusedField("")}
-                onChange={(e) => {
-                  setBookingPin(e.target.value.replace(/\D/g, "").slice(0, 10));
-                  setBookingPinError("");
-                }}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827", caretColor: bookingPinError ? "#991b1b" : "#111827" }}
-              />
-              {bookingPinError && (
-                <span style={{ color: "#dc2626", WebkitTextFillColor: "#dc2626", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
-                  {bookingPinError}
-                </span>
-              )}
-            </label>
-
             {(() => {
-              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot && bookingPin.trim();
+              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot;
               return (
                 <button
-                  className="primary-action-button"
                   onClick={requestBooking}
                   disabled={!isReady || isSubmitting}
                   onMouseEnter={() => setIsHoverBooking(true)}
