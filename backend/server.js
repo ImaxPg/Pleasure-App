@@ -345,15 +345,59 @@ app.delete("/appointments/:id", requireAdmin, (req, res) => {
 
 // ADMIN - SVI TERMINI
 app.get("/admin/appointments", requireAdmin, (req, res) => {
-  db.all(
-    "SELECT * FROM appointments WHERE status NOT IN ('rejected', 'expired') ORDER BY date ASC, time ASC",
-    [],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: "Greška pri čitanju termina" });
+  const { filter = "all", search = "" } = req.query;
 
-      res.json(rows);
+  let where = [];
+  let params = [];
+
+
+  if (filter === "all") {
+  where.push("status != 'expired'");
+}
+
+  // FILTERI PO DATUMU
+  if (filter === "today") {
+    where.push("date = DATE('now')");
+  }
+
+  if (filter === "tomorrow") {
+    where.push("date = DATE('now', '+1 day')");
+  }
+
+  if (filter === "week") {
+    where.push("date BETWEEN DATE('now') AND DATE('now', '+7 day')");
+  }
+
+  // FILTER PO STATUSU
+  if (["pending", "confirmed", "blocked", "rejected", "open"].includes(filter)) {
+    where.push("status = ?");
+    params.push(filter);
+  }
+
+  // SEARCH
+  if (search.trim()) {
+    where.push(`
+      (client_name LIKE ? OR client_phone LIKE ?)
+    `);
+    const q = `%${search.trim()}%`;
+    params.push(q, q);
+  }
+
+  const sql = `
+    SELECT *
+    FROM appointments
+    ${where.length ? "WHERE " + where.join(" AND ") : ""}
+    ORDER BY date ASC, time ASC
+  `;
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error("Admin appointments error:", err);
+      return res.status(500).json({ error: "Greška pri čitanju termina" });
     }
-  );
+
+    res.json(rows);
+  });
 });
 
 // ADMIN BLOKIRA TERMIN

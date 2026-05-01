@@ -22,6 +22,15 @@ const todayISO = () => {
   return `${year}-${month}-${day}`;
 };
 
+const addDaysISO = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 // FIX za iPhone zoom / mala slova
 if (typeof document !== "undefined") {
   const meta = document.querySelector('meta[name="viewport"]');
@@ -126,6 +135,8 @@ export default function MassageBookingSite() {
   };
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
+  const [adminQuickFilter, setAdminQuickFilter] = useState("all");
+  const [adminSearch, setAdminSearch] = useState("");
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   useEffect(() => {
@@ -502,11 +513,54 @@ export default function MassageBookingSite() {
     return map;
   };
 
-  const displayedAdminAppointments = sortAdminAppointments(adminAppointments);
-  const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
   const isPastAppointment = (appointment) => {
     return new Date(`${appointment.date}T${appointment.time}:00`) <= new Date();
   };
+
+  const adminQuickFilters = [
+    { key: "all", label: "Svi" },
+    { key: "today", label: "Danas" },
+    { key: "tomorrow", label: "Sjutra" },
+    { key: "week", label: "7 dana" },
+    { key: "pending", label: "Pending" },
+    { key: "confirmed", label: "Potvrđeni" },
+    { key: "blocked", label: "Blokirani" },
+    { key: "open", label: "Ručno otvoreni" },
+    { key: "rejected", label: "Odbijeni" },
+  ];
+
+  const matchesAdminQuickFilter = (appointment) => {
+    const status = normalizeStatus(appointment.status);
+
+    if (adminQuickFilter === "all") return true;
+    if (adminQuickFilter === "today") return appointment.date === todayISO();
+    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
+    if (adminQuickFilter === "week") {
+      return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+    }
+
+    return status === adminQuickFilter;
+  };
+
+  const matchesAdminSearch = (appointment) => {
+    const q = adminSearch.trim().toLowerCase();
+    if (!q) return true;
+
+    return [
+      appointment.client_name,
+      appointment.client_phone,
+      appointment.date,
+      appointment.time,
+      appointment.status,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(q));
+  };
+
+  const displayedAdminAppointments = sortAdminAppointments(
+    adminAppointments.filter((appointment) => matchesAdminQuickFilter(appointment) && matchesAdminSearch(appointment))
+  );
+  const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
 
   const pendingAdminAppointments = displayedAdminAppointments.filter(
     (appointment) => normalizeStatus(appointment.status) === "pending" && !isPastAppointment(appointment)
@@ -1242,6 +1296,59 @@ export default function MassageBookingSite() {
               Pregled svih zahtjeva i zakazanih termina, poređanih po datumu i vremenu.
             </p>
           </header>
+
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
+                Filteri i pretraga
+              </h2>
+              <button
+                onClick={() => {
+                  setAdminQuickFilter("all");
+                  setAdminSearch("");
+                }}
+                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
+              >
+                Reset
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
+              value={adminSearch}
+              onChange={(e) => setAdminSearch(e.target.value)}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
+            />
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {adminQuickFilters.map((item) => {
+                const active = adminQuickFilter === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setAdminQuickFilter(item.key)}
+                    style={{
+                      border: active ? "1px solid #18181b" : "1px solid #e5e7eb",
+                      borderRadius: 999,
+                      background: active ? "#18181b" : "white",
+                      color: active ? "white" : "#18181b",
+                      padding: "9px 13px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      WebkitTextFillColor: active ? "white" : "#18181b",
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: "#71717a" }}>
+              Prikazano: <strong>{displayedAdminAppointments.length}</strong> od ukupno <strong>{adminAppointments.length}</strong> termina.
+            </p>
+          </section>
 
           <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
