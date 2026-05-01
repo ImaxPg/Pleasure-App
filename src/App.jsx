@@ -2049,7 +2049,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       border: checked ? "2px solid #be185d" : "1px solid #fbcfe8",
                       borderRadius: 16,
                       padding: "14px 8px",
-                      background: checked ? "#67d66c" : "#89f08e",
+                      background: checked ? "#67d66c" : "#a5e6a8",
                       color: checked ? "white" : "#111827",
                       fontWeight: 900,
                       fontSize: 15,
