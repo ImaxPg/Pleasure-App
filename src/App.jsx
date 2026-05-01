@@ -1604,10 +1604,10 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             )}
           </section>
-<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid rgba(94,234,212,0.35)", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
               <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
               <input
                 type="date"
@@ -1631,7 +1631,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 style={{
                   flex: 1,
                   borderRadius: 16,
-                  background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+                  background: "linear-gradient(135deg, #ccfbf1 0%, #2563eb 100%)",
                   color: "white",
                   padding: "12px 14px",
                   fontWeight: 800,
@@ -1689,12 +1689,12 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     onClick={() => toggleBlock(selectedDate, slot)}
                     style={{
                       borderRadius: 14,
-                      border: blockedNow ? "1px solid #1e3a8a" : "1px solid #dbeafe",
+                      border: blockedNow ? "1px solid #ccfbf1" : "1px solid #dbeafe",
                       padding: "10px 12px",
                       fontSize: 14,
                       fontWeight: 700,
-                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#1e3a8a" : "white",
-                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#1e3a8a",
+                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#ccfbf1" : "white",
+                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#ccfbf1",
                       cursor: bookedNow ? "not-allowed" : "pointer",
                       opacity: bookedNow ? 0.55 : 1,
                       boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
@@ -1744,7 +1744,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Zaključano za izabrani datum</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#1e3a8a" }}>{stats.blockedSelectedDate}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#ccfbf1" }}>{stats.blockedSelectedDate}</div>
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Ručno otvoreno</div>
@@ -1764,7 +1764,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff7fb 0%, #fdf2f8 34%, #eef2ff 72%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #022c22 0%, #064e3b 45%, #0f766e 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
@@ -1776,8 +1776,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         .date-choice-card:hover, .time-choice-card:hover { transform: translateY(-2px); }
         .primary-action-button:not(:disabled):hover { transform: translateY(-1px); }
         .date-scroll::-webkit-scrollbar { height: 7px; }
-        .date-scroll::-webkit-scrollbar-track { background: rgba(244, 114, 182, 0.12); border-radius: 999px; }
-        .date-scroll::-webkit-scrollbar-thumb { background: rgba(190, 24, 93, 0.32); border-radius: 999px; }
+        .date-scroll::-webkit-scrollbar-track { background: rgba(167, 243, 208, 0.12); border-radius: 999px; }
+        .date-scroll::-webkit-scrollbar-thumb { background: rgba(52, 211, 153, 0.46); border-radius: 999px; }
         @media (max-width: 520px) { .time-grid-mobile { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
       `}</style>
       {userPopup && (
@@ -1839,7 +1839,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         </div>
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
-        <header className="user-glass-card" style={{ background: "rgba(255,255,255,0.78)", border: "1px solid rgba(244,114,182,0.22)", borderRadius: 32, padding: 28, boxShadow: "0 24px 70px rgba(190,24,93,0.10)" }}>
+        <header className="user-glass-card" style={{ background: "rgba(6,78,59,0.72)", border: "1px solid rgba(167,243,208,0.22)", borderRadius: 32, padding: 28, boxShadow: "0 24px 70px rgba(2,44,34,0.38)" }}>
           <div className="flex items-center justify-between gap-3">
             <div style={{ width: "100%", textAlign: "center" }}>
               <div>
@@ -1948,11 +1948,11 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </section>
           )}
-          <section className="user-glass-card" style={{ background: "rgba(255,255,255,0.84)", border: "1px solid rgba(244,114,182,0.20)", borderRadius: 32, padding: 24, boxShadow: "0 22px 60px rgba(15,23,42,0.09)" }}>
+          <section className="user-glass-card" style={{ background: "rgba(240,253,244,0.94)", border: "1px solid rgba(167,243,208,0.38)", borderRadius: 32, padding: 24, boxShadow: "0 22px 60px rgba(15,23,42,0.09)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "name" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "name" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Ime i prezime</span>
                 <input
                   type="text"
@@ -1965,7 +1965,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 />
               </label>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(190,24,93,0.12)" : "none", transition: "all 0.2s ease" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, border: focusedField === "phone" ? "2px solid #10b981" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", boxShadow: focusedField === "phone" ? "0 0 0 4px rgba(16,185,129,0.16)" : "none", transition: "all 0.2s ease" }}>
                 <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#111827", WebkitTextFillColor: "#111827", fontSize: 16 }}>
                   Telefon
                   {isValidPhone(clientPhone) && (
@@ -2030,15 +2030,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         setUserMessage("");
                       }}
                       style={{
-                        border: active ? "2px solid #be185d" : "1px solid #f9a8d4",
+                        border: active ? "2px solid #10b981" : "1px solid rgba(167,243,208,0.45)",
                         borderRadius: 20,
-                        background: active ? "linear-gradient(135deg, #be185d 0%, #ec4899 100%)" : "linear-gradient(135deg, #fff7fb 0%, #fce7f3 100%)",
-                        color: active ? "#ffffff" : "#831843",
+                        background: active ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
+                        color: active ? "#ffffff" : "#d1fae5",
                         padding: "11px 8px",
                         minHeight: 70,
                         cursor: "pointer",
-                        boxShadow: active ? "0 12px 28px rgba(190,24,93,0.26)" : "0 7px 18px rgba(190,24,93,0.08)",
-                        WebkitTextFillColor: active ? "#ffffff" : "#831843",
+                        boxShadow: active ? "0 12px 28px rgba(16,185,129,0.32)" : "0 7px 18px rgba(16,185,129,0.16)",
+                        WebkitTextFillColor: active ? "#ffffff" : "#d1fae5",
                       }}
                     >
                       <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{item.label}</div>
@@ -2063,16 +2063,16 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       setUserMessage("");
                     }}
                     style={{
-                      border: checked ? "2px solid #1d4ed8" : "1px solid #bfdbfe",
+                      border: checked ? "2px solid #0891b2" : "1px solid rgba(94,234,212,0.35)",
                       borderRadius: 18,
                       padding: "14px 8px",
-                      background: checked ? "linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%)" : "linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)",
-                      color: checked ? "white" : "#1e3a8a",
+                      background: checked ? "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)" : "linear-gradient(135deg, #134e4a 0%, #115e59 100%)",
+                      color: checked ? "white" : "#ccfbf1",
                       fontWeight: 900,
                       fontSize: 15,
                       cursor: "pointer",
-                      boxShadow: checked ? "0 12px 28px rgba(29,78,216,0.28)" : "0 7px 18px rgba(30,58,138,0.08)",
-                      WebkitTextFillColor: checked ? "white" : "#1e3a8a",
+                      boxShadow: checked ? "0 12px 28px rgba(6,182,212,0.32)" : "0 7px 18px rgba(20,184,166,0.16)",
+                      WebkitTextFillColor: checked ? "white" : "#ccfbf1",
                     }}
                   >
                     {slot}
@@ -2091,14 +2091,14 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
-                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? "2px solid #be185d" : "1px solid #e5e7eb",
+                border: bookingPinError ? "2px solid #dc2626" : focusedField === "pin" ? "2px solid #10b981" : "1px solid #e5e7eb",
                 borderRadius: 14,
                 padding: "10px 12px",
                 background: bookingPinError ? "#fef2f2" : "white",
                 boxShadow: bookingPinError
                   ? "0 0 0 4px rgba(220,38,38,0.12)"
                   : focusedField === "pin"
-                  ? "0 0 0 4px rgba(190,24,93,0.12)"
+                  ? "0 0 0 4px rgba(16,185,129,0.16)"
                   : "none",
                 transition: "all 0.2s ease",
                 marginTop: 18,
