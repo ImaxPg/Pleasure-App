@@ -532,11 +532,10 @@ export default function MassageBookingSite() {
     { key: "today", label: "Danas" },
     { key: "tomorrow", label: "Sjutra" },
     { key: "week", label: "7 dana" },
-    { key: "pending", label: "Nepotvrdjeni" },
     { key: "confirmed", label: "Potvrđeni" },
+    { key: "blocked", label: "Blokirani" },
+    { key: "open", label: "Ručno otvoreni" },
     { key: "rejected", label: "Odbijeni" },
-    { key: "blocked", label: "Blokirani termini" },
-    { key: "open", label: "Ručno otvoreni termini" },
   ];
 
   const matchesAdminQuickFilter = (appointment) => {
@@ -570,51 +569,46 @@ export default function MassageBookingSite() {
   const displayedAdminAppointments = sortAdminAppointments(
     adminAppointments.filter((appointment) => matchesAdminQuickFilter(appointment) && matchesAdminSearch(appointment))
   );
-  const adminDateColorMap = getDateColorMap(displayedAdminAppointments);
+  const adminDateColorMap = getDateColorMap(adminAppointments);
 
-  const pendingAdminAppointments = displayedAdminAppointments.filter(
-    (appointment) => normalizeStatus(appointment.status) === "pending" && !isPastAppointment(appointment)
+  // Novi zahtjevi moraju biti uvijek vidljivi, bez obzira na odabranu karticu.
+  // Search i dalje važi, da admin može brzo pronaći konkretan zahtjev.
+  const pendingAdminAppointments = sortAdminAppointments(
+    adminAppointments.filter(
+      (appointment) =>
+        normalizeStatus(appointment.status) === "pending" &&
+        !isPastAppointment(appointment) &&
+        matchesAdminSearch(appointment)
+    )
   );
 
-  const expiredPendingAppointments = displayedAdminAppointments.filter(
-    (appointment) => normalizeStatus(appointment.status) === "pending" && isPastAppointment(appointment)
+  const expiredPendingAppointments = sortAdminAppointments(
+    adminAppointments.filter(
+      (appointment) =>
+        normalizeStatus(appointment.status) === "pending" &&
+        isPastAppointment(appointment) &&
+        matchesAdminSearch(appointment)
+    )
   );
   const overviewAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
 
-    // Pending zahtjevi se prikazuju samo u sekciji "Novi zahtjevi",
-    // da se ne bi duplirali u pregledu po datumima.
-    if (status === "pending" || status === "blocked" || status === "open") return false;
+    if (["pending", "blocked", "open"].includes(status)) return false;
 
-    if (adminQuickFilter === "today") {
-      return status === "confirmed" && appointment.date === todayISO();
-    }
-
-    if (adminQuickFilter === "tomorrow") {
-      return status === "confirmed" && appointment.date === addDaysISO(1);
-    }
-
-    if (adminQuickFilter === "week") {
-      return status === "confirmed" && appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
-    }
+    if (adminQuickFilter === "today") return appointment.date === todayISO();
+    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
+    if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
 
     if (adminQuickFilter === "all") {
-      return status === "confirmed" && appointment.date >= todayISO();
-    }
+        return status === "confirmed" && appointment.date >= todayISO();
+      }
 
-    if (adminQuickFilter === "confirmed") {
-      return status === "confirmed" && appointment.date >= todayISO();
-    }
 
-    if (adminQuickFilter === "rejected") {
-      return status === "rejected" && appointment.date >= todayISO();
-    }
+      if (adminQuickFilter === "confirmed") {
+        return status === "confirmed" && appointment.date >= todayISO();
+      }
 
-    if (adminQuickFilter === "pending") {
-      return false;
-    }
-
-    return status === "confirmed" && appointment.date === adminFilterDate;
+      return appointment.date === adminFilterDate;
   });
 
   const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
@@ -624,13 +618,13 @@ export default function MassageBookingSite() {
   }, {});
 
   const overviewDates = Object.keys(overviewGroupedByDate).sort();
-  const isOverviewRangeMode = ["all", "week", "confirmed", "rejected"].includes(adminQuickFilter);
+  const isOverviewRangeMode = ["all", "week", "confirmed"].includes(adminQuickFilter);
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
 
   const stats = {
-    pending: displayedAdminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
+    pending: adminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
     confirmedToday: todayAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
     confirmedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "confirmed").length,
     blockedSelectedDate: selectedDayAllAppointments.filter((a) => normalizeStatus(a.status) === "blocked").length,
@@ -1349,68 +1343,13 @@ export default function MassageBookingSite() {
             </p>
           </header>
 
-          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
-                Filteri i pretraga
-              </h2>
-              <button
-                onClick={() => {
-                  setAdminQuickFilter("today");
-                  setAdminSearch("");
-                }}
-                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
-              >
-                Reset
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
-              value={adminSearch}
-              onChange={(e) => setAdminSearch(e.target.value)}
-              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
-            />
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {adminQuickFilters.map((item) => {
-                const active = adminQuickFilter === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => setAdminQuickFilter(item.key)}
-                    style={{
-                      border: active ? "1px solid #18181b" : "1px solid #e5e7eb",
-                      borderRadius: 999,
-                      background: active ? "#18181b" : "white",
-                      color: active ? "white" : "#18181b",
-                      padding: "9px 13px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      WebkitTextFillColor: active ? "white" : "#18181b",
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: "#71717a" }}>
-              Prikazano: <strong>{displayedAdminAppointments.length}</strong> od ukupno <strong>{adminAppointments.length}</strong> termina.
-            </p>
-          </section>
-
+          {pendingAdminAppointments.length > 0 && (
           <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Novi zahtjevi</h2>
             </div>
 
-            {pendingAdminAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema novih zahtjeva.</p>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: 10 }}>
                 {pendingAdminAppointments.map((appointment) => (
                   <div
                     key={appointment.id}
@@ -1478,7 +1417,61 @@ export default function MassageBookingSite() {
                   </div>
                 ))}
               </div>
-            )}
+          </section>
+
+          )}
+
+          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+              <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
+                Filteri i pretraga
+              </h2>
+              <button
+                onClick={() => {
+                  setAdminQuickFilter("today");
+                  setAdminSearch("");
+                }}
+                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
+              >
+                Reset
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
+              value={adminSearch}
+              onChange={(e) => setAdminSearch(e.target.value)}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
+            />
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {adminQuickFilters.map((item) => {
+                const active = adminQuickFilter === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => setAdminQuickFilter(item.key)}
+                    style={{
+                      border: active ? "1px solid #18181b" : "1px solid #e5e7eb",
+                      borderRadius: 999,
+                      background: active ? "#18181b" : "white",
+                      color: active ? "white" : "#18181b",
+                      padding: "9px 13px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      WebkitTextFillColor: active ? "white" : "#18181b",
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p style={{ marginTop: 12, marginBottom: 0, fontSize: 13, color: "#71717a" }}>
+              Prikazano: <strong>{displayedAdminAppointments.length}</strong> od ukupno <strong>{adminAppointments.length}</strong> termina.
+            </p>
           </section>
 
           <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
@@ -1487,14 +1480,8 @@ export default function MassageBookingSite() {
             {isOverviewRangeMode ? (
               <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
                 {adminQuickFilter === "week"
-                  ? `Prikaz: potvrdjeni termini za narednih 7 dana (${todayISO()} - ${addDaysISO(7)})`
-                  : adminQuickFilter === "all"
-                    ? "Prikaz: svi buduci potvrdjeni termini"
-                    : adminQuickFilter === "confirmed"
-                      ? "Prikaz: svi buduci potvrdjeni termini"
-                      : adminQuickFilter === "rejected"
-                        ? "Prikaz: odbijeni zahtjevi"
-                        : "Prikaz po datumima"}
+                  ? `Prikaz: narednih 7 dana (${todayISO()} – ${addDaysISO(7)})`
+                  : "Prikaz: svi budući potvrđeni termini"}
               </div>
             ) : (
               <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
@@ -1509,7 +1496,7 @@ export default function MassageBookingSite() {
             )}
 
             {overviewAppointments.length === 0 ? (
-              <p className="text-zinc-500">Nema termina za izabrani prikaz.</p>
+              <p className="text-zinc-500">Nema potvrđenih termina za izabrani prikaz.</p>
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
                 {overviewDates.map((date) => (
