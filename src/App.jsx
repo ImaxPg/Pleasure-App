@@ -534,9 +534,9 @@ export default function MassageBookingSite() {
     { key: "week", label: "7 dana" },
     { key: "pending", label: "Pending" },
     { key: "confirmed", label: "Potvrđeni" },
-    { key: "blocked", label: "Blokirani" },
-    { key: "open", label: "Ručno otvoreni" },
     { key: "rejected", label: "Odbijeni" },
+    { key: "blocked", label: "Blokirani termini" },
+    { key: "open", label: "Ručno otvoreni termini" },
   ];
 
   const matchesAdminQuickFilter = (appointment) => {
@@ -582,13 +582,25 @@ export default function MassageBookingSite() {
   const overviewAppointments = displayedAdminAppointments.filter((appointment) => {
     const status = normalizeStatus(appointment.status);
 
-    if (status === "pending" || status === "blocked" || status === "open") return false;
+    if (status === "blocked" || status === "open") return false;
 
     if (adminQuickFilter === "today") return appointment.date === todayISO();
     if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
     if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
 
-    return appointment.date === adminFilterDate;
+    if (adminQuickFilter === "all") {
+        return ["pending", "confirmed"].includes(status) && appointment.date >= todayISO();
+      }
+
+      if (adminQuickFilter === "pending") {
+        return status === "pending" && appointment.date >= todayISO();
+      }
+
+      if (adminQuickFilter === "confirmed") {
+        return status === "confirmed" && appointment.date >= todayISO();
+      }
+
+      return appointment.date === adminFilterDate;
   });
 
   const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
@@ -598,7 +610,7 @@ export default function MassageBookingSite() {
   }, {});
 
   const overviewDates = Object.keys(overviewGroupedByDate).sort();
-  const isOverviewRangeMode = adminQuickFilter === "week";
+  const isOverviewRangeMode = ["all", "week", "pending", "confirmed"].includes(adminQuickFilter);
 
   const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
   const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
