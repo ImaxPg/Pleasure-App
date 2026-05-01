@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const BOOKING_PIN = "13579";
 const rateLimit = require("express-rate-limit");
 const express = require("express");
 const cors = require("cors");
@@ -214,10 +215,14 @@ function isPastSlot(date, time) {
 }
 
 app.post("/appointments", bookingLimiter, (req, res) => {
-  const { date, time, client_name, client_phone } = req.body;
+  const { date, time, client_name, client_phone, booking_pin } = req.body;
 
   if (!date || !time || !client_name || !client_phone) {
     return res.status(400).json({ error: "Nedostaju podaci za zakazivanje." });
+  }
+
+  if (!booking_pin || booking_pin !== BOOKING_PIN) {
+  return res.status(403).json({ error: "Neispravan PIN kod." });
   }
 
   if (!isValidPhone(client_phone)) {
