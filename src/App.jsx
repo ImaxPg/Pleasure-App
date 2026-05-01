@@ -116,7 +116,7 @@ export default function MassageBookingSite() {
       // Zvuk nije presudan za rad aplikacije.
     }
   };
-  const isAdminPage = window.location.pathname.startsWith("/admin");
+  const isAdminPage = window.location.pathname.startsWith("/admin-pero-081");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,7 +126,6 @@ export default function MassageBookingSite() {
   };
   const [now, setNow] = useState(new Date());
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
-  const [archiveFilterDate, setArchiveFilterDate] = useState(todayISO());
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   useEffect(() => {
@@ -390,7 +389,17 @@ export default function MassageBookingSite() {
         cache: "no-store",
       })
         .then((res) => {
-          if (!res.ok) throw new Error("Admin nije autorizovan.");
+          if (res.status === 401) {
+            setIsAdminAuth(false);
+            sessionStorage.removeItem("adminToken");
+            setUserMessage("Sesija je istekla. Molimo prijavite se ponovo.");
+            throw new Error("Token istekao");
+          }
+
+          if (!res.ok) {
+            throw new Error("Greška pri čitanju termina.");
+          }
+
           return res.json();
         })
         .then((data) => {
@@ -452,9 +461,6 @@ export default function MassageBookingSite() {
         })
         .catch(() => {
           setIsBackendOnline(false);
-          setIsAdminAuth(false);
-          sessionStorage.removeItem("adminToken");
-          setUserMessage("Sesija je istekla. Molimo prijavite se ponovo.");
         });
     };
 
@@ -778,7 +784,7 @@ export default function MassageBookingSite() {
       setAdminAppointments((current) => current.filter((item) => item.id !== booking.id));
       setUserMessage(`Termin ${date} u ${slot} je otkazan${booking?.clientName ? ` za korisnika ${booking.clientName}` : ""}. Termin je ponovo slobodan.`);
     } catch (error) {
-      adminCancelledIdsRef.current.delete(String(appointment.id));
+      adminCancelledIdsRef.current.delete(String(booking.id));
       setUserMessage("Greška: termin nije otkazan u backendu.");
     }
   };

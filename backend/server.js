@@ -7,6 +7,17 @@ const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 const cron = require("node-cron");
 
+const helmet = require("helmet");
+const app = express();
+
+app.use(helmet());
+
+//Protiv Spama!!!
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3,
+});
+
 
 
 const EMAIL_USER = process.env.EMAIL_USER;
@@ -24,7 +35,7 @@ const transporter = nodemailer.createTransport({
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const app = express();
+
 
 const allowedOrigins = [
   "https://pleasure-app.vercel.app",
@@ -138,9 +149,7 @@ const adminLoginLimiter = rateLimit({
 app.post("/admin/login", adminLoginLimiter, (req, res) => {
   const { password } = req.body;
 
-  console.log("ENV password length:", ADMIN_PASSWORD?.length);
-console.log("Input password length:", password?.length);
-
+  
   if (password === ADMIN_PASSWORD) {
     const token = jwt.sign(
   { role: "admin" },
@@ -174,7 +183,7 @@ function isPastSlot(date, time) {
   return new Date(`${date}T${time}:00`) <= new Date();
 }
 
-app.post("/appointments", (req, res) => {
+app.post("/appointments", bookingLimiter, (req, res) => {
   const { date, time, client_name, client_phone } = req.body;
 
   if (!date || !time || !client_name || !client_phone) {
