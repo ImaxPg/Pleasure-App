@@ -1764,13 +1764,21 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff1f2 0%, #ffffff 42%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #fff7fb 0%, #fdf2f8 34%, #eef2ff 72%, #ecfeff 100%)", color: "#18181b", padding: "14px", fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
           50% { transform: scale(1.22); opacity: 0.72; }
           100% { transform: scale(1); opacity: 1; }
         }
+        .user-glass-card { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+        .date-choice-card, .time-choice-card, .primary-action-button { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease; }
+        .date-choice-card:hover, .time-choice-card:hover { transform: translateY(-2px); }
+        .primary-action-button:not(:disabled):hover { transform: translateY(-1px); }
+        .date-scroll::-webkit-scrollbar { height: 7px; }
+        .date-scroll::-webkit-scrollbar-track { background: rgba(244, 114, 182, 0.12); border-radius: 999px; }
+        .date-scroll::-webkit-scrollbar-thumb { background: rgba(190, 24, 93, 0.32); border-radius: 999px; }
+        @media (max-width: 520px) { .time-grid-mobile { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
       `}</style>
       {userPopup && (
         <div
@@ -1831,7 +1839,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         </div>
       )}
       <div className="max-w-6xl mx-auto grid gap-6">
-        <header style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #fce7f3", borderRadius: 30, padding: 28, boxShadow: "0 20px 60px rgba(15,23,42,0.08)" }}>
+        <header className="user-glass-card" style={{ background: "rgba(255,255,255,0.78)", border: "1px solid rgba(244,114,182,0.22)", borderRadius: 32, padding: 28, boxShadow: "0 24px 70px rgba(190,24,93,0.10)" }}>
           <div className="flex items-center justify-between gap-3">
             <div style={{ width: "100%", textAlign: "center" }}>
               <div>
@@ -1886,7 +1894,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <main className="grid gap-6">
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
+            <section style={{ background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)", border: "1px solid #86efac", borderRadius: 30, padding: 20, boxShadow: "0 18px 48px rgba(22,101,52,0.10)", boxSizing: "border-box", overflow: "hidden" }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
@@ -1940,7 +1948,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </section>
           )}
-          <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #f1f5f9", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+          <section className="user-glass-card" style={{ background: "rgba(255,255,255,0.84)", border: "1px solid rgba(244,114,182,0.20)", borderRadius: 32, padding: 24, boxShadow: "0 22px 60px rgba(15,23,42,0.09)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Podaci korisnika</h2>
 
             <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
@@ -1999,6 +2007,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
               </div>
               <div
+                className="date-scroll"
                 style={{
                   display: "grid",
                   gridAutoFlow: "column",
@@ -2014,21 +2023,22 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     <button
                       key={item.iso}
                       type="button"
+                      className="date-choice-card"
                       onClick={() => {
                         setSelectedDate(item.iso);
                         setSelectedSlot("");
                         setUserMessage("");
                       }}
                       style={{
-                        border: active ? "2px solid #be185d" : "1px solid #fbcfe8",
-                        borderRadius: 18,
-                        background: active ? "#fdf2f8" : "#fff7fb",
-                        color: active ? "#9d174d" : "#111827",
+                        border: active ? "2px solid #be185d" : "1px solid #f9a8d4",
+                        borderRadius: 20,
+                        background: active ? "linear-gradient(135deg, #be185d 0%, #ec4899 100%)" : "linear-gradient(135deg, #fff7fb 0%, #fce7f3 100%)",
+                        color: active ? "#ffffff" : "#831843",
                         padding: "11px 8px",
                         minHeight: 70,
                         cursor: "pointer",
-                        boxShadow: active ? "0 8px 22px rgba(190,24,93,0.18)" : "0 5px 16px rgba(15,23,42,0.05)",
-                        WebkitTextFillColor: active ? "#9d174d" : "#111827",
+                        boxShadow: active ? "0 12px 28px rgba(190,24,93,0.26)" : "0 7px 18px rgba(190,24,93,0.08)",
+                        WebkitTextFillColor: active ? "#ffffff" : "#831843",
                       }}
                     >
                       <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>{item.label}</div>
@@ -2039,7 +2049,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+            <div className="time-grid-mobile" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
               {visibleUserSlots.map((slot) => {
                 const checked = selectedSlot === slot;
 
@@ -2047,21 +2057,22 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   <button
                     key={slot}
                     type="button"
+                    className="time-choice-card"
                     onClick={() => {
                       setSelectedSlot(checked ? "" : slot);
                       setUserMessage("");
                     }}
                     style={{
-                      border: checked ? "2px solid #be185d" : "1px solid #fbcfe8",
-                      borderRadius: 16,
+                      border: checked ? "2px solid #1d4ed8" : "1px solid #bfdbfe",
+                      borderRadius: 18,
                       padding: "14px 8px",
-                      background: checked ? "#3d7344" : "#edffee",
-                      color: checked ? "white" : "#111827",
+                      background: checked ? "linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%)" : "linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)",
+                      color: checked ? "white" : "#1e3a8a",
                       fontWeight: 900,
                       fontSize: 15,
                       cursor: "pointer",
-                      boxShadow: checked ? "0 10px 24px rgba(236,72,153,0.28)" : "0 5px 14px rgba(15,23,42,0.04)",
-                      WebkitTextFillColor: checked ? "white" : "#111827",
+                      boxShadow: checked ? "0 12px 28px rgba(29,78,216,0.28)" : "0 7px 18px rgba(30,58,138,0.08)",
+                      WebkitTextFillColor: checked ? "white" : "#1e3a8a",
                     }}
                   >
                     {slot}
@@ -2070,7 +2081,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               })}
               {visibleUserSlots.length === 0 && (
                 <p style={{ color: "#71717a", marginTop: 12, gridColumn: "1 / -1" }}>
-                  Za izabrani datum nema dostupnih termina ili je salon neradan.
+                  Nema slobodnih termina za ovaj dan. Pokušajte drugi datum.
                 </p>
               )}
             </div>
@@ -2120,6 +2131,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot && bookingPin.trim();
               return (
                 <button
+                  className="primary-action-button"
                   onClick={requestBooking}
                   disabled={!isReady || isSubmitting}
                   onMouseEnter={() => setIsHoverBooking(true)}
