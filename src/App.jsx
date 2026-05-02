@@ -1870,6 +1870,54 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           50% { transform: scale(1.22); opacity: 0.72; }
           100% { transform: scale(1); opacity: 1; }
         }
+        .pleasure-user-page,
+        .pleasure-user-page * {
+          box-sizing: border-box;
+        }
+        .pleasure-user-page {
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+        .pleasure-user-page section,
+        .pleasure-user-page main,
+        .pleasure-user-page div,
+        .pleasure-user-page label,
+        .pleasure-user-page button,
+        .pleasure-user-page input {
+          min-width: 0;
+        }
+        .pleasure-user-card {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow: hidden;
+        }
+        .pleasure-user-scroll {
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
+        .pleasure-user-input {
+          width: 100%;
+          max-width: 100%;
+        }
+        @media (max-width: 430px) {
+          .pleasure-user-content {
+            max-width: 100vw !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+          .pleasure-user-hero {
+            max-width: 100vw !important;
+          }
+          .pleasure-user-card {
+            border-radius: 22px !important;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+          }
+        }
       `}</style>
       {userPopup && (
         <div
@@ -1929,8 +1977,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           })()}
         </div>
       )}
-      <div style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
-        <section style={{ position: "relative", width: "100%", maxWidth: 390, margin: "0 auto", overflow: "hidden", background: "#111827" }}>
+      <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
+        <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: 390, margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
             src={HERO_IMAGE}
             alt="Frizerski salon Pleasure"
@@ -1965,8 +2013,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </div>
         </section>
 
-        <div style={{ width: "100%", maxWidth: 390, margin: "0 auto", padding: "14px", display: "grid", gap: 16, boxSizing: "border-box", overflowX: "hidden" }}>
-          <section style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 14, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
+        <div className="pleasure-user-content" style={{ width: "100%", maxWidth: 390, margin: "0 auto", padding: "14px", display: "grid", gap: 16, boxSizing: "border-box", overflowX: "hidden" }}>
+          <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 14, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 950, color: "#111827" }}>09–20</div>
@@ -2013,9 +2061,9 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </section>
 
 
-        <main className="grid gap-6">
+        <main className="grid gap-6" style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }}>
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
+            <section className="pleasure-user-card" style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
               <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
@@ -2082,7 +2130,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   onFocus={() => setFocusedField("name")}
                   onBlur={() => setFocusedField("")}
                   onChange={(e) => setClientName(e.target.value)}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
+                  className="pleasure-user-input" style={{ flex: 1, width: "100%", minWidth: 0, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
                 />
               </label>
 
@@ -2106,7 +2154,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     }
                     setClientPhone(digits);
                   }}
-                  style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
+                  className="pleasure-user-input" style={{ flex: 1, width: "100%", minWidth: 0, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: "#111827", WebkitTextFillColor: "#111827", caretColor: "#111827" }}
                 />
               </label>
 
@@ -2129,10 +2177,11 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
               </div>
               <div
+                className="pleasure-user-scroll"
                 style={{
                   display: "grid",
                   gridAutoFlow: "column",
-                  gridAutoColumns: "72px",
+                  gridAutoColumns: "68px",
                   gap: 8,
                   overflowX: "auto",
                   paddingBottom: 6,
@@ -2157,6 +2206,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         color: active ? theme.dateTextActive : theme.dateText,
                         padding: "11px 8px",
                         minHeight: 70,
+                        minWidth: 0,
+                        width: "100%",
                         cursor: "pointer",
                         boxShadow: active ? `0 8px 22px rgba(${theme.focusRgb},0.18)` : "0 5px 16px rgba(15,23,42,0.05)",
                         WebkitTextFillColor: active ? theme.dateTextActive : theme.dateText,
@@ -2190,6 +2241,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       color: checked ? "white" : theme.slotText,
                       fontWeight: 900,
                       fontSize: 14,
+                      minWidth: 0,
+                      width: "100%",
                       cursor: "pointer",
                       boxShadow: checked ? `0 10px 24px ${theme.slotShadowActive}` : "0 5px 14px rgba(15,23,42,0.04)",
                       WebkitTextFillColor: checked ? "white" : theme.slotText,
@@ -2238,7 +2291,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   setBookingPin(e.target.value.replace(/\D/g, "").slice(0, 10));
                   setBookingPinError("");
                 }}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827", caretColor: bookingPinError ? "#991b1b" : "#111827" }}
+                className="pleasure-user-input" style={{ flex: 1, width: "100%", minWidth: 0, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827", caretColor: bookingPinError ? "#991b1b" : "#111827" }}
               />
             </label>
 
