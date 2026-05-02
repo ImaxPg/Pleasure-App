@@ -1481,7 +1481,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </header>
 
           {pendingAdminAppointments.length > 0 && (
-          <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+          <section style={{ background: "rgba(255,247,237,0.96)", border: "1px solid #fed7aa", borderRadius: 24, padding: 16, boxShadow: "0 16px 45px rgba(15,23,42,0.08)", boxSizing: "border-box", overflow: "hidden" }}>
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Novi zahtjevi</h2>
             </div>
@@ -1929,15 +1929,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           })()}
         </div>
       )}
-      <div style={{ minHeight: "100vh", width: "100%" }}>
-        <section style={{ position: "relative", width: "100%", overflow: "hidden", background: "#111827" }}>
+      <div style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
+        <section style={{ position: "relative", width: "100%", maxWidth: 390, margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
             src={HERO_IMAGE}
             alt="Frizerski salon Pleasure"
             style={{
               display: "block",
               width: "100%",
-              height: "clamp(270px, 58vw, 430px)",
+              height: "clamp(240px, 58vw, 360px)",
               objectFit: "cover",
               objectPosition: "center top",
             }}
@@ -1965,7 +1965,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </div>
         </section>
 
-        <div style={{ width: "100%", maxWidth: 430, margin: "0 auto", padding: "16px", display: "grid", gap: 18, boxSizing: "border-box" }}>
+        <div style={{ width: "100%", maxWidth: 390, margin: "0 auto", padding: "14px", display: "grid", gap: 16, boxSizing: "border-box", overflowX: "hidden" }}>
           <section style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 14, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
               <div>
@@ -2132,10 +2132,11 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 style={{
                   display: "grid",
                   gridAutoFlow: "column",
-                  gridAutoColumns: "minmax(76px, 1fr)",
-                  gap: 10,
+                  gridAutoColumns: "72px",
+                  gap: 8,
                   overflowX: "auto",
                   paddingBottom: 6,
+                  WebkitOverflowScrolling: "touch",
                 }}
               >
                 {userDateCards.map((item) => {
@@ -2169,7 +2170,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {visibleUserSlots.map((slot) => {
                 const checked = selectedSlot === slot;
 
@@ -2184,11 +2185,11 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     style={{
                       border: checked ? `2px solid ${theme.slotBorderActive}` : `1px solid ${theme.slotBorder}`,
                       borderRadius: 16,
-                      padding: "14px 8px",
+                      padding: "12px 6px",
                       background: checked ? theme.slotBgActive : theme.slotBg,
                       color: checked ? "white" : theme.slotText,
                       fontWeight: 900,
-                      fontSize: 15,
+                      fontSize: 14,
                       cursor: "pointer",
                       boxShadow: checked ? `0 10px 24px ${theme.slotShadowActive}` : "0 5px 14px rgba(15,23,42,0.04)",
                       WebkitTextFillColor: checked ? "white" : theme.slotText,
