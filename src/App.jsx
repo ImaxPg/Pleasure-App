@@ -1875,9 +1875,25 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           box-sizing: border-box;
         }
         .pleasure-user-page {
+          --pleasure-user-max: 430px;
           width: 100%;
           max-width: 100vw;
           overflow-x: hidden;
+        }
+        @media (min-width: 768px) {
+          .pleasure-user-page {
+            --pleasure-user-max: 760px;
+          }
+        }
+        @media (min-width: 1024px) {
+          .pleasure-user-page {
+            --pleasure-user-max: 980px;
+          }
+        }
+        @media (min-width: 1280px) {
+          .pleasure-user-page {
+            --pleasure-user-max: 1080px;
+          }
         }
         .pleasure-user-page section,
         .pleasure-user-page main,
@@ -1902,6 +1918,17 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         .pleasure-user-input {
           width: 100%;
           max-width: 100%;
+        }
+        @media (min-width: 768px) {
+          .pleasure-user-card {
+            padding: 22px !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .pleasure-user-card {
+            border-radius: 28px !important;
+            padding: 26px !important;
+          }
         }
         @media (max-width: 430px) {
           .pleasure-user-content {
@@ -1978,7 +2005,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
         </div>
       )}
       <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
-        <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: 390, margin: "0 auto", overflow: "hidden", background: "#111827" }}>
+        <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
             src={HERO_IMAGE}
             alt="Frizerski salon Pleasure"
@@ -2013,7 +2040,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </div>
         </section>
 
-        <div className="pleasure-user-content" style={{ width: "100%", maxWidth: 390, margin: "0 auto", padding: "14px", display: "grid", gap: 16, boxSizing: "border-box", overflowX: "hidden" }}>
+        <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 14, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
               <div>
