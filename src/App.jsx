@@ -1702,7 +1702,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             )}
           </section>
-<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+<section style={{ background: "rgba(255,239,239,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
