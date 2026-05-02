@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Calendar, Mail, ShieldCheck } from "lucide-react";
+import { Calendar, ShieldCheck } from "lucide-react";
 
 const START_HOUR = 9;
 const END_HOUR = 20;
@@ -17,16 +17,16 @@ const COLOR_THEMES = {
     dateBorderActive: "#16a34a",
     dateText: "#111827",
     dateTextActive: "#166534",
-    slotBg: "#ecfdf5",
-    slotBgActive: "#15803d",
-    slotBorder: "#bbf7d0",
-    slotBorderActive: "#15803d",
-    slotShadowActive: "rgba(21,128,61,0.28)",
+    slotBg: "#e0f2fe",
+    slotBgActive: "#0284c7",
+    slotBorder: "#bae6fd",
+    slotBorderActive: "#0284c7",
+    slotShadowActive: "rgba(2,132,199,0.28)",
     strong: "#15803d",
     strongHover: "#16a34a",
   },
   blue: {
-    pageBg: "linear-gradient(135deg, #eff6ff 0%, #ffffff 42%, #ecfeff 100%)",
+    pageBg: "linear-gradient(135deg, #eff6ff 0%, #ffffff 42%, #f5f3ff 100%)",
     softBorder: "#bfdbfe",
     focus: "#2563eb",
     focusRgb: "37,99,235",
@@ -36,16 +36,16 @@ const COLOR_THEMES = {
     dateBorderActive: "#2563eb",
     dateText: "#111827",
     dateTextActive: "#1e3a8a",
-    slotBg: "#e0f2fe",
-    slotBgActive: "#0284c7",
-    slotBorder: "#bae6fd",
-    slotBorderActive: "#0284c7",
-    slotShadowActive: "rgba(2,132,199,0.28)",
+    slotBg: "#eef2ff",
+    slotBgActive: "#4f46e5",
+    slotBorder: "#c7d2fe",
+    slotBorderActive: "#4f46e5",
+    slotShadowActive: "rgba(79,70,229,0.28)",
     strong: "#2563eb",
     strongHover: "#1d4ed8",
   },
   red: {
-    pageBg: "linear-gradient(135deg, #fef2f2 0%, #ffffff 42%, #fff1f2 100%)",
+    pageBg: "linear-gradient(135deg, #fef2f2 0%, #ffffff 42%, #fffbeb 100%)",
     softBorder: "#fecaca",
     focus: "#dc2626",
     focusRgb: "220,38,38",
@@ -55,11 +55,11 @@ const COLOR_THEMES = {
     dateBorderActive: "#dc2626",
     dateText: "#111827",
     dateTextActive: "#7f1d1d",
-    slotBg: "#fff1f2",
-    slotBgActive: "#be123c",
-    slotBorder: "#fecdd3",
-    slotBorderActive: "#be123c",
-    slotShadowActive: "rgba(190,18,60,0.28)",
+    slotBg: "#fffbeb",
+    slotBgActive: "#d97706",
+    slotBorder: "#fde68a",
+    slotBorderActive: "#d97706",
+    slotShadowActive: "rgba(217,119,6,0.28)",
     strong: "#be123c",
     strongHover: "#dc2626",
   },
@@ -207,6 +207,16 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     }
   };
   const isAdminPage = window.location.pathname.startsWith("/admin-pero-081");
+
+  useEffect(() => {
+    if (isAdminPage || !userMessage) return;
+
+    const timer = setTimeout(() => {
+      setUserMessage("");
+    }, 20000);
+
+    return () => clearTimeout(timer);
+  }, [userMessage, isAdminPage]);
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [isHoverBooking, setIsHoverBooking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -834,6 +844,15 @@ if (!selectedDate || !selectedSlot) {
   return;
 }
 
+const hasConfirmedBookingForSelectedDate = userConfirmedBookings.some((booking) =>
+  booking.date === selectedDate && !isPastSlot(booking.date, booking.time)
+);
+
+if (hasConfirmedBookingForSelectedDate) {
+  setUserMessage("Već imate rezervisan termin za ovaj dan");
+  return;
+}
+
 if (!bookingPin.trim()) {
   setBookingPinError("Unesite PIN za zakazivanje.");
   setUserMessage("Unesite PIN za zakazivanje.");
@@ -903,10 +922,20 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
   setIsSubmitting(false);
 } catch (error) {
   setIsSubmitting(false);
-  const message = error.message || "Greška: zahtjev nije poslat backendu.";
+  let message = error.message || "Greška: zahtjev nije poslat backendu.";
+
+  const hasConfirmedBookingForSelectedDate = userConfirmedBookings.some((booking) =>
+    booking.date === selectedDate && !isPastSlot(booking.date, booking.time)
+  );
+
+  if (hasConfirmedBookingForSelectedDate && message.includes("Već imate zakazan")) {
+    message = "Već imate rezervisan termin za ovaj dan";
+  }
+
   if (message.toLowerCase().includes("pin")) {
     setBookingPinError(message);
   }
+
   setUserMessage(message);
 }
   };
@@ -1973,12 +2002,6 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </div>
         </header>
 
-        {userMessage && (
-          <div className="rounded-2xl bg-white border border-zinc-200 shadow-sm p-4 flex gap-3 items-start">
-            <Mail className="w-5 h-5 mt-0.5" />
-            <p>{userMessage}</p>
-          </div>
-        )}
 
         <main className="grid gap-6">
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
@@ -2205,11 +2228,6 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 }}
                 style={{ flex: 1, border: "none", outline: "none", fontSize: 16, textAlign: "center", background: "transparent", color: bookingPinError ? "#991b1b" : "#111827", WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827", caretColor: bookingPinError ? "#991b1b" : "#111827" }}
               />
-              {bookingPinError && (
-                <span style={{ color: "#dc2626", WebkitTextFillColor: "#dc2626", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
-                  {bookingPinError}
-                </span>
-              )}
             </label>
 
             {(() => {
@@ -2246,6 +2264,28 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 </button>
               );
             })()}
+
+            {userMessage && (
+              <div
+                style={{
+                  marginTop: 14,
+                  borderRadius: 16,
+                  border: bookingPinError ? "1px solid #fecaca" : `1px solid ${theme.softBorder}`,
+                  background: bookingPinError ? "#fef2f2" : "rgba(255,255,255,0.92)",
+                  color: bookingPinError ? "#991b1b" : "#111827",
+                  WebkitTextFillColor: bookingPinError ? "#991b1b" : "#111827",
+                  padding: "12px 14px",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  textAlign: "center",
+                  boxShadow: bookingPinError
+                    ? "0 8px 20px rgba(220,38,38,0.10)"
+                    : "0 8px 20px rgba(15,23,42,0.06)",
+                }}
+              >
+                {userMessage}
+              </div>
+            )}
           </section>
         </main>
         {userLastUpdated && (
