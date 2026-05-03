@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, ShieldCheck } from "lucide-react";
+import peroImage from "./pero4.jpg";
 
 const START_HOUR = 9;
 const END_HOUR = 20;
@@ -2007,16 +2008,17 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
         <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
-            src={HERO_IMAGE}
-            alt="Frizerski salon Pleasure"
-            style={{
-              display: "block",
-              width: "100%",
-              height: "clamp(240px, 58vw, 360px)",
-              objectFit: "cover",
-              objectPosition: "center top",
-            }}
-          />
+			  src={peroImage}
+			  alt="Frizerski salon Pleasure"
+			  style={{
+			    width: "100%",
+			    height: "auto",
+			    maxHeight: "340px",
+			    objectFit: "cover",
+			    objectPosition: "center top",
+			    display: "block",
+			  }}
+			/>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)" }} />
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "white", maxWidth: 430, margin: "0 auto" }}>
             <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, letterSpacing: "-0.04em" }}>
