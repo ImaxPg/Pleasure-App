@@ -2025,7 +2025,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               Frizerski salon<br />Pleasure
             </h1>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontWeight: 800, opacity: 0.96 }}>
-              <span style={{ textAlign: "center" }}>Zakazivanje termina</span>
+              <span>Zakazivanje termina</span>
               <span
                 title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
                 style={{
