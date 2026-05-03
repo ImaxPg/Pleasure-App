@@ -2024,8 +2024,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, color: "#fff", textShadow: "0 2px 6px rgba(0,0,0,0.5)", letterSpacing: "-0.04em" }}>
               Frizerski salon<br />Pleasure
             </h1>
-            <div style={{ display: "flex", alignItems: "center", textAlign: "center", gap: 8, marginTop: 9, fontWeight: 800, opacity: 0.96 }}>
-              <span >Zakazivanje termina</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontWeight: 800, opacity: 0.96 }}>
+              <span style={{ textAlign: "center" }}>Zakazivanje termina</span>
               <span
                 title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
                 style={{
