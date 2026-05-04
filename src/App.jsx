@@ -2044,20 +2044,34 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 14, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 950, color: "#111827" }}>09–20</div>
-                <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>Radno vrijeme</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 950, color: "#111827" }}>30 min</div>
-                <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>Trajanje</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 950, color: "#111827" }}>Admin</div>
-                <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>Potvrda</div>
-              </div>
-            </div>
+            <div   style={{
+			    display: "flex",
+			    alignItems: "center",
+			    justifyContent: "center",
+			    gap: "8px",
+			    marginBottom: "10px",
+			  }}
+			>
+			  <span
+			    style={{
+			      fontSize: "16px",
+			      fontWeight: "600",
+			      color: "#065f46", // možeš vezati za temu ako želiš
+			    }}
+			  >
+			    Zakazivanje termina
+			  </span>
+
+			  <span
+			    style={{
+			      width: "10px",
+			      height: "10px",
+			      borderRadius: "50%",
+			      background: "#10b981",
+			      display: "inline-block",
+			    }}
+			  />
+			</div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 15 }}>
               {[
                 { key: "green", color: "#16a34a", label: "Zelena tema" },
