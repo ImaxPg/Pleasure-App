@@ -1623,7 +1623,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           )}
 
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
                 Filteri i pretraga
               </h2>
@@ -1965,7 +1965,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </section>
 
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 16 }}>
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
                 Statistika
               </h2>
@@ -2186,7 +2186,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 16, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9, fontWeight: 950, color: "#111827", letterSpacing: "-0.02em" }}>
                 <span>Zakazivanje termina ONLINE</span>
                 <span
@@ -2346,7 +2346,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 10 }}>
                 <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
                 <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
               </div>
