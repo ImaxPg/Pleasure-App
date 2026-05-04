@@ -2186,8 +2186,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 16, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9, fontWeight: 950, color: "#111827", letterSpacing: "-0.02em" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, fontWeight: 950, color: "#111827", letterSpacing: "-0.02em" }}>
                 <span>Zakazivanje termina ONLINE</span>
                 <span
                   title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
