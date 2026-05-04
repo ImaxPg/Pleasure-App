@@ -2024,21 +2024,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, color: "#fff", textShadow: "0 2px 6px rgba(0,0,0,0.5)", letterSpacing: "-0.04em" }}>
               Frizerski salon<br />Pleasure
             </h1>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontWeight: 800, opacity: 0.96 }}>
-              <span>Zakazivanje termina</span>
-              <span
-                title={isBackendOnline ? "Backend je dostupan" : "Backend nije dostupan"}
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: isBackendOnline ? "#22c55e" : "#ef4444",
-                  display: "inline-block",
-                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.22)" : "0 0 0 4px rgba(239,68,68,0.22)",
-                  ...(isBackendOnline ? pulseStyle : {}),
-                }}
-              />
-            </div>
+
+            
           </div>
         </section>
 
@@ -2056,7 +2043,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 			    style={{
 			      fontSize: "16px",
 			      fontWeight: "600",
-			      color: "#065f46", // možeš vezati za temu ako želiš
+			      color: "black", // možeš vezati za temu ako želiš
 			    }}
 			  >
 			    Zakazivanje termina
