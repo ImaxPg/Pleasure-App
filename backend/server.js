@@ -20,6 +20,8 @@ const bookingLimiter = rateLimit({
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const EMAIL_TO = process.env.EMAIL_TO;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -77,6 +79,36 @@ db.run(`
   ON appointments(date, time)
   WHERE status IN ('pending', 'confirmed', 'blocked')
 `);
+
+
+async function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.log("Telegram notifikacije nijesu podešene.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "HTML",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Telegram greška:", errorText);
+    }
+  } catch (err) {
+    console.error("Greška pri slanju Telegram notifikacije:", err.message);
+  }
+}
 
 function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -265,6 +297,16 @@ app.post("/appointments", bookingLimiter, (req, res) => {
 
                 return res.status(500).json({ error: "Greška pri čuvanju termina." });
               }
+
+              const telegramMessage =
+                `✂️ Novi zahtjev za termin\n\n` +
+                `Ime: ${client_name.trim()}\n` +
+                `Telefon: ${client_phone.trim()}\n` +
+                `Datum: ${date}\n` +
+                `Vrijeme: ${time}\n\n` +
+                `Status: čeka potvrdu admina`;
+
+              sendTelegramNotification(telegramMessage);
 
               res.json({ id: this.lastID });
             }
