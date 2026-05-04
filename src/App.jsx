@@ -1417,7 +1417,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             >
               <div
                 style={{
-                  background: "white",
+                  background: "rgba(255,255,255,0.94)",
                   borderRadius: 24,
                   boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
                   padding: 28,
@@ -1610,7 +1610,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                           });
                           setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
                         }}
-                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
+                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "rgba(255,255,255,0.94)", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
                       >
                         Odbij
                       </button>
@@ -1632,7 +1632,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   setAdminQuickFilter("today");
                   setAdminSearch("");
                 }}
-                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
+                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "rgba(255,255,255,0.94)", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
               >
                 Reset
               </button>
@@ -1643,7 +1643,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
-              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "rgba(255,255,255,0.94)" }}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1676,7 +1676,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>{adminQuickFilter === "archive" ? "Arhiva završenih termina" : "Pregled termina po datumu"}</h2>
 
             {isOverviewRangeMode ? (
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.94)", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
                 {adminQuickFilter === "today"
                   ? `Prikaz: danas (${todayISO()})`
                   : adminQuickFilter === "tomorrow"
@@ -2256,7 +2256,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         maxWidth: "100%",
                         minWidth: 0,
                         boxSizing: "border-box",
-                        background: "#ffffff",
+                        background: "linear-gradient(135deg, #111827, #1f2937)",
                         border: "1px solid #86efac",
                         borderRadius: 18,
                         padding: 16,
