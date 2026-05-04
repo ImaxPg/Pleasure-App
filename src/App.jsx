@@ -2046,7 +2046,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 			      color: "black", // možeš vezati za temu ako želiš
 			    }}
 			  >
-			    Zakazivanje termina
+			    Zakazivanje termina ONLINE
 			  </span>
 
 			  <span
