@@ -135,6 +135,10 @@ db.run(`
   )
 `);
 
+db.run(`
+  ALTER TABLE appointments ADD COLUMN booked_by TEXT DEFAULT 'user'
+`, () => {});
+
 
 db.run(`
   CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot
@@ -474,6 +478,57 @@ app.post("/admin/open-slot", requireAdmin, (req, res) => {
       if (err) return res.status(500).json({ error: "Greška pri otvaranju termina" });
 
       res.json({ id: this.lastID });
+    }
+  );
+});
+
+
+
+// ADMIN RUČNO ZAKAZUJE TERMIN (telefon)
+app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
+  const { date, time, client_name, client_phone = "" } = req.body;
+
+  if (!date || !time || !client_name) {
+    return res.status(400).json({ error: "Datum, vrijeme i ime su obavezni." });
+  }
+
+  db.get(
+    `
+    SELECT * FROM appointments
+    WHERE date = ?
+    AND time = ?
+    AND status IN ('pending', 'confirmed', 'blocked')
+    `,
+    [date, time],
+    (err, takenSlot) => {
+      if (err) return res.status(500).json({ error: "Greška pri provjeri termina." });
+
+      if (takenSlot) {
+        return res.status(409).json({ error: "Termin je već zauzet." });
+      }
+
+      db.run(
+        `
+        INSERT INTO appointments 
+        (date, time, client_name, client_phone, status, booked_by)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [
+          date,
+          time,
+          client_name.trim(),
+          client_phone.trim(),
+          "confirmed",
+          "admin"
+        ],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: "Greška pri ručnom zakazivanju." });
+          }
+
+          res.json({ id: this.lastID });
+        }
+      );
     }
   );
 });
