@@ -94,14 +94,13 @@ function sendTelegramNotification(message) {
     return;
   }
 
-  TELEGRAM_CHAT_IDS.forEach((chatId) => {
+  for (const chatId of TELEGRAM_CHAT_IDS) {
     fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
-        parse_mode: "HTML",
       }),
     })
       .then(async (response) => {
@@ -113,7 +112,7 @@ function sendTelegramNotification(message) {
       .catch((err) => {
         console.error(`Greška pri slanju Telegram notifikacije za chat ${chatId}:`, err.message);
       });
-  });
+  }
 }
 
 function requireAdmin(req, res, next) {
@@ -214,12 +213,10 @@ app.get("/", (req, res) => {
   res.send("Backend radi ✅");
 });
 
-
 app.get("/test-telegram", (req, res) => {
   sendTelegramNotification("✅ Test Telegram notifikacije iz Pleasure backend-a");
   res.json({ success: true, chat_count: TELEGRAM_CHAT_IDS.length });
 });
-
 
 const adminLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
