@@ -7,7 +7,7 @@ const END_HOUR = 20;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const COLOR_THEMES = {
   green: {
-    pageBg: "linear-gradient(135deg, #f0fdf4 0%, #ffffff 45%, #ecfeff 100%)",
+    pageBg: "linear-gradient(135deg, #111827, #1f2937)",
     softBorder: "#bbf7d0",
     focus: "#16a34a",
     focusRgb: "22,163,74",
@@ -27,7 +27,7 @@ const COLOR_THEMES = {
     strongHover: "#16a34a",
   },
   blue: {
-    pageBg: "linear-gradient(135deg, #eff6ff 0%, #ffffff 45%, #f0f9ff 100%)",
+    pageBg: "linear-gradient(135deg, #111827, #1f2937)",
     softBorder: "#bfdbfe",
     focus: "#2563eb",
     focusRgb: "37,99,235",
@@ -47,7 +47,7 @@ const COLOR_THEMES = {
     strongHover: "#1d4ed8",
   },
   red: {
-    pageBg: "linear-gradient(135deg, #fef2f2 0%, #ffffff 45%, #fff7ed 100%)",
+    pageBg: "linear-gradient(135deg, #111827, #1f2937)",
     softBorder: "#fecaca",
     focus: "#dc2626",
     focusRgb: "220,38,38",
@@ -1417,7 +1417,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             >
               <div
                 style={{
-                  background: "rgba(255,255,255,0.94)",
+                  background: "white",
                   borderRadius: 24,
                   boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
                   padding: 28,
@@ -1610,7 +1610,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                           });
                           setAdminAppointments((current) => current.filter((item) => item.id !== appointment.id));
                         }}
-                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "rgba(255,255,255,0.94)", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
+                        style={{ border: "1px solid #d4d4d8", borderRadius: 10, background: "white", color: "#18181b", padding: "8px 12px", cursor: "pointer", fontWeight: 700 }}
                       >
                         Odbij
                       </button>
@@ -1623,7 +1623,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           )}
 
           <section style={{ background: "rgba(255,255,255,0.94)", border: "1px solid #e5e7eb", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
                 Filteri i pretraga
               </h2>
@@ -1632,7 +1632,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                   setAdminQuickFilter("today");
                   setAdminSearch("");
                 }}
-                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "rgba(255,255,255,0.94)", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
+                style={{ border: "1px solid #d4d4d8", borderRadius: 14, background: "white", color: "#18181b", padding: "9px 12px", fontWeight: 800, cursor: "pointer", WebkitTextFillColor: "#18181b" }}
               >
                 Reset
               </button>
@@ -1643,7 +1643,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               placeholder="Pretraga po imenu, telefonu, datumu, vremenu ili statusu..."
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
-              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "rgba(255,255,255,0.94)" }}
+              style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 16, padding: "13px 14px", fontSize: 16, outline: "none", marginBottom: 14, color: "#111827", WebkitTextFillColor: "#111827", background: "white" }}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1676,7 +1676,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>{adminQuickFilter === "archive" ? "Arhiva završenih termina" : "Pregled termina po datumu"}</h2>
 
             {isOverviewRangeMode ? (
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "rgba(255,255,255,0.94)", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
                 {adminQuickFilter === "today"
                   ? `Prikaz: danas (${todayISO()})`
                   : adminQuickFilter === "tomorrow"
@@ -1965,7 +1965,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           </section>
 
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
               <h2 className="text-2xl font-semibold" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827", margin: 0 }}>
                 Statistika
               </h2>
@@ -2186,7 +2186,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 16, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
-            <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9, fontWeight: 950, color: "#111827", letterSpacing: "-0.02em" }}>
                 <span>Zakazivanje termina ONLINE</span>
                 <span
@@ -2256,7 +2256,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         maxWidth: "100%",
                         minWidth: 0,
                         boxSizing: "border-box",
-                        background: "linear-gradient(135deg, #111827, #1f2937)",
+                        background: "#ffffff",
                         border: "1px solid #86efac",
                         borderRadius: 18,
                         padding: 16,
@@ -2346,7 +2346,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
             <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
                 <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
                 <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
               </div>
