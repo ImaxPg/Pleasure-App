@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, ShieldCheck } from "lucide-react";
-import peroImage from "./pero4.jpg";
 
 const START_HOUR = 9;
 const END_HOUR = 20;
@@ -233,6 +232,11 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [adminFilterDate, setAdminFilterDate] = useState(todayISO());
   const [adminQuickFilter, setAdminQuickFilter] = useState("today");
   const [adminSearch, setAdminSearch] = useState("");
+  const [manualDate, setManualDate] = useState(todayISO());
+  const [manualTime, setManualTime] = useState("09:00");
+  const [manualClientName, setManualClientName] = useState("");
+  const [manualClientPhone, setManualClientPhone] = useState("");
+  const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   useEffect(() => {
@@ -301,6 +305,66 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const handleAdminLogout = () => {
     setIsAdminAuth(false);
     sessionStorage.removeItem("adminToken");
+  };
+
+  const handleManualBooking = async () => {
+    const name = manualClientName.trim();
+    const phone = manualClientPhone.replace(/\D/g, "").trim();
+
+    if (!manualDate || !manualTime || !name) {
+      setUserMessage("Unesite datum, vrijeme i ime klijenta za ručno zakazivanje.");
+      return;
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      setUserMessage("Telefon mora imati 9 cifara i početi sa 06, ili ostavite polje prazno.");
+      return;
+    }
+
+    if (isPastSlot(manualDate, manualTime)) {
+      setUserMessage("Nije moguće ručno zakazati termin koji je prošao.");
+      return;
+    }
+
+    setIsManualSubmitting(true);
+
+    try {
+      const response = await fetch(`${API}/admin/manual-appointment`, {
+        method: "POST",
+        headers: getAdminJsonHeaders(),
+        body: JSON.stringify({
+          date: manualDate,
+          time: manualTime,
+          client_name: name,
+          client_phone: phone,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Greška pri ručnom zakazivanju termina.");
+      }
+
+      const newAppointment = {
+        id: data.id || `manual-${Date.now()}`,
+        date: manualDate,
+        time: manualTime,
+        client_name: name,
+        client_phone: phone,
+        status: "confirmed",
+        booked_by: "admin",
+      };
+
+      setAdminAppointments((current) => sortAdminAppointments([...current, newAppointment]));
+      setManualClientName("");
+      setManualClientPhone("");
+      setUserMessage(`Termin ${manualDate} u ${manualTime} je ručno zakazan za ${name}.`);
+    } catch (error) {
+      setUserMessage(error.message || "Greška pri ručnom zakazivanju termina.");
+    } finally {
+      setIsManualSubmitting(false);
+    }
   };
 
   const syncUserConfirmedBookings = async () => {
@@ -1666,7 +1730,26 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                         >
                           <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
                           <span style={{ minWidth: 100 }}>{appointment.date}</span>
-                          <span style={{ minWidth: 180 }}>{appointment.client_name}</span>
+                          <span style={{ minWidth: 180, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            {appointment.client_name}
+                            {appointment.booked_by === "admin" && (
+                              <span
+                                style={{
+                                  border: "1px solid #16a34a",
+                                  background: "#ecfdf5",
+                                  color: "#166534",
+                                  WebkitTextFillColor: "#166534",
+                                  borderRadius: 999,
+                                  padding: "2px 8px",
+                                  fontSize: 12,
+                                  fontWeight: 900,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                Zakazao Admin
+                              </span>
+                            )}
+                          </span>
                           <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
                           <span style={{ color: "#71717a", minWidth: 100 }}>
                             {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
@@ -1704,7 +1787,82 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               </div>
             )}
           </section>
-<section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+<section style={{ background: "rgba(236,253,245,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Ručno zakazivanje telefonom</h2>
+            <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
+              Za klijente koji pozovu telefonom: unesite ime, izaberite datum i vrijeme. Termin se odmah upisuje kao potvrđen i u pregledu dobija oznaku “Zakazao Admin”.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontWeight: 800, color: "#111827" }}>Ime i prezime</span>
+                <input
+                  type="text"
+                  value={manualClientName}
+                  onChange={(e) => setManualClientName(e.target.value)}
+                  placeholder="npr. Petar Petrović"
+                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontWeight: 800, color: "#111827" }}>Telefon (opciono)</span>
+                <input
+                  type="tel"
+                  value={manualClientPhone}
+                  onChange={(e) => setManualClientPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                  placeholder="06xxxxxxx"
+                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontWeight: 800, color: "#111827" }}>Datum</span>
+                <input
+                  type="date"
+                  min={todayISO()}
+                  value={manualDate}
+                  onChange={(e) => setManualDate(e.target.value)}
+                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                />
+              </label>
+
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontWeight: 800, color: "#111827" }}>Vrijeme</span>
+                <select
+                  value={manualTime}
+                  onChange={(e) => setManualTime(e.target.value)}
+                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                >
+                  {slots.map((slot) => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <button
+              onClick={handleManualBooking}
+              disabled={isManualSubmitting}
+              style={{
+                marginTop: 18,
+                width: "100%",
+                borderRadius: 16,
+                background: isManualSubmitting ? "#9ca3af" : "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+                color: "white",
+                padding: "13px 16px",
+                fontWeight: 900,
+                border: "none",
+                cursor: isManualSubmitting ? "not-allowed" : "pointer",
+                boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {isManualSubmitting ? "Upisujem termin..." : "Ručno zakaži termin"}
+            </button>
+          </section>
+
+          <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
@@ -2008,20 +2166,19 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
         <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
-			  src={peroImage}
-			  alt="Frizerski salon Pleasure"
-			  style={{
-			    width: "100%",
-			    height: "auto",
-			    maxHeight: "340px",
-			    objectFit: "cover",
-			    objectPosition: "center top",
-			    display: "block",
-			  }}
-			/>
+            src={HERO_IMAGE}
+            alt="Frizerski salon Pleasure"
+            style={{
+              display: "block",
+              width: "100%",
+              height: "clamp(240px, 58vw, 360px)",
+              objectFit: "cover",
+              objectPosition: "center top",
+            }}
+          />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)" }} />
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "white", maxWidth: 430, margin: "0 auto" }}>
-            <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, color: "#fff", textShadow: "0 2px 6px rgba(0,0,0,0.5)", letterSpacing: "-0.04em" }}>
+            <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, letterSpacing: "-0.04em" }}>
               Frizerski salon<br />Pleasure
             </h1>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontWeight: 800, opacity: 0.96 }}>
