@@ -21,7 +21,14 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const EMAIL_TO = process.env.EMAIL_TO;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_IDS?.split(",") || [];
+const TELEGRAM_CHAT_IDS = (
+  process.env.TELEGRAM_CHAT_IDS ||
+  process.env.TELEGRAM_CHAT_ID ||
+  ""
+)
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -81,40 +88,32 @@ db.run(`
 `);
 
 
-async function sendTelegramNotification(message) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_CHAT_IDS.length === 0) {
     console.log("Telegram notifikacije nijesu podešene.");
     return;
   }
 
-  try {
-    for (const chatId of TELEGRAM_CHAT_IDS) {
-      const response = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            parse_mode: "HTML",
-          }),
+  TELEGRAM_CHAT_IDS.forEach((chatId) => {
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "HTML",
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Telegram greška za chat ${chatId}:`, errorText);
         }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Telegram greška:", errorText);
-      }
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Telegram greška:", errorText);
-    }
-  } catch (err) {
-    console.error("Greška pri slanju Telegram notifikacije:", err.message);
-  }
+      })
+      .catch((err) => {
+        console.error(`Greška pri slanju Telegram notifikacije za chat ${chatId}:`, err.message);
+      });
+  });
 }
 
 function requireAdmin(req, res, next) {
@@ -215,6 +214,13 @@ app.get("/", (req, res) => {
   res.send("Backend radi ✅");
 });
 
+
+app.get("/test-telegram", (req, res) => {
+  sendTelegramNotification("✅ Test Telegram notifikacije iz Pleasure backend-a");
+  res.json({ success: true, chat_count: TELEGRAM_CHAT_IDS.length });
+});
+
+
 const adminLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -305,6 +311,8 @@ app.post("/appointments", bookingLimiter, (req, res) => {
                 return res.status(500).json({ error: "Greška pri čuvanju termina." });
               }
 
+              res.json({ id: this.lastID });
+
               const telegramMessage =
                 `✂️ Novi zahtjev za termin\n\n` +
                 `Ime: ${client_name.trim()}\n` +
@@ -314,8 +322,6 @@ app.post("/appointments", bookingLimiter, (req, res) => {
                 `Status: čeka potvrdu admina`;
 
               sendTelegramNotification(telegramMessage);
-
-              res.json({ id: this.lastID });
             }
           );
         }
