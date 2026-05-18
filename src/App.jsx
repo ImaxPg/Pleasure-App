@@ -390,14 +390,30 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         status: "confirmed",
         booked_by: "admin",
         barber_id: manualBarber,
-        barber_name:
-          barberNameMap[manualBarber] || `Frizer ${manualBarber}`,
+        barber_name: getBarberName(manualBarber),
       };
 
       setAdminAppointments((current) => sortAdminAppointments([...current, newAppointment]));
+
+      setAdminPopups((current) => [
+        ...current,
+        {
+          id: `manual-created-${newAppointment.id}`,
+          manualCreated: true,
+          client_name: name,
+          client_phone: phone,
+          date: manualDate,
+          time: manualTime,
+          barber_id: manualBarber,
+          barber_name: getBarberName(manualBarber),
+        },
+      ]);
+
+      playAdminNotificationSound();
+
       setManualClientName("");
       setManualClientPhone("");
-      setUserMessage(`Termin ${manualDate} u ${manualTime} je ručno zakazan za ${name}.`);
+      setUserMessage(`Termin ${manualDate} u ${manualTime} je ručno zakazan za ${name} kod frizera ${getBarberName(manualBarber)}.`);
     } catch (error) {
       setUserMessage(error.message || "Greška pri ručnom zakazivanju termina.");
     } finally {
@@ -473,6 +489,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
                 slot: item.time,
                 clientName: item.client_name,
                 clientPhone: item.client_phone,
+                barber_id: item.barber_id,
+                barber_name: item.barber_name,
               };
             }
 
@@ -525,6 +543,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
                 slot: item.time,
                 clientName: item.client_name,
                 clientPhone: item.client_phone,
+                barber_id: item.barber_id,
+                barber_name: item.barber_name,
               });
             }
 
@@ -533,6 +553,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
                 id: item.id,
                 date: item.date,
                 slot: item.time,
+                barber_id: item.barber_id,
+                barber_name: item.barber_name,
               };
             }
 
@@ -541,6 +563,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
                 id: item.id,
                 date: item.date,
                 slot: item.time,
+                barber_id: item.barber_id,
+                barber_name: item.barber_name,
               };
             }
           });
@@ -1613,23 +1637,48 @@ if (isAdminPage) {
                 }}
               >
                 <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>
-                  {adminPopups[0].adminCancelled
+                  {adminPopups[0].manualCreated
+                    ? "Termin je ručno dodat"
+                    : adminPopups[0].adminCancelled
                     ? "Uspješno ste otkazali termin"
                     : adminPopups[0].cancelled
                     ? "Termin je otkazan"
                     : "Novi zahtjev za termin"}
                 </h2>
-                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
+                {adminPopups[0].manualCreated && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 16, marginBottom: 8 }}>
+                      Frizer <strong>{getBarberName(adminPopups[0])}</strong> je uspješno ručno dodao termin.
+                    </p>
+                    {adminPopups[0].client_name && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Klijent: <strong>{adminPopups[0].client_name}</strong>
+                      </p>
+                    )}
+                    {adminPopups[0].client_phone && (
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>
+                        Telefon: <strong>{adminPopups[0].client_phone}</strong>
+                      </p>
+                    )}
+                    <p style={{ fontSize: 16, marginBottom: 8 }}>
+                      Datum: <strong>{adminPopups[0].date}</strong>
+                    </p>
+                    <p style={{ fontSize: 16, marginBottom: 8 }}>
+                      Vrijeme: <strong>{adminPopups[0].time}</strong>
+                    </p>
+                  </div>
+                )}
+                {!adminPopups[0].manualCreated && !adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                 <p style={{ fontSize: 18, marginBottom: 8 }}>
                   <strong>{adminPopups[0].client_name}</strong>
                 </p>
                 )}
-                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
+                {!adminPopups[0].manualCreated && !adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                 <p style={{ fontSize: 16, marginBottom: 8 }}>
                   Datum: <strong>{adminPopups[0].date}</strong>
                 </p>
                 )}
-                {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
+                {!adminPopups[0].manualCreated && !adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
                   <>
                 <p style={{ fontSize: 16, marginBottom: 16 }}>
                   Vrijeme: <strong>{adminPopups[0].time}</strong>

@@ -189,6 +189,17 @@ function isValidTime(time) {
   return /^([01][0-9]|2[0-3]):(00|30)$/.test(String(time || ""));
 }
 
+function getBarberName(barberId) {
+  const id = Number(barberId) || 1;
+  const barberNameMap = {
+    1: "Pero",
+    2: "Dženo",
+  };
+
+  return barberNameMap[id] || `Frizer ${id}`;
+}
+
+
 function isPastSlot(date, time) {
   return new Date(`${date}T${time}:00`) <= new Date();
 }
@@ -239,8 +250,9 @@ function generateNext7DaysReport(callback) {
           text += `\n${r.date}\n-------------------\n`;
         }
 
+        const barberLabel = ` - ${getBarberName(r.barber_id)}`;
         const adminLabel = r.booked_by === "admin" ? " (Zakazao Admin)" : "";
-        text += `${r.time} - ${r.client_name} - ${r.client_phone || "-"}${adminLabel}\n`;
+        text += `${r.time} - ${r.client_name} - ${r.client_phone || "-"}${barberLabel}${adminLabel}\n`;
       });
 
       callback(null, text);
@@ -354,12 +366,7 @@ app.post("/appointments", bookingLimiter, (req, res) => {
 
               res.json({ id: this.lastID });
 
-              const barberNameMap = {
-                1: "Pero",
-                2: "Dženo",
-              };
-
-              const barberName = barberNameMap[selectedBarberId] || `Frizer ${selectedBarberId}`;
+              const barberName = getBarberName(selectedBarberId);
 
               const telegramMessage =
                 `✂️ Novi zahtjev za termin\n\n` +
@@ -383,10 +390,15 @@ app.get("/appointments", (req, res) => {
   const { date, barber_id } = req.query;
 
   const params = [date];
-  let sql = "SELECT * FROM appointments WHERE date = ?";
+  let sql = `
+    SELECT appointments.*, barbers.name AS barber_name
+    FROM appointments
+    LEFT JOIN barbers ON appointments.barber_id = barbers.id
+    WHERE date = ?
+  `;
 
   if (barber_id) {
-    sql += " AND barber_id = ?";
+    sql += " AND appointments.barber_id = ?";
     params.push(Number(barber_id));
   }
 
@@ -571,7 +583,24 @@ app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
             return res.status(500).json({ error: "Greška pri ručnom zakazivanju." });
           }
 
-          res.json({ id: this.lastID });
+          const barberName = getBarberName(selectedBarberId);
+
+          res.json({
+            id: this.lastID,
+            barber_id: selectedBarberId,
+            barber_name: barberName,
+          });
+
+          const telegramMessage =
+            `✂️ Ručno dodat termin\n\n` +
+            `Frizer: ${barberName}\n` +
+            `Ime: ${client_name.trim()}\n` +
+            `Telefon: ${client_phone.trim() || "-"}\n` +
+            `Datum: ${date}\n` +
+            `Vrijeme: ${time}\n\n` +
+            `Status: potvrđen`;
+
+          sendTelegramNotification(telegramMessage);
         }
       );
     }
@@ -612,7 +641,9 @@ app.get("/appointments/my-booking", (req, res) => {
 
   db.all(
     `
-    SELECT * FROM appointments
+    SELECT appointments.*, barbers.name AS barber_name
+    FROM appointments
+    LEFT JOIN barbers ON appointments.barber_id = barbers.id
     WHERE client_phone = ?
     AND status = 'confirmed'
     AND datetime(date || 'T' || time) > datetime('now')
