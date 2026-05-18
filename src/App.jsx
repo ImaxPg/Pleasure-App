@@ -130,6 +130,11 @@ const [selectedSlot, setSelectedSlot] = useState("");
   },
 ];
 
+const barberNameMap = {
+  1: "Pero",
+  2: "Dženo",
+};
+
 const userDateCards = useMemo(() => {
   const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
   return Array.from({ length: 21 }, (_, index) => {
@@ -353,6 +358,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
           time: manualTime,
           client_name: name,
           client_phone: phone,
+          barber_id: manualBarber,
         }),
       });
 
@@ -370,14 +376,10 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         client_phone: phone,
         status: "confirmed",
         booked_by: "admin",
-      barber_id: selectedBarber,
-            barber_name:
-            selectedBarber === 1
-              ? "Pero"
-              : selectedBarber === 2
-              ? "Dženo"
-              : `Frizer ${selectedBarber}`,
-          };
+        barber_id: manualBarber,
+        barber_name:
+          barberNameMap[manualBarber] || `Frizer ${manualBarber}`,
+      };
 
       setAdminAppointments((current) => sortAdminAppointments([...current, newAppointment]));
       setManualClientName("");
@@ -748,6 +750,8 @@ const getBarberColor = (appointment) => {
     return [
       appointment.client_name,
       appointment.client_phone,
+      appointment.barber_name,
+      barberNameMap[appointment.barber_id],
       appointment.date,
       appointment.time,
       appointment.status,
@@ -2154,7 +2158,7 @@ if (isAdminPage) {
               {slots.map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
-                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot);
+                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot, blockBarber);
                 const manuallyOpenNow = Boolean(overrideOpen[key(selectedDate, slot)]);
 
                 return (
@@ -2953,7 +2957,7 @@ if (isAdminPage) {
 
                     try {
                       const response = await fetch(
-                        `${API_BASE}/appointments/${trackedBooking.id}/user-cancel`,
+                        `${API}/appointments/${trackedBooking.id}/user-cancel`,
                         {
                           method: "DELETE",
                           headers: {
