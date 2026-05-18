@@ -298,7 +298,7 @@ if (!expectedPassword) {
   return res.status(500).json({ error: "Admin lozinka nije podešena za ovog frizera." });
 }
 
-  const expectedPassword = barberPasswordMap[selectedBarberId] || ADMIN_PASSWORD;
+  
 
   if (password === expectedPassword) {
     const token = jwt.sign(
