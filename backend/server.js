@@ -167,11 +167,15 @@ function requireAdmin(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   try {
-    jwt.verify(token, JWT_SECRET);
+    req.admin = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
     return res.status(401).json({ error: "Token nije validan ili je istekao" });
   }
+}
+
+function getAdminBarberId(req) {
+  return Number(req.admin?.barber_id || req.body?.barber_id || req.query?.barber_id || 1) || 1;
 }
 
 function todayISO() {
@@ -279,11 +283,32 @@ const adminLoginLimiter = rateLimit({
 });
 
 app.post("/admin/login", adminLoginLimiter, (req, res) => {
-  const { password } = req.body;
+  const { password, barber_id = 1 } = req.body;
+  const selectedBarberId = Number(barber_id) || 1;
 
-  if (password === ADMIN_PASSWORD) {
-    const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "14h" });
-    return res.json({ token });
+  const barberPasswordMap = {
+    1: process.env.ADMIN_PASSWORD_PERO || ADMIN_PASSWORD,
+    2: process.env.ADMIN_PASSWORD_DZENO || ADMIN_PASSWORD,
+  };
+
+  const expectedPassword = barberPasswordMap[selectedBarberId] || ADMIN_PASSWORD;
+
+  if (password === expectedPassword) {
+    const token = jwt.sign(
+      {
+        role: "admin",
+        barber_id: selectedBarberId,
+        barber_name: getBarberName(selectedBarberId),
+      },
+      JWT_SECRET,
+      { expiresIn: "14h" }
+    );
+
+    return res.json({
+      token,
+      barber_id: selectedBarberId,
+      barber_name: getBarberName(selectedBarberId),
+    });
   }
 
   res.status(401).json({ error: "Pogrešna lozinka" });
@@ -409,31 +434,53 @@ app.get("/appointments", (req, res) => {
 });
 
 app.post("/appointments/:id/approve", requireAdmin, (req, res) => {
-  db.run("UPDATE appointments SET status = 'confirmed' WHERE id = ?", [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: "Greška pri potvrdi termina" });
-    res.json({ success: true });
-  });
+  const selectedBarberId = getAdminBarberId(req);
+
+  db.run(
+    "UPDATE appointments SET status = 'confirmed' WHERE id = ? AND barber_id = ?",
+    [req.params.id, selectedBarberId],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Greška pri potvrdi termina" });
+      if (this.changes === 0) return res.status(404).json({ error: "Termin nije pronađen za ovog frizera" });
+      res.json({ success: true });
+    }
+  );
 });
 
 app.post("/appointments/:id/reject", requireAdmin, (req, res) => {
-  db.run("UPDATE appointments SET status = 'rejected' WHERE id = ?", [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: "Greška pri odbijanju termina" });
-    res.json({ success: true });
-  });
+  const selectedBarberId = getAdminBarberId(req);
+
+  db.run(
+    "UPDATE appointments SET status = 'rejected' WHERE id = ? AND barber_id = ?",
+    [req.params.id, selectedBarberId],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Greška pri odbijanju termina" });
+      if (this.changes === 0) return res.status(404).json({ error: "Termin nije pronađen za ovog frizera" });
+      res.json({ success: true });
+    }
+  );
 });
 
 app.delete("/appointments/:id", requireAdmin, (req, res) => {
-  db.run("DELETE FROM appointments WHERE id = ?", [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: "Greška pri otkazivanju termina" });
-    res.json({ success: true });
-  });
+  const selectedBarberId = getAdminBarberId(req);
+
+  db.run(
+    "DELETE FROM appointments WHERE id = ? AND barber_id = ?",
+    [req.params.id, selectedBarberId],
+    function (err) {
+      if (err) return res.status(500).json({ error: "Greška pri otkazivanju termina" });
+      if (this.changes === 0) return res.status(404).json({ error: "Termin nije pronađen za ovog frizera" });
+      res.json({ success: true });
+    }
+  );
 });
 
 app.get("/admin/appointments", requireAdmin, (req, res) => {
   const { filter = "all", search = "" } = req.query;
+  const selectedBarberId = getAdminBarberId(req);
 
-  const where = [];
-  const params = [];
+  const where = ["appointments.barber_id = ?"];
+  const params = [selectedBarberId];
 
   if (filter === "all") {
     where.push("status != 'expired'");
@@ -481,8 +528,8 @@ app.get("/admin/appointments", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/block-slot", requireAdmin, (req, res) => {
-  const { date, time, barber_id = 1 } = req.body;
-  const selectedBarberId = Number(barber_id) || 1;
+  const { date, time } = req.body;
+  const selectedBarberId = getAdminBarberId(req);
 
   if (!date || !time) {
     return res.status(400).json({ error: "Datum i vrijeme su obavezni." });
@@ -510,8 +557,8 @@ app.post("/admin/block-slot", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/open-slot", requireAdmin, (req, res) => {
-  const { date, time, barber_id = 1 } = req.body;
-  const selectedBarberId = Number(barber_id) || 1;
+  const { date, time } = req.body;
+  const selectedBarberId = getAdminBarberId(req);
 
   if (!date || !time) {
     return res.status(400).json({ error: "Datum i vrijeme su obavezni." });
@@ -532,8 +579,8 @@ app.post("/admin/open-slot", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
-  const { date, time, client_name, client_phone = "", barber_id = 1 } = req.body;
-  const selectedBarberId = Number(barber_id) || 1;
+  const { date, time, client_name, client_phone = "" } = req.body;
+  const selectedBarberId = getAdminBarberId(req);
 
   if (!date || !time || !client_name) {
     return res.status(400).json({ error: "Datum, vrijeme i ime su obavezni." });
@@ -587,6 +634,12 @@ app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
 
           res.json({
             id: this.lastID,
+            date,
+            time,
+            client_name: client_name.trim(),
+            client_phone: client_phone.trim(),
+            status: "confirmed",
+            booked_by: "admin",
             barber_id: selectedBarberId,
             barber_name: barberName,
           });
