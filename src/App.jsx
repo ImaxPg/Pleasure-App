@@ -135,6 +135,19 @@ const barberNameMap = {
   2: "Dženo",
 };
 
+const getBarberName = (appointmentOrId) => {
+  const id =
+    typeof appointmentOrId === "object"
+      ? Number(appointmentOrId?.barber_id || appointmentOrId?.barberId || 1)
+      : Number(appointmentOrId || 1);
+
+  if (typeof appointmentOrId === "object" && appointmentOrId?.barber_name) {
+    return appointmentOrId.barber_name;
+  }
+
+  return barberNameMap[id] || `Frizer ${id || 1}`;
+};
+
 const userDateCards = useMemo(() => {
   const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
   return Array.from({ length: 21 }, (_, index) => {
@@ -686,16 +699,21 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 
   const sortAdminAppointments = (items) => {
     return [...items].sort((a, b) => {
-      const aStatus = normalizeStatus(a.status);
-      const bStatus = normalizeStatus(b.status);
+      const aStatus = normalizeStatus(a?.status);
+      const bStatus = normalizeStatus(b?.status);
 
       // 1. Svi pending zahtjevi uvijek idu na vrh
       if (aStatus === "pending" && bStatus !== "pending") return -1;
       if (aStatus !== "pending" && bStatus === "pending") return 1;
 
       // 2. Unutar iste grupe sortiramo po datumu, pa po vremenu
-      if (a.date !== b.date) return a.date.localeCompare(b.date);
-      return a.time.localeCompare(b.time);
+      const aDate = String(a?.date || "");
+      const bDate = String(b?.date || "");
+      const aTime = String(a?.time || "");
+      const bTime = String(b?.time || "");
+
+      if (aDate !== bDate) return aDate.localeCompare(bDate);
+      return aTime.localeCompare(bTime);
     });
   };
 
@@ -712,7 +730,10 @@ const getBarberColor = (appointment) => {
 };
 
   const isPastAppointment = (appointment) => {
-    return new Date(`${appointment.date}T${appointment.time}:00`) <= new Date();
+    if (!appointment?.date || !appointment?.time) return false;
+    const parsed = new Date(`${appointment.date}T${appointment.time}:00`);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return parsed <= new Date();
   };
 
   const adminQuickFilters = [
@@ -731,10 +752,10 @@ const getBarberColor = (appointment) => {
     const status = normalizeStatus(appointment.status);
 
     if (adminQuickFilter === "all") return true;
-    if (adminQuickFilter === "today") return appointment.date === todayISO();
-    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
+    if (adminQuickFilter === "today") return String(appointment?.date || "") === todayISO();
+    if (adminQuickFilter === "tomorrow") return String(appointment?.date || "") === addDaysISO(1);
     if (adminQuickFilter === "week") {
-      return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+      return String(appointment?.date || "") >= todayISO() && String(appointment?.date || "") <= addDaysISO(7);
     }
     if (adminQuickFilter === "archive") {
       return status === "confirmed" && isPastAppointment(appointment);
@@ -790,33 +811,35 @@ const getBarberColor = (appointment) => {
     if (["pending", "blocked", "open"].includes(status)) return false;
 
     if (adminQuickFilter === "archive") {
-      return status === "confirmed" && isPastAppointment(appointment) && appointment.date === adminFilterDate;
+      return status === "confirmed" && isPastAppointment(appointment) && String(appointment?.date || "") === adminFilterDate;
     }
 
     if (status !== "confirmed" || isPastAppointment(appointment)) return false;
 
-    if (adminQuickFilter === "today") return appointment.date === todayISO();
-    if (adminQuickFilter === "tomorrow") return appointment.date === addDaysISO(1);
-    if (adminQuickFilter === "week") return appointment.date >= todayISO() && appointment.date <= addDaysISO(7);
+    if (adminQuickFilter === "today") return String(appointment?.date || "") === todayISO();
+    if (adminQuickFilter === "tomorrow") return String(appointment?.date || "") === addDaysISO(1);
+    if (adminQuickFilter === "week") return String(appointment?.date || "") >= todayISO() && String(appointment?.date || "") <= addDaysISO(7);
 
     if (adminQuickFilter === "all" || adminQuickFilter === "confirmed") {
-      return appointment.date >= todayISO();
+      return String(appointment?.date || "") >= todayISO();
     }
 
-    return appointment.date === adminFilterDate;
+    return String(appointment?.date || "") === adminFilterDate;
   });
 
   const overviewGroupedByDate = overviewAppointments.reduce((groups, appointment) => {
-    if (!groups[appointment.date]) groups[appointment.date] = [];
-    groups[appointment.date].push(appointment);
+    const dateKey = String(appointment?.date || "");
+    if (!dateKey) return groups;
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(appointment);
     return groups;
   }, {});
 
   const overviewDates = Object.keys(overviewGroupedByDate).sort();
   const isOverviewRangeMode = ["all", "today", "tomorrow", "week", "confirmed"].includes(adminQuickFilter);
 
-  const todayAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === todayISO());
-  const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => appointment.date === adminFilterDate);
+  const todayAppointments = displayedAdminAppointments.filter((appointment) => String(appointment?.date || "") === todayISO());
+  const selectedDayAllAppointments = displayedAdminAppointments.filter((appointment) => String(appointment?.date || "") === adminFilterDate);
 
   const stats = {
     pending: adminAppointments.filter((a) => normalizeStatus(a.status) === "pending" && !isPastAppointment(a)).length,
@@ -1480,7 +1503,10 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
   };
 
   const getDayBorder = (date) => {
-    const day = new Date(date).getDay();
+    if (!date) return "#e5e7eb";
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return "#e5e7eb";
+    const day = parsed.getDay();
     return dayBorderMap[day] || "#e5e7eb";
   };
 
@@ -1609,7 +1635,7 @@ if (isAdminPage) {
                   Vrijeme: <strong>{adminPopups[0].time}</strong>
                 </p>
                 <p style={{ fontSize: 16, marginBottom: 16 }}>
-      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+      Frizer: <strong>{getBarberName(adminPopups[0])}</strong>
     </p>
   </>
                 )}
@@ -1635,7 +1661,7 @@ if (isAdminPage) {
     </p>
 
     <p style={{ fontSize: 16, marginBottom: 16 }}>
-      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+      Frizer: <strong>{getBarberName(adminPopups[0])}</strong>
     </p>
   </>
 )}
@@ -1657,7 +1683,7 @@ if (isAdminPage) {
                         Vrijeme: <strong>{adminPopups[0].time}</strong>
                       </p>
                       <p style={{ fontSize: 16, marginBottom: 16 }}>
-      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+      Frizer: <strong>{getBarberName(adminPopups[0])}</strong>
     </p>
   </>
 )}
@@ -1755,7 +1781,7 @@ if (isAdminPage) {
                           </span>
 
                           <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
-                            {" "}· {appointment.barber_name || barberNameMap[appointment.barber_id || 1] || `Frizer ${appointment.barber_id || 1}`}
+                            {" "}· {getBarberName(appointment)}
                           </span>
                         </>
                       )}
@@ -1935,7 +1961,7 @@ if (isAdminPage) {
                           <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
                           
                           <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
-                            {appointment.barber_name || barberNameMap[appointment.barber_id || 1] || `Frizer ${appointment.barber_id || 1}`}
+                            {getBarberName(appointment)}
                           </span>
                           <span style={{ color: "#71717a", minWidth: 100 }}>
                             {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
@@ -2930,9 +2956,7 @@ if (isAdminPage) {
                     marginBottom: 6,
                   }}
                 >
-                  {trackedBooking.barber_name ||
-                    barberNameMap[trackedBooking.barber_id || 1] ||
-                    `Frizer ${trackedBooking.barber_id || 1}`}
+                  {getBarberName(trackedBooking)}
                 </div>
 
                 <div
