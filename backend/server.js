@@ -287,9 +287,16 @@ app.post("/admin/login", adminLoginLimiter, (req, res) => {
   const selectedBarberId = Number(barber_id) || 1;
 
   const barberPasswordMap = {
-    1: process.env.ADMIN_PASSWORD_PERO || ADMIN_PASSWORD,
-    2: process.env.ADMIN_PASSWORD_DZENO || ADMIN_PASSWORD,
-  };
+  1: process.env.ADMIN_PASSWORD_PERO,
+  2: process.env.ADMIN_PASSWORD_DZENO,
+};
+
+
+const expectedPassword = barberPasswordMap[selectedBarberId];
+
+if (!expectedPassword) {
+  return res.status(500).json({ error: "Admin lozinka nije podešena za ovog frizera." });
+}
 
   const expectedPassword = barberPasswordMap[selectedBarberId] || ADMIN_PASSWORD;
 
