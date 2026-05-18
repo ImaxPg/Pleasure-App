@@ -107,19 +107,20 @@ if (typeof document !== "undefined") {
   }
 }
 
+const ADMIN_BARBER_ROUTES = {
+  "/admin-pero-081": 1,
+  "/admin-dzeno-081": 2,
+};
+
+
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
   const [selectedColorTheme, setSelectedColorTheme] = useState(() => localStorage.getItem("pleasureColorTheme") || "green");
   const theme = COLOR_THEMES[selectedColorTheme] || COLOR_THEMES.green;
 
-  const pathname = window.location.pathname;
-
-const isPeroAdmin = pathname.startsWith("/admin-pero-081");
-const isDzenoAdmin = pathname.startsWith("/admin-dzeno-081");
-
-const isAdminPage = isPeroAdmin || isDzenoAdmin;
-
-const fixedAdminBarberId = isPeroAdmin ? 1 : isDzenoAdmin ? 2 : null;
+  const pathname = window.location.pathname.replace(/\/$/, "");
+  const fixedAdminBarberId = ADMIN_BARBER_ROUTES[pathname] || null;
+  const isAdminPage = Boolean(fixedAdminBarberId);
 const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
   const [selectedBarber, setSelectedBarber] = useState(fixedAdminBarberId || 1);
@@ -282,7 +283,14 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
 
   const [manualBarber, setManualBarber] = useState(fixedAdminBarberId || 1);
-const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
+  const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
+
+  useEffect(() => {
+    if (!fixedAdminBarberId) return;
+    setSelectedBarber(fixedAdminBarberId);
+    setManualBarber(fixedAdminBarberId);
+    setBlockBarber(fixedAdminBarberId);
+  }, [fixedAdminBarberId]);
 
   useEffect(() => {
     if (adminQuickFilter === "today") {
@@ -321,9 +329,9 @@ const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-  password: adminPasswordInput,
-  barber_id: fixedAdminBarberId || 1,
-}),
+          password: adminPasswordInput,
+          barber_id: fixedAdminBarberId,
+        }),
       });
 
       if (!response.ok) {
@@ -358,6 +366,8 @@ const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
   const handleManualBooking = async () => {
     const name = manualClientName.trim();
     const phone = manualClientPhone.replace(/\D/g, "").trim();
+    const selectedManualBarber = fixedAdminBarberId || manualBarber || 1;
+    const selectedManualBarberName = getBarberName(selectedManualBarber);
 
     if (!manualDate || !manualTime || !name) {
       setUserMessage("Unesite datum, vrijeme i ime klijenta za ručno zakazivanje.");
@@ -385,7 +395,7 @@ const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
           time: manualTime,
           client_name: name,
           client_phone: phone,
-          barber_id: manualBarber,
+          barber_id: selectedManualBarber,
         }),
       });
 
@@ -397,14 +407,14 @@ const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
 
       const newAppointment = {
         id: data.id || `manual-${Date.now()}`,
-        date: manualDate,
-        time: manualTime,
-        client_name: name,
-        client_phone: phone,
-        status: "confirmed",
-        booked_by: "admin",
-        barber_id: manualBarber,
-        barber_name: getBarberName(manualBarber),
+        date: data.date || manualDate,
+        time: data.time || manualTime,
+        client_name: data.client_name || name,
+        client_phone: data.client_phone || phone,
+        status: data.status || "confirmed",
+        booked_by: data.booked_by || "admin",
+        barber_id: Number(data.barber_id || selectedManualBarber),
+        barber_name: data.barber_name || selectedManualBarberName,
       };
 
       setAdminAppointments((current) => sortAdminAppointments([...current, newAppointment]));
@@ -414,20 +424,21 @@ const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
         {
           id: `manual-created-${newAppointment.id}`,
           manualCreated: true,
-          client_name: name,
-          client_phone: phone,
-          date: manualDate,
-          time: manualTime,
-          barber_id: manualBarber,
-          barber_name: getBarberName(manualBarber),
+          client_name: newAppointment.client_name,
+          client_phone: newAppointment.client_phone,
+          date: newAppointment.date,
+          time: newAppointment.time,
+          barber_id: newAppointment.barber_id,
+          barber_name: newAppointment.barber_name,
         },
       ]);
 
       playAdminNotificationSound();
-
       setManualClientName("");
       setManualClientPhone("");
-      setUserMessage(`Termin ${manualDate} u ${manualTime} je ručno zakazan za ${name} kod frizera ${getBarberName(manualBarber)}.`);
+      setUserMessage(
+        `Termin ${newAppointment.date} u ${newAppointment.time} je ručno zakazan za ${newAppointment.client_name} kod frizera ${newAppointment.barber_name}.`
+      );
     } catch (error) {
       setUserMessage(error.message || "Greška pri ručnom zakazivanju termina.");
     } finally {
@@ -943,7 +954,7 @@ const getBarberColor = (appointment) => {
   };
 
   const getActiveBarberForSchedule = () => {
-    if (isAdminPage) return blockBarber || selectedBarber || 1;
+    if (isAdminPage) return fixedAdminBarberId || blockBarber || selectedBarber || 1;
     return selectedBarber || 1;
   };
 
@@ -1135,12 +1146,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
               client_name: clientName,
               client_phone: clientPhone.trim(),
               barber_id: selectedBarber,
-              barber_name:
-                selectedBarber === 1
-                  ? "Pero"
-                  : selectedBarber === 2
-                  ? "Dženo"
-                  : `Frizer ${selectedBarber}`,
+              barber_name: getBarberName(selectedBarber),
               status: "pending",
             });
           },
@@ -1329,12 +1335,12 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
     }
 
     // ako je neradni termin -> klik ga otključava (override)
-    if (isNonWorkingSlot(date, slot, blockBarber)) {
+    if (isNonWorkingSlot(date, slot, fixedAdminBarberId || blockBarber)) {
       try {
         const response = await fetch(`${API}/admin/open-slot`, {
           method: "POST",
           headers: getAdminJsonHeaders(),
-          body: JSON.stringify({ date, time: slot, barber_id: blockBarber }),
+          body: JSON.stringify({ date, time: slot, barber_id: fixedAdminBarberId || blockBarber }),
         });
 
         if (!response.ok) throw new Error("Greška pri ručnom otvaranju termina.");
@@ -1391,7 +1397,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
       const response = await fetch(`${API}/admin/block-slot`, {
         method: "POST",
         headers: getAdminJsonHeaders(),
-        body: JSON.stringify({ date, time: slot, barber_id: blockBarber }),
+        body: JSON.stringify({ date, time: slot, barber_id: fixedAdminBarberId || blockBarber }),
       });
 
       if (!response.ok) throw new Error("Greška pri blokiranju termina.");
@@ -1420,14 +1426,14 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
       for (const slot of slots) {
         const slotKey = key(selectedDate, slot);
 
-        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot) || isNonWorkingSlot(selectedDate, slot, blockBarber)) {
+        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot) || isNonWorkingSlot(selectedDate, slot, fixedAdminBarberId || blockBarber)) {
           continue;
         }
 
         const response = await fetch(`${API}/admin/block-slot`, {
           method: "POST",
           headers: getAdminJsonHeaders(),
-          body: JSON.stringify({ date: selectedDate, time: slot, barber_id: blockBarber }),
+          body: JSON.stringify({ date: selectedDate, time: slot, barber_id: fixedAdminBarberId || blockBarber }),
         });
 
         if (!response.ok) {
@@ -1800,7 +1806,7 @@ if (isAdminPage) {
                   ...(isBackendOnline ? pulseStyle : {}),
                 }}
               />
-              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: "#111827", fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.15, WebkitTextFillColor: "#111827" }}>Admin stranica</h1>
+              <h1 className="text-3xl md:text-4xl font-bold" style={{ color: "#111827", fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.15, WebkitTextFillColor: "#111827" }}>Admin stranica · {getBarberName(fixedAdminBarberId)}</h1>
             </div>
             <p className="text-zinc-600">
               Pregled svih zahtjeva i zakazanih termina, poređanih po datumu i vremenu.
@@ -2259,7 +2265,7 @@ if (isAdminPage) {
               {slots.map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
-                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot, blockBarber);
+                const nonWorkingNow = isNonWorkingSlot(selectedDate, slot, fixedAdminBarberId || blockBarber);
                 const manuallyOpenNow = Boolean(overrideOpen[key(selectedDate, slot)]);
 
                 return (
