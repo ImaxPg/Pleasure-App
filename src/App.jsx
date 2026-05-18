@@ -772,7 +772,7 @@ const getBarberColor = (appointment) => {
       appointment.client_name,
       appointment.client_phone,
       appointment.barber_name,
-      barberNameMap[appointment.barber_id],
+      getBarberName(appointment),
       appointment.date,
       appointment.time,
       appointment.status,
