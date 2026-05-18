@@ -111,11 +111,19 @@ export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
   const [selectedColorTheme, setSelectedColorTheme] = useState(() => localStorage.getItem("pleasureColorTheme") || "green");
   const theme = COLOR_THEMES[selectedColorTheme] || COLOR_THEMES.green;
+
+  const pathname = window.location.pathname;
+
+const isPeroAdmin = pathname.startsWith("/admin-pero-081");
+const isDzenoAdmin = pathname.startsWith("/admin-dzeno-081");
+
+const isAdminPage = isPeroAdmin || isDzenoAdmin;
+
+const fixedAdminBarberId = isPeroAdmin ? 1 : isDzenoAdmin ? 2 : null;
 const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
-  const [selectedBarber, setSelectedBarber] = useState(1);
-  const [manualBarber, setManualBarber] = useState(1);
-  const [blockBarber, setBlockBarber] = useState(1);
+  const [selectedBarber, setSelectedBarber] = useState(fixedAdminBarberId || 1);
+
 
   const barbers = [
   {
@@ -244,7 +252,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       // Zvuk nije presudan za rad aplikacije.
     }
   };
-  const isAdminPage = window.location.pathname.startsWith("/admin-pero-081");
+  
 
   useEffect(() => {
     if (isAdminPage || !userMessage) return;
@@ -272,6 +280,9 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [manualClientPhone, setManualClientPhone] = useState("");
   const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [isAdminAuth, setIsAdminAuth] = useState(() => Boolean(sessionStorage.getItem("adminToken")));
+
+  const [manualBarber, setManualBarber] = useState(fixedAdminBarberId || 1);
+const [blockBarber, setBlockBarber] = useState(fixedAdminBarberId || 1);
 
   useEffect(() => {
     if (adminQuickFilter === "today") {
@@ -309,7 +320,10 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password: adminPasswordInput }),
+        body: JSON.stringify({
+  password: adminPasswordInput,
+  barber_id: fixedAdminBarberId || 1,
+}),
       });
 
       if (!response.ok) {
@@ -2099,19 +2113,7 @@ if (isAdminPage) {
                 </select>
               </div>
 
-              <div className="manual-booking-field">
-                <label>Frizer</label>
-                <select
-                  value={manualBarber}
-                  onChange={(e) => setManualBarber(Number(e.target.value))}
-                >
-                  {barbers.map((barber) => (
-                    <option key={barber.id} value={barber.id}>
-                      {barber.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              
             </div>
             <button
               onClick={handleManualBooking}
@@ -2137,27 +2139,51 @@ if (isAdminPage) {
           <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
-              <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>
-                Frizer
-              </span>
-              <select
-                value={blockBarber}
-                onChange={(e) => {
-                  const nextBarber = Number(e.target.value);
-                  setBlockBarber(nextBarber);
-                  setSelectedBarber(nextBarber);
-                  setUserMessage("");
-                }}
-                style={{ flex: 1, border: "none", outline: "none", fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 34 }}
-              >
-                {barbers.map((barber) => (
-                  <option key={barber.id} value={barber.id}>
-                    {barber.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <label
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    padding: "10px 12px",
+    background: "white",
+    marginBottom: 16,
+  }}
+>
+  <span
+    style={{
+      minWidth: 120,
+      fontWeight: 700,
+      fontSize: 16,
+      color: "#111827",
+      WebkitTextFillColor: "#111827",
+    }}
+  >
+    Frizer
+  </span>
+
+  <select
+    value={blockBarber}
+    onChange={(e) => setBlockBarber(Number(e.target.value))}
+    style={{
+      flex: 1,
+      border: "none",
+      outline: "none",
+      fontSize: 16,
+      background: "transparent",
+      color: "#111827",
+      WebkitTextFillColor: "#111827",
+      fontWeight: 700,
+    }}
+  >
+    {barbers.map((barber) => (
+      <option key={barber.id} value={barber.id}>
+        {barber.name}
+      </option>
+    ))}
+  </select>
+</label>
 
 
 
