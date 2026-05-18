@@ -1,3 +1,4 @@
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const BOOKING_PIN = process.env.BOOKING_PIN;
 const rateLimit = require("express-rate-limit");
@@ -45,6 +46,8 @@ const transporter = nodemailer.createTransport({
 const allowedOrigins = [
   "https://pleasure-app.vercel.app",
   "https://perofrizer.me",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
 ];
 
 app.use(
@@ -63,29 +66,66 @@ app.use(express.json());
 
 const db = new sqlite3.Database("./database.db");
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS appointments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
-    time TEXT,
-    client_name TEXT,
-    client_phone TEXT,
-    status TEXT
-  )
-`);
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT,
+      time TEXT,
+      client_name TEXT,
+      client_phone TEXT,
+      status TEXT,
+      barber_id INTEGER DEFAULT 1
+    )
+  `);
 
-db.run(
-  `ALTER TABLE appointments ADD COLUMN booked_by TEXT DEFAULT 'user'`,
-  (err) => {
-    if (err && !String(err.message).includes("duplicate column name")) {
-      console.error("Greška pri dodavanju booked_by kolone:", err.message);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS barbers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      active INTEGER DEFAULT 1
+    )
+  `);
+
+  db.run(`
+  INSERT OR IGNORE INTO barbers (id, name, active)
+  VALUES 
+    (1, 'Pero', 1),
+    (2, 'Dženo', 1)
+`, () => {
+  db.run(`UPDATE barbers SET name = 'Pero' WHERE id = 1`);
+  db.run(`UPDATE barbers SET name = 'Dženo' WHERE id = 2`);
+});
+
+  db.run(
+    `ALTER TABLE appointments ADD COLUMN barber_id INTEGER DEFAULT 1`,
+    (err) => {
+      if (err && !String(err.message).includes("duplicate column name")) {
+        console.error("Greška pri dodavanju barber_id kolone:", err.message);
+      }
     }
-  }
-);
+  );
 
+  db.run(
+    `ALTER TABLE appointments ADD COLUMN booked_by TEXT DEFAULT 'user'`,
+    (err) => {
+      if (err && !String(err.message).includes("duplicate column name")) {
+        console.error("Greška pri dodavanju booked_by kolone:", err.message);
+      }
+    }
+  );
+
+  db.run(`DROP INDEX IF EXISTS unique_active_slot`);
+
+  db.run(`
+    CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot_barber
+    ON appointments(date, time, barber_id)
+    WHERE status IN ('pending', 'confirmed', 'blocked')
+  `);
+});
 db.run(`
-  CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot
-  ON appointments(date, time)
+  CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot_barber
+  ON appointments(date, time, barber_id)
   WHERE status IN ('pending', 'confirmed', 'blocked')
 `);
 
@@ -238,7 +278,8 @@ app.post("/admin/login", adminLoginLimiter, (req, res) => {
 });
 
 app.post("/appointments", bookingLimiter, (req, res) => {
-  const { date, time, client_name, client_phone, booking_pin } = req.body;
+  const { date, time, client_name, client_phone, booking_pin, barber_id = 1 } = req.body;
+  const selectedBarberId = Number(barber_id) || 1;
 
   if (!date || !time || !client_name || !client_phone) {
     return res.status(400).json({ error: "Nedostaju podaci za zakazivanje." });
@@ -264,10 +305,11 @@ app.post("/appointments", bookingLimiter, (req, res) => {
     `
     SELECT * FROM appointments
     WHERE date = ?
-    AND time = ?
-    AND status IN ('pending', 'confirmed', 'blocked')
+      AND time = ?
+      AND barber_id = ?
+      AND status IN ('pending', 'confirmed', 'blocked')
     `,
-    [date, time],
+    [date, time, selectedBarberId],
     (err, takenSlot) => {
       if (err) return res.status(500).json({ error: "Greška pri provjeri termina." });
 
@@ -295,10 +337,10 @@ app.post("/appointments", bookingLimiter, (req, res) => {
           db.run(
             `
             INSERT INTO appointments 
-            (date, time, client_name, client_phone, status, booked_by)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (date, time, client_name, client_phone, status, booked_by, barber_id)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
             `,
-            [date, time, client_name.trim(), client_phone.trim(), "pending", "user"],
+            [date, time, client_name.trim(), client_phone.trim(), "pending", "user", selectedBarberId],
             function (err) {
               if (err) {
                 if (err.code === "SQLITE_CONSTRAINT") {
@@ -312,8 +354,16 @@ app.post("/appointments", bookingLimiter, (req, res) => {
 
               res.json({ id: this.lastID });
 
+              const barberNameMap = {
+                1: "Pero",
+                2: "Dženo",
+              };
+
+              const barberName = barberNameMap[selectedBarberId] || `Frizer ${selectedBarberId}`;
+
               const telegramMessage =
                 `✂️ Novi zahtjev za termin\n\n` +
+                `Frizer: ${barberName}\n` +
                 `Ime: ${client_name.trim()}\n` +
                 `Telefon: ${client_phone.trim()}\n` +
                 `Datum: ${date}\n` +
@@ -330,9 +380,17 @@ app.post("/appointments", bookingLimiter, (req, res) => {
 });
 
 app.get("/appointments", (req, res) => {
-  const { date } = req.query;
+  const { date, barber_id } = req.query;
 
-  db.all("SELECT * FROM appointments WHERE date = ?", [date], (err, rows) => {
+  const params = [date];
+  let sql = "SELECT * FROM appointments WHERE date = ?";
+
+  if (barber_id) {
+    sql += " AND barber_id = ?";
+    params.push(Number(barber_id));
+  }
+
+  db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: "Greška pri čitanju baze" });
     res.json(rows);
   });
@@ -393,11 +451,12 @@ app.get("/admin/appointments", requireAdmin, (req, res) => {
   }
 
   const sql = `
-    SELECT *
-    FROM appointments
-    ${where.length ? "WHERE " + where.join(" AND ") : ""}
-    ORDER BY date ASC, time ASC
-  `;
+  SELECT appointments.*, barbers.name AS barber_name
+  FROM appointments
+  LEFT JOIN barbers ON appointments.barber_id = barbers.id
+  ${where.length ? "WHERE " + where.join(" AND ") : ""}
+  ORDER BY appointments.date ASC, appointments.time ASC
+`;
 
   db.all(sql, params, (err, rows) => {
     if (err) {
@@ -410,7 +469,8 @@ app.get("/admin/appointments", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/block-slot", requireAdmin, (req, res) => {
-  const { date, time } = req.body;
+  const { date, time, barber_id = 1 } = req.body;
+  const selectedBarberId = Number(barber_id) || 1;
 
   if (!date || !time) {
     return res.status(400).json({ error: "Datum i vrijeme su obavezni." });
@@ -419,10 +479,10 @@ app.post("/admin/block-slot", requireAdmin, (req, res) => {
   db.run(
     `
     INSERT INTO appointments 
-    (date, time, client_name, client_phone, status, booked_by) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    (date, time, client_name, client_phone, status, booked_by, barber_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [date, time, "ADMIN", "", "blocked", "admin"],
+    [date, time, "ADMIN", "", "blocked", "admin", selectedBarberId],
     function (err) {
       if (err) {
         if (err.code === "SQLITE_CONSTRAINT") {
@@ -438,7 +498,8 @@ app.post("/admin/block-slot", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/open-slot", requireAdmin, (req, res) => {
-  const { date, time } = req.body;
+  const { date, time, barber_id = 1 } = req.body;
+  const selectedBarberId = Number(barber_id) || 1;
 
   if (!date || !time) {
     return res.status(400).json({ error: "Datum i vrijeme su obavezni." });
@@ -447,10 +508,10 @@ app.post("/admin/open-slot", requireAdmin, (req, res) => {
   db.run(
     `
     INSERT INTO appointments 
-    (date, time, client_name, client_phone, status, booked_by) 
-    VALUES (?, ?, ?, ?, ?, ?)
+    (date, time, client_name, client_phone, status, booked_by, barber_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [date, time, "ADMIN", "", "open", "admin"],
+    [date, time, "ADMIN", "", "open", "admin", selectedBarberId],
     function (err) {
       if (err) return res.status(500).json({ error: "Greška pri otvaranju termina" });
       res.json({ id: this.lastID });
@@ -459,7 +520,8 @@ app.post("/admin/open-slot", requireAdmin, (req, res) => {
 });
 
 app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
-  const { date, time, client_name, client_phone = "" } = req.body;
+  const { date, time, client_name, client_phone = "", barber_id = 1 } = req.body;
+  const selectedBarberId = Number(barber_id) || 1;
 
   if (!date || !time || !client_name) {
     return res.status(400).json({ error: "Datum, vrijeme i ime su obavezni." });
@@ -482,9 +544,10 @@ app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
     SELECT * FROM appointments
     WHERE date = ?
     AND time = ?
+    AND barber_id = ?
     AND status IN ('pending', 'confirmed', 'blocked')
     `,
-    [date, time],
+    [date, time, selectedBarberId],
     (err, takenSlot) => {
       if (err) return res.status(500).json({ error: "Greška pri provjeri termina." });
 
@@ -495,10 +558,10 @@ app.post("/admin/manual-appointment", requireAdmin, (req, res) => {
       db.run(
         `
         INSERT INTO appointments 
-        (date, time, client_name, client_phone, status, booked_by)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (date, time, client_name, client_phone, status, booked_by, barber_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
-        [date, time, client_name.trim(), client_phone.trim(), "confirmed", "admin"],
+        [date, time, client_name.trim(), client_phone.trim(), "confirmed", "admin", selectedBarberId],
         function (err) {
           if (err) {
             if (err.code === "SQLITE_CONSTRAINT") {
@@ -529,9 +592,9 @@ app.delete("/appointments/:id/user-cancel", (req, res) => {
       return res.status(403).json({ error: "Nemate dozvolu za otkazivanje ovog termina" });
     }
 
-    if (appointment.status !== "confirmed") {
-      return res.status(400).json({ error: "Može se otkazati samo potvrđen termin" });
-    }
+    if (!["confirmed", "pending"].includes(appointment.status)) {
+  return res.status(400).json({ error: "Može se otkazati samo potvrđen termin ili zahtjev na čekanju" });
+}
 
     db.run("DELETE FROM appointments WHERE id = ?", [req.params.id], function (err) {
       if (err) return res.status(500).json({ error: "Greška pri otkazivanju termina" });

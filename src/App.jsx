@@ -113,6 +113,22 @@ export default function MassageBookingSite() {
   const theme = COLOR_THEMES[selectedColorTheme] || COLOR_THEMES.green;
 const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedBarber, setSelectedBarber] = useState(1);
+  const [manualBarber, setManualBarber] = useState(1);
+  const [blockBarber, setBlockBarber] = useState(1);
+
+  const barbers = [
+  {
+    id: 1,
+    name: "Pero",
+    image: "/barbers/pero.jpg",
+  },
+  {
+    id: 2,
+    name: "Dženo",
+    image: "/barbers/dzeno.jpg",
+  },
+];
 
 const userDateCards = useMemo(() => {
   const dayLabels = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"];
@@ -144,6 +160,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [userMessage, setUserMessage] = useState("");
   const [userPopup, setUserPopup] = useState(null);
   const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
+  const [trackedBooking, setTrackedBooking] = useState(null);
   const [userConfirmedBookings, setUserConfirmedBookings] = useState(() => {
     const savedList = localStorage.getItem("userConfirmedBookings");
     if (savedList) return JSON.parse(savedList);
@@ -353,7 +370,14 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         client_phone: phone,
         status: "confirmed",
         booked_by: "admin",
-      };
+      barber_id: selectedBarber,
+            barber_name:
+            selectedBarber === 1
+              ? "Pero"
+              : selectedBarber === 2
+              ? "Dženo"
+              : `Frizer ${selectedBarber}`,
+          };
 
       setAdminAppointments((current) => sortAdminAppointments([...current, newAppointment]));
       setManualClientName("");
@@ -414,7 +438,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   // UCITAVANJE TERMINA IZ BACKENDA (auto refresh svakih 3s)
   useEffect(() => {
     const fetchData = () => {
-      fetch(`${API}/appointments?date=${selectedDate}`)
+      fetch(`${API}/appointments?date=${selectedDate}&barber_id=${selectedBarber}`)
         .then((res) => {
           if (!res.ok) throw new Error("Backend nije dostupan");
           setIsBackendOnline(true);
@@ -562,7 +586,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     const interval = setInterval(fetchData, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, trackedBookingId, clientPhone]);
+  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
@@ -624,6 +648,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
                 client_phone: oldAppointment?.client_phone || "",
                 date: oldAppointment?.date || "",
                 time: oldAppointment?.time || "",
+                barber_id: oldAppointment?.barber_id,
+                barber_name: oldAppointment?.barber_name,
                 cancelled: true,
               };
             });
@@ -671,20 +697,17 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     });
   };
 
-  const getDateColorMap = (items) => {
-    const colors = ["#dbeafe", "#fef3c7", "#dcfce7", "#fce7f3", "#ede9fe", "#cffafe"];
-    const map = {};
-    let index = 0;
+ const barberColorMap = {
+  1: "#dbeafe", // Pero
+  2: "#dcfce7", // Drugi
+  3: "#ede9fe",
+  4: "#fef3c7",
+  5: "#fce7f3",
+};
 
-    sortAdminAppointments(items).forEach((item) => {
-      if (!map[item.date]) {
-        map[item.date] = colors[index % colors.length];
-        index += 1;
-      }
-    });
-
-    return map;
-  };
+const getBarberColor = (appointment) => {
+  return barberColorMap[appointment.barber_id] || "#f4f4f5";
+};
 
   const isPastAppointment = (appointment) => {
     return new Date(`${appointment.date}T${appointment.time}:00`) <= new Date();
@@ -736,7 +759,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const displayedAdminAppointments = sortAdminAppointments(
     adminAppointments.filter((appointment) => matchesAdminQuickFilter(appointment) && matchesAdminSearch(appointment))
   );
-  const adminDateColorMap = getDateColorMap(adminAppointments);
+  const adminDateColorMap = {};
 
   // Novi zahtjevi moraju biti uvijek vidljivi, bez obzira na odabranu karticu.
   // Search i dalje važi, da admin može brzo pronaći konkretan zahtjev.
@@ -828,7 +851,38 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     return new Date(year, month - 1, day).getDay(); // 0 = nedjelja, 6 = subota
   };
 
-  const isNonWorkingSlot = (date, slot) => {
+
+  const barberSchedules = {
+    1: {
+      name: "Pero",
+      workingStart: "08:00",
+      workingEnd: "20:00",
+      breaks: [{ start: "15:00", end: "17:00" }],
+    },
+    2: {
+      name: "Dženo",
+      workingStart: "09:00",
+      workingEnd: "20:00",
+      breaks: [{ start: "18:00", end: "20:00" }],
+    },
+  };
+
+  const timeToMinutes = (time) => {
+    const [hours, minutes] = String(time || "00:00").split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const isSlotInRange = (slot, start, end) => {
+    const slotMinutes = timeToMinutes(slot);
+    return slotMinutes >= timeToMinutes(start) && slotMinutes < timeToMinutes(end);
+  };
+
+  const getActiveBarberForSchedule = () => {
+    if (isAdminPage) return blockBarber || selectedBarber || 1;
+    return selectedBarber || 1;
+  };
+
+  const isNonWorkingSlot = (date, slot, barberId = getActiveBarberForSchedule()) => {
     const slotKey = `${date}_${slot}`;
     if (overrideOpen[slotKey]) return false;
 
@@ -837,6 +891,23 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 
     if (day === 0) return true;
     if (day === 6 && hour >= 15) return true;
+
+    const schedule = barberSchedules[Number(barberId)];
+
+    if (schedule) {
+      if (schedule.workingStart && isSlotInRange(slot, "00:00", schedule.workingStart)) {
+        return true;
+      }
+
+      if (schedule.workingEnd && timeToMinutes(slot) >= timeToMinutes(schedule.workingEnd)) {
+        return true;
+      }
+
+      if (Array.isArray(schedule.breaks)) {
+        const isBreak = schedule.breaks.some((pause) => isSlotInRange(slot, pause.start, pause.end));
+        if (isBreak) return true;
+      }
+    }
 
     return false;
   };
@@ -852,7 +923,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const visibleUserSlots = slots.filter(
     (slot) =>
       !isPastSlot(selectedDate, slot) &&
-      !isNonWorkingSlot(selectedDate, slot) &&
+      !isNonWorkingSlot(selectedDate, slot, selectedBarber) &&
       !isBlocked(selectedDate, slot) &&
       !isBooked(selectedDate, slot) &&
       !isPending(selectedDate, slot)
@@ -927,7 +998,7 @@ if (!bookingPin.trim()) {
   return;
 }
 
-if (isNonWorkingSlot(selectedDate, selectedSlot)) {
+if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
       setUserMessage("Izabrani termin je neradni i nije moguće zakazivanje.");
       setSelectedSlot("");
       return;
@@ -953,6 +1024,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           client_name: clientName,
           client_phone: clientPhone.trim(),
           booking_pin: bookingPin.trim(),
+          barber_id: selectedBarber,
         }),
       });
 
@@ -983,6 +1055,32 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       }
       localStorage.setItem("trackedBookingId", String(request.id));
       setTrackedBookingId(String(request.id));
+
+      setTimeout(() => {
+        setUserPopup({
+          title: "Zahtjev je poslat",
+          message:
+            "Ako ste greškom rezervisali pogrešan termin, možete ga odmah otkazati.",
+          confirmButtons: true,
+          onConfirm: () => {
+            cancelUserBooking({
+              id: request.id,
+              date: selectedDate,
+              time: selectedSlot,
+              client_name: clientName,
+              client_phone: clientPhone.trim(),
+              barber_id: selectedBarber,
+              barber_name:
+                selectedBarber === 1
+                  ? "Pero"
+                  : selectedBarber === 2
+                  ? "Dženo"
+                  : `Frizer ${selectedBarber}`,
+              status: "pending",
+            });
+          },
+        });
+      }, 300);
   setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
   setSelectedSlot("");
   setBookingPin("");
@@ -1119,6 +1217,8 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
           client_phone: appointment.client_phone,
           date: appointment.date,
           time: appointment.time,
+          barber_id: appointment.barber_id,
+          barber_name: appointment.barber_name,
         },
       ]);
       setUserMessage(`Termin ${appointment.date} u ${appointment.time} je otkazan.`);
@@ -1164,12 +1264,12 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
     }
 
     // ako je neradni termin -> klik ga otključava (override)
-    if (isNonWorkingSlot(date, slot)) {
+    if (isNonWorkingSlot(date, slot, blockBarber)) {
       try {
         const response = await fetch(`${API}/admin/open-slot`, {
           method: "POST",
           headers: getAdminJsonHeaders(),
-          body: JSON.stringify({ date, time: slot }),
+          body: JSON.stringify({ date, time: slot, barber_id: blockBarber }),
         });
 
         if (!response.ok) throw new Error("Greška pri ručnom otvaranju termina.");
@@ -1226,7 +1326,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       const response = await fetch(`${API}/admin/block-slot`, {
         method: "POST",
         headers: getAdminJsonHeaders(),
-        body: JSON.stringify({ date, time: slot }),
+        body: JSON.stringify({ date, time: slot, barber_id: blockBarber }),
       });
 
       if (!response.ok) throw new Error("Greška pri blokiranju termina.");
@@ -1255,14 +1355,14 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       for (const slot of slots) {
         const slotKey = key(selectedDate, slot);
 
-        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot) || isNonWorkingSlot(selectedDate, slot)) {
+        if (isBooked(selectedDate, slot) || isBlocked(selectedDate, slot) || isNonWorkingSlot(selectedDate, slot, blockBarber)) {
           continue;
         }
 
         const response = await fetch(`${API}/admin/block-slot`, {
           method: "POST",
           headers: getAdminJsonHeaders(),
-          body: JSON.stringify({ date: selectedDate, time: slot }),
+          body: JSON.stringify({ date: selectedDate, time: slot, barber_id: blockBarber }),
         });
 
         if (!response.ok) {
@@ -1364,7 +1464,23 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
     URL.revokeObjectURL(url);
   };
 
-  if (isAdminPage) {
+  
+  const dayBorderMap = {
+    0: "#facc15",
+    1: "#3b82f6",
+    2: "#22c55e",
+    3: "#a855f7",
+    4: "#f97316",
+    5: "#ef4444",
+    6: "#eab308",
+  };
+
+  const getDayBorder = (date) => {
+    const day = new Date(date).getDay();
+    return dayBorderMap[day] || "#e5e7eb";
+  };
+
+if (isAdminPage) {
     if (!isAdminAuth) {
       return (
         <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
@@ -1400,7 +1516,46 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
             50% { transform: scale(1.22); opacity: 0.72; }
             100% { transform: scale(1); opacity: 1; }
           }
-        `}</style>
+          .manual-booking-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 12px;
+            align-items: end;
+          }
+
+          .manual-booking-field {
+            min-width: 0;
+          }
+
+          .manual-booking-field > label,
+          .manual-booking-field > div:first-child {
+            display: block;
+            font-weight: 700;
+            font-size: 16px;
+            color: #111827;
+            -webkit-text-fill-color: #111827;
+            margin-bottom: 6px;
+          }
+
+          .manual-booking-field input,
+          .manual-booking-field select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: white;
+            font-size: 16px;
+            min-height: 48px;
+          }
+
+          @media (max-width: 767px) {
+            .manual-booking-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}
+        </style>
         <div className="max-w-5xl mx-auto grid gap-6">
           {adminPopups.length > 0 && (
             <div
@@ -1445,11 +1600,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 </p>
                 )}
                 {!adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
+                  <>
                 <p style={{ fontSize: 16, marginBottom: 16 }}>
                   Vrijeme: <strong>{adminPopups[0].time}</strong>
                 </p>
-                )
-                }
+                <p style={{ fontSize: 16, marginBottom: 16 }}>
+      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+    </p>
+  </>
+                )}
                 {adminPopups[0].adminCancelled && (
                   <div style={{ marginBottom: 16 }}>
                     <p style={{ fontSize: 16, marginBottom: 8 }}>
@@ -1466,10 +1625,16 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       </p>
                     )}
                     {adminPopups[0].time && (
-                      <p style={{ fontSize: 16, marginBottom: 8 }}>
-                        Vrijeme: <strong>{adminPopups[0].time}</strong>
-                      </p>
-                    )}
+  <>
+    <p style={{ fontSize: 16, marginBottom: 8 }}>
+      Vrijeme: <strong>{adminPopups[0].time}</strong>
+    </p>
+
+    <p style={{ fontSize: 16, marginBottom: 16 }}>
+      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+    </p>
+  </>
+)}
                   </div>
                 )}
                 {adminPopups[0].cancelled && !adminPopups[0].adminCancelled && (
@@ -1483,10 +1648,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       </p>
                     )}
                     {adminPopups[0].time && (
+                      <>
                       <p style={{ fontSize: 16, marginBottom: 8 }}>
                         Vrijeme: <strong>{adminPopups[0].time}</strong>
                       </p>
-                    )}
+                      <p style={{ fontSize: 16, marginBottom: 16 }}>
+      Frizer: <strong>{adminPopups[0].barber_name || barberNameMap[adminPopups[0].barber_id || 1] || `Frizer ${adminPopups[0].barber_id || 1}`}</strong>
+    </p>
+  </>
+)}
                     <p style={{ fontSize: 14, color: "#71717a" }}>
                       Termin je ponovo slobodan.
                     </p>
@@ -1563,7 +1733,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                       border: "1px solid #e5e7eb",
                       borderRadius: 14,
                       padding: "10px 12px",
-                      background: adminDateColorMap[appointment.date] || "#ffffff",
+                      background: getBarberColor(appointment),
                       borderLeft: "6px solid #f97316",
                       whiteSpace: "nowrap",
                       overflowX: "auto",
@@ -1573,8 +1743,17 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                     <div style={{ minWidth: 110, fontSize: 14 }}>{appointment.date}</div>
                     <div style={{ minWidth: 180, fontWeight: 700 }}>
                       {appointment.client_name}
+
                       {appointment.client_phone && (
-                        <span style={{ color: "#71717a", fontWeight: 400 }}> · {appointment.client_phone}</span>
+                        <>
+                          <span style={{ color: "#71717a", fontWeight: 400 }}>
+                            {" "}· {appointment.client_phone}
+                          </span>
+
+                          <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
+                            {" "}· {appointment.barber_name || barberNameMap[appointment.barber_id || 1] || `Frizer ${appointment.barber_id || 1}`}
+                          </span>
+                        </>
                       )}
                     </div>
                     <div style={{ minWidth: 110, fontSize: 14, color: "#71717a" }}>Čeka potvrdu</div>
@@ -1719,12 +1898,12 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                             display: "flex",
                             gap: 14,
                             alignItems: "center",
-                            border: "1px solid #e5e7eb",
+                            border: `3px solid ${getDayBorder(appointment.date)}`,
                             borderRadius: 14,
                             padding: "10px 12px",
                             whiteSpace: "nowrap",
                             overflowX: "auto",
-                            background: adminDateColorMap[appointment.date] || "#ffffff",
+                            background: getBarberColor(appointment),
                           }}
                         >
                           <strong style={{ minWidth: 60 }}>{appointment.time}</strong>
@@ -1750,6 +1929,10 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                             )}
                           </span>
                           <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
+                          
+                          <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
+                            {appointment.barber_name || barberNameMap[appointment.barber_id || 1] || `Frizer ${appointment.barber_id || 1}`}
+                          </span>
                           <span style={{ color: "#71717a", minWidth: 100 }}>
                             {isConfirmed ? "Potvrđen" : isRejected ? "Odbijen" : appointment.status}
                           </span>
@@ -1792,54 +1975,65 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
               Za klijente koji pozovu telefonom: unesite ime, izaberite datum i vrijeme. Termin se odmah upisuje kao potvrđen i u pregledu dobija oznaku “Zakazao Admin”.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800, color: "#111827" }}>Ime i prezime</span>
+            <div className="manual-booking-grid" style={{ marginBottom: 16 }}>
+              <div className="manual-booking-field">
+                <label>Ime i prezime</label>
                 <input
                   type="text"
                   value={manualClientName}
                   onChange={(e) => setManualClientName(e.target.value)}
-                  placeholder="npr. Petar Petrović"
-                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                  placeholder="Ime klijenta"
                 />
-              </label>
+              </div>
 
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800, color: "#111827" }}>Telefon (opciono)</span>
+              <div className="manual-booking-field">
+                <label>Telefon</label>
                 <input
-                  type="tel"
+                  type="text"
                   value={manualClientPhone}
-                  onChange={(e) => setManualClientPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  placeholder="06xxxxxxx"
-                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
+                  onChange={(e) => setManualClientPhone(e.target.value)}
+                  placeholder="067123456"
                 />
-              </label>
+              </div>
 
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800, color: "#111827" }}>Datum</span>
+              <div className="manual-booking-field">
+                <label>Datum</label>
                 <input
                   type="date"
                   min={todayISO()}
                   value={manualDate}
                   onChange={(e) => setManualDate(e.target.value)}
-                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
                 />
-              </label>
+              </div>
 
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800, color: "#111827" }}>Vrijeme</span>
+              <div className="manual-booking-field">
+                <label>Vrijeme</label>
                 <select
                   value={manualTime}
                   onChange={(e) => setManualTime(e.target.value)}
-                  style={{ border: "1px solid #d1fae5", borderRadius: 14, padding: "12px 14px", fontSize: 16, color: "#111827", background: "white" }}
                 >
                   {slots.map((slot) => (
-                    <option key={slot} value={slot}>{slot}</option>
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
                   ))}
                 </select>
-              </label>
-            </div>
+              </div>
 
+              <div className="manual-booking-field">
+                <label>Frizer</label>
+                <select
+                  value={manualBarber}
+                  onChange={(e) => setManualBarber(Number(e.target.value))}
+                >
+                  {barbers.map((barber) => (
+                    <option key={barber.id} value={barber.id}>
+                      {barber.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <button
               onClick={handleManualBooking}
               disabled={isManualSubmitting}
@@ -1863,6 +2057,30 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
           <section style={{ background: "rgba(239,246,255,0.96)", border: "1px solid #bfdbfe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Blokiranje termina</h2>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 14, border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16 }}>
+              <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>
+                Frizer
+              </span>
+              <select
+                value={blockBarber}
+                onChange={(e) => {
+                  const nextBarber = Number(e.target.value);
+                  setBlockBarber(nextBarber);
+                  setSelectedBarber(nextBarber);
+                  setUserMessage("");
+                }}
+                style={{ flex: 1, border: "none", outline: "none", fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827", background: "transparent", textAlign: "center", minHeight: 34 }}
+              >
+                {barbers.map((barber) => (
+                  <option key={barber.id} value={barber.id}>
+                    {barber.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+
 
             <label style={{ display: "flex", alignItems: "center", gap: 14, border: focusedField === "date" ? "2px solid #be185d" : "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, boxShadow: focusedField === "date" ? `0 0 0 4px rgba(${theme.focusRgb},0.12)` : "none", transition: "all 0.2s ease" }}>
               <span style={{ minWidth: 120, fontWeight: 700, fontSize: 16, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
@@ -2142,21 +2360,61 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 <div style={{ fontSize: 40, marginBottom: 10 }}>{icon}</div>
                 <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16, color: "#18181b" }}>{userPopup.title}</h2>
                 <p style={{ fontSize: 16, marginBottom: 20, color: "#374151" }}>{userPopup.message}</p>
-                <button
-                  onClick={() => setUserPopup(null)}
-                  style={{
-                    width: "100%",
-                    border: 0,
-                    borderRadius: 16,
-                    background: buttonColor,
-                    color: "white",
-                    padding: "14px 18px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  U redu
-                </button>
+                {userPopup.confirmButtons ? (
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <button
+                      onClick={() => {
+                        const onConfirm = userPopup.onConfirm;
+                        setUserPopup(null);
+                        if (onConfirm) onConfirm();
+                      }}
+                      style={{
+                        flex: 1,
+                        border: 0,
+                        borderRadius: 16,
+                        background: "#16a34a",
+                        color: "white",
+                        padding: "14px 18px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      DA
+                    </button>
+
+                    <button
+                      onClick={() => setUserPopup(null)}
+                      style={{
+                        flex: 1,
+                        border: "1px solid #d4d4d8",
+                        borderRadius: 16,
+                        background: "white",
+                        color: "#18181b",
+                        padding: "14px 18px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      NE
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setUserPopup(null)}
+                    style={{
+                      width: "100%",
+                      border: 0,
+                      borderRadius: 16,
+                      background: buttonColor,
+                      color: "white",
+                      padding: "14px 18px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    U redu
+                  </button>
+                )}
               </div>
             );
           })()}
@@ -2165,17 +2423,17 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
       <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
         <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", overflow: "hidden", background: "#111827" }}>
           <img
-			  src={peroImage}
-			  alt="Frizerski salon Pleasure"
-			  style={{
-			    width: "100%",
-			    height: "auto",
-			    maxHeight: "340px",
-			    objectFit: "cover",
-			    objectPosition: "center top",
-			    display: "block",
-			  }}
-			/>
+        src={peroImage}
+        alt="Frizerski salon Pleasure"
+        style={{
+          width: "100%",
+          height: "auto",
+          maxHeight: "340px",
+          objectFit: "cover",
+          objectPosition: "center top",
+          display: "block",
+        }}
+      />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)" }} />
           <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "white", maxWidth: 430, margin: "0 auto" }}>
             <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, color: "#fff", textShadow: "0 2px 6px rgba(0,0,0,0.5)", letterSpacing: "-0.04em" }}>
@@ -2345,7 +2603,64 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
 
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", WebkitTextFillColor: "#111827", fontSize: 25, lineHeight: 1.2 }}>Izaberite termin</h2>
 
-            <div style={{ marginBottom: 18 }}>
+            
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 14,
+                marginBottom: 20,
+              }}
+            >
+              {barbers.map((barber) => {
+                const active = selectedBarber === barber.id;
+
+                return (
+                  <button
+                    key={barber.id}
+                    type="button"
+                    onClick={() => setSelectedBarber(barber.id)}
+                    style={{
+                      border: active ? `3px solid ${theme.strong}` : "1px solid #e5e7eb",
+                      borderRadius: 22,
+                      padding: 12,
+                      background: active ? "rgba(240,253,244,0.95)" : "white",
+                      cursor: "pointer",
+                      boxShadow: active
+                        ? `0 12px 28px rgba(${theme.focusRgb},0.20)`
+                        : "0 6px 18px rgba(15,23,42,0.06)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <img
+                      src={barber.image}
+                      alt={barber.name}
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1 / 1",
+                        objectFit: "cover",
+                        borderRadius: 18,
+                        marginBottom: 10,
+                        background: "#f4f4f5",
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        fontWeight: 900,
+                        fontSize: 20,
+                        color: "#111827",
+                        WebkitTextFillColor: "#111827",
+                      }}
+                    >
+                      {barber.name}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+<div style={{ marginBottom: 18 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
                 <span style={{ fontWeight: 900, fontSize: 17, color: "#111827", WebkitTextFillColor: "#111827" }}>Datum</span>
                 <span style={{ fontSize: 13, color: "#71717a", WebkitTextFillColor: "#71717a" }}>Naredni 21 dan</span>
@@ -2394,6 +2709,57 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 })}
               </div>
             </div>
+
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                border: "1px solid #e5e7eb",
+                borderRadius: 14,
+                padding: "10px 12px",
+                background: "white",
+                marginBottom: 18,
+              }}
+            >
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontSize: 16,
+                  color: "#111827",
+                  WebkitTextFillColor: "#111827",
+                  textAlign: "center",
+                }}
+              >
+                Izaberite frizera
+              </span>
+
+              <select
+                value={selectedBarber}
+                onChange={(e) => {
+                  setSelectedBarber(Number(e.target.value));
+                  setSelectedSlot("");
+                  setUserMessage("");
+                }}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  fontSize: 16,
+                  textAlign: "center",
+                  background: "transparent",
+                  color: "#111827",
+                  WebkitTextFillColor: "#111827",
+                  minHeight: 34,
+                  fontWeight: 800,
+                }}
+              >
+                {barbers.map((barber) => (
+                  <option key={barber.id} value={barber.id}>
+                    {barber.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {visibleUserSlots.map((slot) => {
@@ -2525,6 +2891,123 @@ if (isNonWorkingSlot(selectedDate, selectedSlot)) {
                 {userMessage}
               </div>
             )}
+            {trackedBooking && (
+              <div
+                style={{
+                  marginTop: 24,
+                  background: "#ffffff",
+                  borderRadius: 20,
+                  padding: 18,
+                  border:
+                    trackedBooking.status === "pending"
+                      ? "2px solid #f59e0b"
+                      : "2px solid #22c55e",
+                }}
+              >
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontWeight: 900,
+                    fontSize: 22,
+                    marginBottom: 8,
+                    color: "#111827",
+                  }}
+                >
+                  {trackedBooking.status === "pending"
+                    ? "Imate aktivan zahtjev"
+                    : "Imate potvrđen termin"}
+                </div>
+
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "#2563eb",
+                    fontWeight: 700,
+                    marginBottom: 6,
+                  }}
+                >
+                  {trackedBooking.barber_name ||
+                    barberNameMap[trackedBooking.barber_id || 1] ||
+                    `Frizer ${trackedBooking.barber_id || 1}`}
+                </div>
+
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "#374151",
+                    marginBottom: 16,
+                  }}
+                >
+                  {trackedBooking.date} u {trackedBooking.time}
+                </div>
+
+                <button
+                  onClick={async () => {
+                    const confirmCancel = window.confirm(
+                      trackedBooking.status === "pending"
+                        ? "Da li želite da otkažete zahtjev?"
+                        : "Da li želite da otkažete termin?"
+                    );
+
+                    if (!confirmCancel) return;
+
+                    try {
+                      const response = await fetch(
+                        `${API_BASE}/appointments/${trackedBooking.id}/user-cancel`,
+                        {
+                          method: "DELETE",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            client_phone: trackedBooking.client_phone,
+                          }),
+                        }
+                      );
+
+                      const data = await response.json();
+
+                      if (!response.ok) {
+                        throw new Error(data.error || "Greška pri otkazivanju.");
+                      }
+
+                      localStorage.removeItem("trackedBookingId");
+                      setTrackedBooking(null);
+                      setTrackedBookingId(null);
+
+                      setUserMessage(
+                        trackedBooking.status === "pending"
+                          ? "Zahtjev je uspješno otkazan."
+                          : "Termin je uspješno otkazan."
+                      );
+                    } catch (err) {
+                      setUserMessage(
+                        err.message || "Greška pri otkazivanju."
+                      );
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    borderRadius: 16,
+                    padding: "14px 18px",
+                    background:
+                      trackedBooking.status === "pending"
+                        ? "#f59e0b"
+                        : "#ef4444",
+                    color: "#ffffff",
+                    fontWeight: 900,
+                    fontSize: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  {trackedBooking.status === "pending"
+                    ? "Otkaži zahtjev"
+                    : "Otkaži termin"}
+                </button>
+              </div>
+            )}
+
           </section>
         </main>
         {userLastUpdated && (
