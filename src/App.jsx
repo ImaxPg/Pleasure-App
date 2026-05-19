@@ -2537,7 +2537,7 @@ if (isAdminPage) {
   style={{
     position: "relative",
     width: "100%",
-    background: "linear-gradient(135deg, #1f2937, #111827)",
+    background: theme.pageBg,
     overflow: "hidden",
     display: "flex",
     justifyContent: "center",
@@ -2560,15 +2560,7 @@ if (isAdminPage) {
       }}
     />
 
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background:
-          "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)",
-      }}
-    />
-  </div>
+    </div>
 </section>
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
