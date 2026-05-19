@@ -1066,17 +1066,15 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
           message:
             "Ako ste greškom rezervisali pogrešan termin, možete ga odmah otkazati.",
           confirmButtons: true,
-          onConfirm: () => {
-            cancelUserBooking({
-              id: request.id,
-              date: selectedDate,
-              time: selectedSlot,
-              client_name: clientName,
-              client_phone: clientPhone.trim(),
-              barber_id: selectedBarber,
-              barber_name: getBarberName(selectedBarber),
-              status: "pending",
-            });
+          bookingToCancel: {
+            id: request.id,
+            date: selectedDate,
+            time: selectedSlot,
+            client_name: clientName,
+            client_phone: clientPhone.trim(),
+            barber_id: selectedBarber,
+            barber_name: getBarberName(selectedBarber),
+            status: "pending",
           },
         });
       }, 300);
