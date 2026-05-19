@@ -2549,7 +2549,7 @@ if (isAdminPage) {
 
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
                 {[
-                  { key: "green", color: "#16a34a", label: "Zelena tema" },
+                  { key: "green", color: "#0d0d45", label: "Zelena tema" },
                   { key: "blue", color: "#2563eb", label: "Plava tema" },
                   { key: "red", color: "#dc2626", label: "Crvena tema" },
                 ].map((item) => {
