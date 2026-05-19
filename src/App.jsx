@@ -2315,7 +2315,7 @@ if (isAdminPage) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.pageBg, color: "#18181b", padding: 0, fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
+    <div style={{ minHeight: "100vh", background: SALON_CONFIG.colors.pageBg, color: "#18181b", padding: 0, fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
           0% { transform: scale(1); opacity: 1; }
