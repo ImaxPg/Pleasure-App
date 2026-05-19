@@ -6,68 +6,7 @@ import peroImage from "./pero4png.png";
 const START_HOUR = 9;
 const END_HOUR = 20;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
-const COLOR_THEMES = {
-  green: {
-    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
-   softBorder: "#4b6b8a",
-focus: "#191970",
-focusRgb: "25,25,112",
-dateBg: "#dbe4f0",
-dateBgActive: "#2c3e75",
-dateBorder: "#4b6b8a",
-dateBorderActive: "#191970",
-dateText: "#0f172a",
-dateTextActive: "#ffffff",
-slotBg: "#b8c7dc",
-slotBgActive: "#191970",
-slotBorder: "#6b85a3",
-slotBorderActive: "#0f1460",
-slotText: "#0f172a",
-slotShadowActive: "rgba(25,25,112,0.30)",
-strong: "#191970",
-strongHover: "#2c3e75",
-  },
-  blue: {
-    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
-    softBorder: "#bfdbfe",
-    focus: "#2563eb",
-    focusRgb: "37,99,235",
-    dateBg: "#dbeafe",
-    dateBgActive: "#60a5fa",
-    dateBorder: "#bfdbfe",
-    dateBorderActive: "#2563eb",
-    dateText: "#1e3a8a",
-    dateTextActive: "#ffffff",
-    slotBg: "#bfdbfe",
-    slotBgActive: "#2563eb",
-    slotBorder: "#93c5fd",
-    slotBorderActive: "#2563eb",
-    slotText: "#1e3a8a",
-    slotShadowActive: "rgba(37,99,235,0.28)",
-    strong: "#2563eb",
-    strongHover: "#1d4ed8",
-  },
-  red: {
-    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
-    softBorder: "#b45353",
-focus: "#800000",
-focusRgb: "128,0,0",
-dateBg: "#f3d6d6",
-dateBgActive: "#991b1b",
-dateBorder: "#b45353",
-dateBorderActive: "#7f1d1d",
-dateText: "#3f0d0d",
-dateTextActive: "#ffffff",
-slotBg: "#e5b4b4",
-slotBgActive: "#800000",
-slotBorder: "#c87171",
-slotBorderActive: "#651111",
-slotText: "#3f0d0d",
-slotShadowActive: "rgba(128,0,0,0.30)",
-strong: "#800000",
-strongHover: "#991b1b",
-  },
-};
+
 
 function makeSlots() {
   const slots = [];
@@ -113,8 +52,26 @@ const ADMIN_BARBER_ROUTES = SALON_CONFIG.adminRoutes;
 
 export default function MassageBookingSite() {
   const slots = useMemo(makeSlots, []);
-  const [selectedColorTheme, setSelectedColorTheme] = useState(() => localStorage.getItem("pleasureColorTheme") || "green");
-  const theme = COLOR_THEMES[selectedColorTheme] || COLOR_THEMES.green;
+ 
+ const theme = {
+  softBorder: "#4b6b8a",
+  focus: "#191970",
+  focusRgb: "25,25,112",
+  dateBg: "#dbe4f0",
+  dateBgActive: "#2c3e75",
+  dateBorder: "#4b6b8a",
+  dateBorderActive: "#191970",
+  dateText: "#0f172a",
+  dateTextActive: "#ffffff",
+  slotBg: "#b8c7dc",
+  slotBgActive: "#191970",
+  slotBorder: "#6b85a3",
+  slotBorderActive: "#0f1460",
+  slotText: "#0f172a",
+  slotShadowActive: "rgba(25,25,112,0.30)",
+  strong: "#191970",
+  strongHover: "#2c3e75",
+};
 
   const pathname = window.location.pathname.replace(/\/$/, "");
   const fixedAdminBarberId = ADMIN_BARBER_ROUTES[pathname] || null;
@@ -293,9 +250,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("pleasureColorTheme", selectedColorTheme);
-  }, [selectedColorTheme]);
+  
 
   useEffect(() => {
     if (!isAdminPage && selectedDate < todayISO()) {
@@ -1512,7 +1467,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
   const dayBorderMap = {
     0: "#facc15",
     1: "#3b82f6",
-    2: "#22c55e",
+    2: "#2c3e75",
     3: "#a855f7",
     4: "#f97316",
     5: "#ef4444",
@@ -1773,9 +1728,9 @@ if (isAdminPage) {
                   width: 14,
                   height: 14,
                   borderRadius: "50%",
-                  background: isBackendOnline ? "#22c55e" : "#ef4444",
+                  background: isBackendOnline ? "#2c3e75" : "#ef4444",
                   display: "inline-block",
-                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(34,197,94,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
+                  boxShadow: isBackendOnline ? "0 0 0 4px rgba(44,62,117,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
                   ...(isBackendOnline ? pulseStyle : {}),
                 }}
               />
@@ -1822,7 +1777,7 @@ if (isAdminPage) {
                             {" "}· {appointment.client_phone}
                           </span>
 
-                          <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
+                          <span style={{ minWidth: 120, color: "#2c3e75", fontWeight: 800 }}>
                             {" "}· {getBarberName(appointment)}
                           </span>
                         </>
@@ -1923,11 +1878,11 @@ if (isAdminPage) {
 
           </section>
 
-          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+          <section style={{ background: "rgba(240,253,244,0.96)", border: "1px solid #b8c7dc", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>{adminQuickFilter === "archive" ? "Arhiva završenih termina" : "Pregled termina po datumu"}</h2>
 
             {isOverviewRangeMode ? (
-              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#166534", fontWeight: 800 }}>
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "10px 12px", background: "white", marginBottom: 16, color: "#191970", fontWeight: 800 }}>
                 {adminQuickFilter === "today"
                   ? `Prikaz: danas (${todayISO()})`
                   : adminQuickFilter === "tomorrow"
@@ -1955,7 +1910,7 @@ if (isAdminPage) {
                 {overviewDates.map((date) => (
                   <div key={date} style={{ display: "grid", gap: 8 }}>
                     {isOverviewRangeMode && (
-                      <h3 style={{ margin: "4px 0", color: "#166534", fontSize: 18, fontWeight: 900 }}>{date}</h3>
+                      <h3 style={{ margin: "4px 0", color: "#191970", fontSize: 18, fontWeight: 900 }}>{date}</h3>
                     )}
 
                     {overviewGroupedByDate[date].map((appointment) => {
@@ -1985,10 +1940,10 @@ if (isAdminPage) {
                             {appointment.booked_by === "admin" && (
                               <span
                                 style={{
-                                  border: "1px solid #16a34a",
-                                  background: "#ecfdf5",
-                                  color: "#166534",
-                                  WebkitTextFillColor: "#166534",
+                                  border: "1px solid #191970",
+                                  background: "#e8edf7",
+                                  color: "#191970",
+                                  WebkitTextFillColor: "#191970",
                                   borderRadius: 999,
                                   padding: "2px 8px",
                                   fontSize: 12,
@@ -2002,7 +1957,7 @@ if (isAdminPage) {
                           </span>
                           <span style={{ minWidth: 120, color: "#71717a" }}>{appointment.client_phone || "Bez telefona"}</span>
                           
-                          <span style={{ minWidth: 120, color: "#2563eb", fontWeight: 800 }}>
+                          <span style={{ minWidth: 120, color: "#2c3e75", fontWeight: 800 }}>
                             {getBarberName(appointment)}
                           </span>
                           <span style={{ color: "#71717a", minWidth: 100 }}>
@@ -2041,7 +1996,7 @@ if (isAdminPage) {
               </div>
             )}
           </section>
-<section style={{ background: "rgba(236,253,245,0.96)", border: "1px solid #bbf7d0", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+<section style={{ background: "rgba(236,253,245,0.96)", border: "1px solid #b8c7dc", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Ručno zakazivanje telefonom</h2>
             <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
               Za klijente koji pozovu telefonom: unesite ime, izaberite datum i vrijeme. Termin se odmah upisuje kao potvrđen i u pregledu dobija oznaku “Zakazao Admin”.
@@ -2101,13 +2056,13 @@ if (isAdminPage) {
                 marginTop: 18,
                 width: "100%",
                 borderRadius: 16,
-                background: isManualSubmitting ? "#9ca3af" : "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+                background: isManualSubmitting ? "#9ca3af" : "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
                 color: "white",
                 padding: "13px 16px",
                 fontWeight: 900,
                 border: "none",
                 cursor: isManualSubmitting ? "not-allowed" : "pointer",
-                boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
+                boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
                 letterSpacing: "0.01em",
               }}
             >
@@ -2182,13 +2137,13 @@ if (isAdminPage) {
                 style={{
                   flex: 1,
                   borderRadius: 16,
-                  background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+                  background: "linear-gradient(135deg, #0f172a 0%, #191970 100%)",
                   color: "white",
                   padding: "12px 14px",
                   fontWeight: 800,
                   border: "none",
                   cursor: "pointer",
-                  boxShadow: "0 10px 25px rgba(37,99,235,0.22)",
+                  boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
                   letterSpacing: "0.01em",
                 }}
               >
@@ -2202,13 +2157,13 @@ if (isAdminPage) {
                 style={{
                   flex: 1,
                   borderRadius: 16,
-                  background: "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+                  background: "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
                   color: "white",
                   padding: "12px 14px",
                   fontWeight: 800,
                   border: "none",
                   cursor: "pointer",
-                  boxShadow: "0 10px 25px rgba(34,197,94,0.22)",
+                  boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
                   letterSpacing: "0.01em",
                 }}
               >
@@ -2240,15 +2195,15 @@ if (isAdminPage) {
                     onClick={() => toggleBlock(selectedDate, slot)}
                     style={{
                       borderRadius: 14,
-                      border: blockedNow ? "1px solid #1e3a8a" : "1px solid #dbeafe",
+                      border: blockedNow ? "1px solid #191970" : "1px solid #b8c7dc",
                       padding: "10px 12px",
                       fontSize: 14,
                       fontWeight: 700,
-                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#ecfdf5" : blockedNow ? "#1e3a8a" : "white",
-                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#166534" : blockedNow ? "white" : "#1e3a8a",
+                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#e8edf7" : blockedNow ? "#191970" : "white",
+                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#191970" : blockedNow ? "white" : "#191970",
                       cursor: bookedNow ? "not-allowed" : "pointer",
                       opacity: bookedNow ? 0.55 : 1,
-                      boxShadow: blockedNow ? "0 8px 18px rgba(30,58,138,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
+                      boxShadow: blockedNow ? "0 8px 18px rgba(25,25,112,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
                     }}
                   >
                     {slot} {bookedNow ? "Zakazano" : manuallyOpenNow ? "✅ Ručno otvoreno (klik za neradno)" : nonWorkingNow ? "Neradno (klik za otvaranje)" : blockedNow ? "🔒 Zaključano" : "Slobodno"}
@@ -2266,14 +2221,14 @@ if (isAdminPage) {
               <button
                 onClick={exportNextSevenDaysTxt}
                 style={{
-                  border: "1px solid #7c3aed",
+                  border: "1px solid #191970",
                   borderRadius: 14,
                   background: "white",
-                  color: "#5b21b6",
+                  color: "#191970",
                   padding: "9px 12px",
                   fontWeight: 800,
                   cursor: "pointer",
-                  WebkitTextFillColor: "#5b21b6",
+                  WebkitTextFillColor: "#191970",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -2287,19 +2242,19 @@ if (isAdminPage) {
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Potvrđeno danas</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#166534" }}>{stats.confirmedToday}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#191970" }}>{stats.confirmedToday}</div>
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Potvrđeno za izabrani datum</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#166534" }}>{stats.confirmedSelectedDate}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#191970" }}>{stats.confirmedSelectedDate}</div>
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Zaključano za izabrani datum</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#1e3a8a" }}>{stats.blockedSelectedDate}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#191970" }}>{stats.blockedSelectedDate}</div>
               </div>
               <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 18, padding: 14 }}>
                 <div style={{ fontSize: 13, color: "#6b7280" }}>Ručno otvoreno</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#7c3aed" }}>{stats.openedSelectedDate}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#191970" }}>{stats.openedSelectedDate}</div>
               </div>
             </div>
           </section>
@@ -2415,10 +2370,10 @@ if (isAdminPage) {
             const isSuccess = userPopup.title.toLowerCase().includes("potvrđen");
             const isError = userPopup.title.toLowerCase().includes("odbijen");
 
-            const bgColor = isSuccess ? "#ecfdf5" : isError ? "#fef2f2" : "white";
-            const borderColor = isSuccess ? "#16a34a" : isError ? "#dc2626" : "#e5e7eb";
+            const bgColor = isSuccess ? "#e8edf7" : isError ? "#fef2f2" : "white";
+            const borderColor = isSuccess ? "#191970" : isError ? "#dc2626" : "#e5e7eb";
             const icon = isSuccess ? "✔️" : isError ? "❌" : "ℹ️";
-            const buttonColor = isSuccess ? "#16a34a" : isError ? "#dc2626" : "#18181b";
+            const buttonColor = isSuccess ? "#191970" : isError ? "#dc2626" : "#18181b";
 
             return (
               <div
@@ -2448,7 +2403,7 @@ if (isAdminPage) {
                         flex: 1,
                         border: 0,
                         borderRadius: 16,
-                        background: "#16a34a",
+                        background: "#191970",
                         color: "white",
                         padding: "14px 18px",
                         fontWeight: 700,
@@ -2539,50 +2494,22 @@ if (isAdminPage) {
                     width: 12,
                     height: 12,
                     borderRadius: "50%",
-                    background: isBackendOnline ? "#22c55e" : "#ef4444",
+                    background: isBackendOnline ? "#2c3e75" : "#ef4444",
                     display: "inline-block",
-                    boxShadow: isBackendOnline ? "0 0 0 5px rgba(34,197,94,0.22)" : "0 0 0 5px rgba(239,68,68,0.22)",
+                    boxShadow: isBackendOnline ? "0 0 0 5px rgba(44,62,117,0.22)" : "0 0 0 5px rgba(239,68,68,0.22)",
                     ...(isBackendOnline ? pulseStyle : {}),
                   }}
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
-                {[
-                  { key: "green", color: "#0d0d45", label: "Zelena tema" },
-                  { key: "blue", color: "#2563eb", label: "Plava tema" },
-                  { key: "red", color: "#dc2626", label: "Crvena tema" },
-                ].map((item) => {
-                  const active = selectedColorTheme === item.key;
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      aria-label={item.label}
-                      title={item.label}
-                      onClick={() => setSelectedColorTheme(item.key)}
-                      style={{
-                        width: active ? 26 : 22,
-                        height: active ? 26 : 22,
-                        borderRadius: "50%",
-                        border: active ? "3px solid #111827" : "2px solid rgba(17,24,39,0.18)",
-                        background: item.color,
-                        cursor: "pointer",
-                        boxShadow: active ? `0 0 0 5px rgba(${theme.focusRgb},0.14)` : "0 4px 12px rgba(15,23,42,0.10)",
-                        transition: "all 0.18s ease",
-                        padding: 0,
-                      }}
-                    />
-                  );
-                })}
-              </div>
+              
             </div>
           </section>
 
         <main className="grid gap-6" style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }}>
           {userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length > 0 && (
-            <section className="pleasure-user-card" style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#166534" }}>
+            <section className="pleasure-user-card" style={{ background: "#e8edf7", border: "1px solid #b8c7dc", borderRadius: 30, padding: 20, boxShadow: "0 12px 35px rgba(15,23,42,0.06)", boxSizing: "border-box", overflow: "hidden" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 16, color: "#191970" }}>
                 Vaši zakazani termini ({userConfirmedBookings.filter((booking) => !isPastSlot(booking.date, booking.time)).length})
               </h2>
 
@@ -2601,15 +2528,15 @@ if (isAdminPage) {
                         minWidth: 0,
                         boxSizing: "border-box",
                         background: "#ffffff",
-                        border: "1px solid #86efac",
+                        border: "1px solid #6b85a3",
                         borderRadius: 18,
                         padding: 16,
                       }}
                     >
-                      <div style={{ color: "#166534", fontWeight: 900, fontSize: 16 }}>
+                      <div style={{ color: "#191970", fontWeight: 900, fontSize: 16 }}>
                         Termin {index + 1}
                       </div>
-                      <div style={{ color: "#166534", fontWeight: 900, fontSize: 20 }}>
+                      <div style={{ color: "#191970", fontWeight: 900, fontSize: 20 }}>
                         {booking.date} u {booking.time}
                       </div>
                       <button
@@ -2656,7 +2583,7 @@ if (isAdminPage) {
                 <span style={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "#111827", WebkitTextFillColor: "#111827", fontSize: 16 }}>
                   Telefon
                   {isValidPhone(clientPhone) && (
-                    <span style={{ color: "#16a34a", fontWeight: 900 }}>✓</span>
+                    <span style={{ color: "#191970", fontWeight: 900 }}>✓</span>
                   )}
                 </span>
                 <input
@@ -2991,7 +2918,7 @@ if (isAdminPage) {
                   border:
                     trackedBooking.status === "pending"
                       ? "2px solid #f59e0b"
-                      : "2px solid #22c55e",
+                      : "2px solid #191970",
                 }}
               >
                 <div
@@ -3011,7 +2938,7 @@ if (isAdminPage) {
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#2563eb",
+                    color: "#2c3e75",
                     fontWeight: 700,
                     marginBottom: 6,
                   }}
