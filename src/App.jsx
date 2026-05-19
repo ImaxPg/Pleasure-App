@@ -933,14 +933,16 @@ const barberSchedules = SALON_CONFIG.schedules;
       !isPending(selectedDate, slot)
   );
 
-  const cancelUserBooking = async (bookingToCancel) => {
+  const cancelUserBooking = async (bookingToCancel, options = {}) => {
     if (!bookingToCancel) return;
 
-    const confirmed = window.confirm(
-      `Da li ste sigurni da želite da otkažete termin ${bookingToCancel.date} u ${bookingToCancel.time}?`
-    );
+    if (!options.skipConfirm) {
+      const confirmed = window.confirm(
+        `Da li ste sigurni da želite da otkažete termin ${bookingToCancel.date} u ${bookingToCancel.time}?`
+      );
 
-    if (!confirmed) return;
+      if (!confirmed) return;
+    }
 
     try {
       const response = await fetch(`${API}/appointments/${bookingToCancel.id}/user-cancel`, {
@@ -2372,7 +2374,8 @@ if (isAdminPage) {
             position: "fixed",
             inset: 0,
             background: "rgba(0,0,0,0.45)",
-            zIndex: 9999,
+            zIndex: 2147483647,
+            pointerEvents: "auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2408,12 +2411,15 @@ if (isAdminPage) {
                   <div style={{ display: "flex", gap: 12 }}>
                     <button
                       type="button"
-                      onClick={() => {
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
                         const bookingToCancel = userPopup.bookingToCancel;
                         setUserPopup(null);
 
                         if (bookingToCancel) {
-                          cancelUserBooking(bookingToCancel);
+                          cancelUserBooking(bookingToCancel, { skipConfirm: true });
                         }
                       }}
                       style={{
@@ -2425,6 +2431,8 @@ if (isAdminPage) {
                         padding: "14px 18px",
                         fontWeight: 700,
                         cursor: "pointer",
+                        touchAction: "manipulation",
+                        pointerEvents: "auto",
                       }}
                     >
                       DA
@@ -2432,7 +2440,11 @@ if (isAdminPage) {
 
                     <button
                       type="button"
-                      onClick={() => setUserPopup(null)}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setUserPopup(null);
+                      }}
                       style={{
                         flex: 1,
                         border: "1px solid #d4d4d8",
@@ -2442,6 +2454,8 @@ if (isAdminPage) {
                         padding: "14px 18px",
                         fontWeight: 700,
                         cursor: "pointer",
+                        touchAction: "manipulation",
+                        pointerEvents: "auto",
                       }}
                     >
                       NE
