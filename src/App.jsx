@@ -2556,7 +2556,6 @@ if (isAdminPage) {
         width: "100%",
         height: "auto",
         display: "block",
-        objectFit: "cover",
       }}
     />
 
@@ -2696,7 +2695,7 @@ if (isAdminPage) {
                 </span>
                 <input
                   type="text"
-                  placeholder="npr. 067 123 456"
+                  placeholder="Obavezno polje 06xxxxxxx"
                   value={formatPhone(clientPhone)}
                   onFocus={() => setFocusedField("phone")}
                   onBlur={() => setFocusedField("")}
