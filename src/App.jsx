@@ -7,7 +7,7 @@ const END_HOUR = 20;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 const COLOR_THEMES = {
   green: {
-    pageBg: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
+    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
     softBorder: "#bbf7d0",
     focus: "#16a34a",
     focusRgb: "22,163,74",
@@ -27,7 +27,7 @@ const COLOR_THEMES = {
     strongHover: "#16a34a",
   },
   blue: {
-    pageBg: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
+    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
     softBorder: "#bfdbfe",
     focus: "#2563eb",
     focusRgb: "37,99,235",
@@ -47,7 +47,7 @@ const COLOR_THEMES = {
     strongHover: "#1d4ed8",
   },
   red: {
-    pageBg: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
+    pageBg: "linear-gradient(180deg, #1f2937 0%, #111827 100%)",
     softBorder: "#fecaca",
     focus: "#dc2626",
     focusRgb: "220,38,38",
