@@ -588,7 +588,11 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(() => {
+  if (!userPopup) {
+    fetchData();
+  }
+}, 5000);
 
     return () => clearInterval(interval);
   }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
