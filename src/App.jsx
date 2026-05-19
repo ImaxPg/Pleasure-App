@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, ShieldCheck } from "lucide-react";
-import peroImage from "./pero4.jpg";
+import peroImage from "./pero04.jpg";
 
 const START_HOUR = 9;
 const END_HOUR = 20;
