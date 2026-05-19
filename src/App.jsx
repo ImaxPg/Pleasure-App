@@ -588,7 +588,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 5000);
 
     return () => clearInterval(interval);
   }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
@@ -680,7 +680,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     };
 
     fetchAdminAppointments();
-    const interval = setInterval(fetchAdminAppointments, 3000);
+    const interval = setInterval(fetchAdminAppointments, 5000);
 
     return () => clearInterval(interval);
   }, [isAdminPage, isAdminAuth]);
