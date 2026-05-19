@@ -587,15 +587,18 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         });
     };
 
-    fetchData();
+    if (!userPopup) {
+      fetchData();
+    }
+
     const interval = setInterval(() => {
-  if (!userPopup) {
-    fetchData();
-  }
-}, 5000);
+      if (!userPopup) {
+        fetchData();
+      }
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone, userPopup]);
+  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
@@ -683,15 +686,18 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
         });
     };
 
-    fetchAdminAppointments();
+    if (adminPopups.length === 0) {
+      fetchAdminAppointments();
+    }
+
     const interval = setInterval(() => {
-  if (adminPopups.length === 0) {
-    fetchAdminAppointments();
-  }
-}, 5000);
+      if (adminPopups.length === 0) {
+        fetchAdminAppointments();
+      }
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [isAdminPage, isAdminAuth, adminPopups.length]);
+  }, [isAdminPage, isAdminAuth]);
 
   const normalizeStatus = (status) => (status || "").toLowerCase().trim();
 
@@ -1695,7 +1701,12 @@ if (isAdminPage) {
                   </p>
                 )}
                 <button
-                  onClick={() => setAdminPopups((current) => current.slice(1))}
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setAdminPopups((current) => current.slice(1));
+                  }}
                   style={{
                     width: "100%",
                     border: 0,
@@ -1705,6 +1716,7 @@ if (isAdminPage) {
                     padding: "14px 18px",
                     fontWeight: 700,
                     cursor: "pointer",
+                    touchAction: "manipulation",
                   }}
                 >
                   U redu
@@ -2404,7 +2416,11 @@ if (isAdminPage) {
                 <p style={{ fontSize: 16, marginBottom: 20, color: "#374151" }}>{userPopup.message}</p>
                 <button
                   type="button"
-                  onClick={() => setUserPopup(null)}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setUserPopup(null);
+                  }}
                   style={{
                     width: "100%",
                     border: 0,
@@ -2414,6 +2430,7 @@ if (isAdminPage) {
                     padding: "14px 18px",
                     fontWeight: 700,
                     cursor: "pointer",
+                    touchAction: "manipulation",
                   }}
                 >
                   U redu
