@@ -2409,10 +2409,12 @@ if (isAdminPage) {
                     <button
                       type="button"
                       onClick={() => {
-                        if (userPopup.onConfirm) {
-                          userPopup.onConfirm();
-                        }
+                        const bookingToCancel = userPopup.bookingToCancel;
                         setUserPopup(null);
+
+                        if (bookingToCancel) {
+                          cancelUserBooking(bookingToCancel);
+                        }
                       }}
                       style={{
                         flex: 1,
