@@ -2546,7 +2546,6 @@ if (isAdminPage) {
   <div
     style={{
       width: "100%",
-      maxWidth: "520px",
       position: "relative",
     }}
   >
@@ -2557,6 +2556,7 @@ if (isAdminPage) {
         width: "100%",
         height: "auto",
         display: "block",
+        objectFit: "cover",
       }}
     />
 
