@@ -2546,6 +2546,7 @@ if (isAdminPage) {
   <div
     style={{
       width: "100%",
+      maxWidth: "520px",
       position: "relative",
     }}
   >
