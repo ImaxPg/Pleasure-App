@@ -2409,10 +2409,12 @@ if (isAdminPage) {
                 {userPopup.confirmButtons ? (
                   <div style={{ display: "flex", gap: 12 }}>
                     <button
+                      type="button"
                       onClick={() => {
-                        const onConfirm = userPopup.onConfirm;
+                        if (userPopup.onConfirm) {
+                          userPopup.onConfirm();
+                        }
                         setUserPopup(null);
-                        if (onConfirm) onConfirm();
                       }}
                       style={{
                         flex: 1,
@@ -2429,6 +2431,7 @@ if (isAdminPage) {
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => setUserPopup(null)}
                       style={{
                         flex: 1,
