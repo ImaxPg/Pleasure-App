@@ -2537,7 +2537,7 @@ if (isAdminPage) {
   style={{
     position: "relative",
     width: "100%",
-    background: "#f8fafc",
+    background: "linear-gradient(135deg, #111827, #1f2937)",
     overflow: "hidden",
     display: "flex",
     justifyContent: "center",
