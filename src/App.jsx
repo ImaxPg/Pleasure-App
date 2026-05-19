@@ -2762,6 +2762,7 @@ if (isAdminPage) {
                         fontSize: 20,
                         color: "#111827",
                         WebkitTextFillColor: "#111827",
+                        textAlign: "center",
                       }}
                     >
                       {barber.name}
