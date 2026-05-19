@@ -595,7 +595,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 }, 5000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
+  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone, userPopup]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
@@ -684,10 +684,14 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     };
 
     fetchAdminAppointments();
-    const interval = setInterval(fetchAdminAppointments, 5000);
+    const interval = setInterval(() => {
+  if (adminPopups.length === 0) {
+    fetchAdminAppointments();
+  }
+}, 5000);
 
     return () => clearInterval(interval);
-  }, [isAdminPage, isAdminAuth]);
+  }, [isAdminPage, isAdminAuth, adminPopups.length]);
 
   const normalizeStatus = (status) => (status || "").toLowerCase().trim();
 
