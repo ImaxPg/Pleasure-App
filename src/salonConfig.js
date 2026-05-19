@@ -40,7 +40,7 @@ export const SALON_CONFIG = {
   },
 
   colors: {
-    pageBg: "#0f172a",
+    pageBg: "#fcba03",
     heroBg: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
   },
 };
