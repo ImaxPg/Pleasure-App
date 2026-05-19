@@ -1,3 +1,4 @@
+import { SALON_CONFIG } from "./salonConfig";
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, ShieldCheck } from "lucide-react";
 import peroImage from "./pero4png.png";
@@ -107,10 +108,7 @@ if (typeof document !== "undefined") {
   }
 }
 
-const ADMIN_BARBER_ROUTES = {
-  "/admin-pero-081": 1,
-  "/admin-dzeno-081": 2,
-};
+const ADMIN_BARBER_ROUTES = SALON_CONFIG.adminRoutes;
 
 
 export default function MassageBookingSite() {
@@ -125,19 +123,7 @@ const [selectedDate, setSelectedDate] = useState(todayISO());
 const [selectedSlot, setSelectedSlot] = useState("");
   const [selectedBarber, setSelectedBarber] = useState(fixedAdminBarberId || 1);
 
-
-  const barbers = [
-  {
-    id: 1,
-    name: "Pero",
-    image: "/barbers/pero.jpg",
-  },
-  {
-    id: 2,
-    name: "Dženo",
-    image: "/barbers/dzeno.jpg",
-  },
-];
+const barbers = SALON_CONFIG.barbers;
 
 const barberNameMap = {
   1: "Pero",
@@ -928,20 +914,7 @@ const getBarberColor = (appointment) => {
   };
 
 
-  const barberSchedules = {
-    1: {
-      name: "Pero",
-      workingStart: "08:00",
-      workingEnd: "20:00",
-      breaks: [{ start: "15:00", end: "17:00" }],
-    },
-    2: {
-      name: "Dženo",
-      workingStart: "09:00",
-      workingEnd: "20:00",
-      breaks: [{ start: "18:00", end: "20:00" }],
-    },
-  };
+const barberSchedules = SALON_CONFIG.schedules;
 
   const timeToMinutes = (time) => {
     const [hours, minutes] = String(time || "00:00").split(":").map(Number);
@@ -1582,7 +1555,7 @@ if (isAdminPage) {
     return (
       <div
         onClick={unlockAdminSound}
-        style={{ minHeight: "100vh", background: theme.pageBg, color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
+        style={{ minHeight: "100vh", background: SALON_CONFIG.colors.pageBg, color: "#18181b", padding: "16px", fontSize: 16, WebkitTextSizeAdjust: "100%" }}
       >
         <style>{`
           @keyframes pulseStatus {
@@ -2523,13 +2496,13 @@ if (isAdminPage) {
           })()}
         </div>
       )}
-      <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: "#1f2937" }}>
+      <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: SALON_CONFIG.colors.pageBg }}>
         <section
   className="pleasure-user-hero"
   style={{
     position: "relative",
     width: "100%",
-    background: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
+    background: SALON_CONFIG.colors.heroBg,
     overflow: "hidden",
     display: "flex",
     justifyContent: "center",
@@ -2543,7 +2516,7 @@ if (isAdminPage) {
     }}
   >
     <img
-      src={peroImage}
+      src={SALON_CONFIG.logo}
       alt="Frizerski salon Pleasure"
       style={{
         width: "100%",
