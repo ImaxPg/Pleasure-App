@@ -1728,7 +1728,7 @@ if (isAdminPage) {
                   width: 14,
                   height: 14,
                   borderRadius: "50%",
-                  background: isBackendOnline ? "#2c3e75" : "#ef4444",
+                  background: isBackendOnline ? "#22c55e" : "#ef4444",
                   display: "inline-block",
                   boxShadow: isBackendOnline ? "0 0 0 4px rgba(44,62,117,0.18)" : "0 0 0 4px rgba(239,68,68,0.18)",
                   ...(isBackendOnline ? pulseStyle : {}),
@@ -2137,7 +2137,7 @@ if (isAdminPage) {
                 style={{
                   flex: 1,
                   borderRadius: 16,
-                  background: "linear-gradient(135deg, #0f172a 0%, #191970 100%)",
+                  background: "linear-gradient(135deg, #b91c1c 0%, #ef4444 100%)",
                   color: "white",
                   padding: "12px 14px",
                   fontWeight: 800,
@@ -2157,7 +2157,7 @@ if (isAdminPage) {
                 style={{
                   flex: 1,
                   borderRadius: 16,
-                  background: "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
+                  background: "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
                   color: "white",
                   padding: "12px 14px",
                   fontWeight: 800,
@@ -2199,8 +2199,23 @@ if (isAdminPage) {
                       padding: "10px 12px",
                       fontSize: 14,
                       fontWeight: 700,
-                      background: bookedNow || nonWorkingNow ? "#f4f4f5" : manuallyOpenNow ? "#e8edf7" : blockedNow ? "#191970" : "white",
-                      color: bookedNow || nonWorkingNow ? "#71717a" : manuallyOpenNow ? "#191970" : blockedNow ? "white" : "#191970",
+                      background:
+                      bookedNow || nonWorkingNow
+                        ? "#f4f4f5"
+                        : manuallyOpenNow
+                        ? "#dcfce7"
+                        : blockedNow
+                        ? "#fee2e2"
+                        : "white",
+
+                    color:
+                      bookedNow || nonWorkingNow
+                        ? "#71717a"
+                        : manuallyOpenNow
+                        ? "#15803d"
+                        : blockedNow
+                        ? "#b91c1c"
+                        : "#191970",
                       cursor: bookedNow ? "not-allowed" : "pointer",
                       opacity: bookedNow ? 0.55 : 1,
                       boxShadow: blockedNow ? "0 8px 18px rgba(25,25,112,0.18)" : "0 6px 14px rgba(15,23,42,0.05)",
@@ -2494,7 +2509,7 @@ if (isAdminPage) {
                     width: 12,
                     height: 12,
                     borderRadius: "50%",
-                    background: isBackendOnline ? "#2c3e75" : "#ef4444",
+                    background: isBackendOnline ? "#22c55e" : "#ef4444",
                     display: "inline-block",
                     boxShadow: isBackendOnline ? "0 0 0 5px rgba(44,62,117,0.22)" : "0 0 0 5px rgba(239,68,68,0.22)",
                     ...(isBackendOnline ? pulseStyle : {}),
