@@ -2539,7 +2539,7 @@ if (isAdminPage) {
         style={{
           width: "100%",
           height: "auto",
-          maxHeight: "340px",
+          height: "clamp(320px, 55vw, 720px)",
           objectFit: "cover",
           objectPosition: "center top",
           display: "block",
