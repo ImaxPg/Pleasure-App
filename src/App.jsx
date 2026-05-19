@@ -2531,13 +2531,13 @@ if (isAdminPage) {
           })()}
         </div>
       )}
-      <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
+      <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: "#1f2937" }}>
         <section
   className="pleasure-user-hero"
   style={{
     position: "relative",
     width: "100%",
-    background: theme.pageBg,
+    background: "linear-gradient(180deg, #111827 0%, #1f2937 100%)",
     overflow: "hidden",
     display: "flex",
     justifyContent: "center",
