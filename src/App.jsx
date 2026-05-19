@@ -2623,7 +2623,7 @@ if (isAdminPage) {
                   type="checkbox"
                   checked={rememberData}
                   onChange={(e) => setRememberData(e.target.checked)}
-                  style={{ width: 18, height: 18, accentColor: "#111827" }}
+                  style={{ width: 18, height: 18, accentColor: "#212f4d" }}
                 />
                 <span style={{ fontSize: 16, color: "#374151", WebkitTextFillColor: "#374151" }}>Zapamti moje podatke</span>
               </label>
