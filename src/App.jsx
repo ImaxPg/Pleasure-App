@@ -2532,26 +2532,44 @@ if (isAdminPage) {
         </div>
       )}
       <div className="pleasure-user-page" style={{ minHeight: "100vh", width: "100%", overflowX: "hidden", background: theme.pageBg }}>
-        <section className="pleasure-user-hero" style={{ position: "relative", width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", overflow: "hidden", background: "#111827" }}>
-          <img
-        src={peroImage}
-        alt="Frizerski salon Pleasure"
-        style={{
-          width: "100%",
-          height: "auto",
-          height: "clamp(320px, 55vw, 720px)",
-          objectFit: "cover",
-          objectPosition: "center top",
-          display: "block",
-        }}
-      />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)" }} />
-          <div style={{ position: "absolute", left: 18, right: 18, bottom: 18, color: "white", maxWidth: 430, margin: "0 auto" }}>
-            <h1 style={{ margin: 0, fontSize: 31, lineHeight: 1.04, fontWeight: 950, color: "#fff", textShadow: "0 2px 6px rgba(0,0,0,0.5)", letterSpacing: "-0.04em" }}>
-              
-            </h1>
-          </div>
-        </section>
+        <section
+  className="pleasure-user-hero"
+  style={{
+    position: "relative",
+    width: "100%",
+    background: "#111827",
+    overflow: "hidden",
+    display: "flex",
+    justifyContent: "center",
+  }}
+>
+  <div
+    style={{
+      width: "100%",
+      maxWidth: "520px",
+      position: "relative",
+    }}
+  >
+    <img
+      src={peroImage}
+      alt="Frizerski salon Pleasure"
+      style={{
+        width: "100%",
+        height: "auto",
+        display: "block",
+      }}
+    />
+
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background:
+          "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.72) 100%)",
+      }}
+    />
+  </div>
+</section>
 
         <div className="pleasure-user-content" style={{ width: "100%", maxWidth: "var(--pleasure-user-max)", margin: "0 auto", padding: "clamp(14px, 2.2vw, 28px)", display: "grid", gap: "clamp(16px, 2.2vw, 24px)", boxSizing: "border-box", overflowX: "hidden" }}>
           <section className="pleasure-user-card" style={{ background: "rgba(255,255,255,0.94)", border: `1px solid ${theme.softBorder}`, borderRadius: 22, padding: 16, boxShadow: "0 12px 35px rgba(15,23,42,0.06)" }}>
