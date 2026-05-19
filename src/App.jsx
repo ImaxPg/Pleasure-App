@@ -2169,26 +2169,18 @@ if (isAdminPage) {
     Frizer
   </span>
 
-  <select
-    value={blockBarber}
-    onChange={(e) => setBlockBarber(Number(e.target.value))}
-    style={{
-      flex: 1,
-      border: "none",
-      outline: "none",
-      fontSize: 16,
-      background: "transparent",
-      color: "#111827",
-      WebkitTextFillColor: "#111827",
-      fontWeight: 700,
-    }}
-  >
-    {barbers.map((barber) => (
-      <option key={barber.id} value={barber.id}>
-        {barber.name}
-      </option>
-    ))}
-  </select>
+  <div
+  style={{
+    flex: 1,
+    fontSize: 16,
+    color: "#111827",
+    WebkitTextFillColor: "#111827",
+    fontWeight: 700,
+    textAlign: "center",
+  }}
+>
+  {getBarberName(fixedAdminBarberId)}
+</div>
 </label>
 
 
