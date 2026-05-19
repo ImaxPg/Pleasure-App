@@ -933,16 +933,14 @@ const barberSchedules = SALON_CONFIG.schedules;
       !isPending(selectedDate, slot)
   );
 
-  const cancelUserBooking = async (bookingToCancel, options = {}) => {
+  const cancelUserBooking = async (bookingToCancel) => {
     if (!bookingToCancel) return;
 
-    if (!options.skipConfirm) {
-      const confirmed = window.confirm(
-        `Da li ste sigurni da želite da otkažete termin ${bookingToCancel.date} u ${bookingToCancel.time}?`
-      );
+    const confirmed = window.confirm(
+      `Da li ste sigurni da želite da otkažete termin ${bookingToCancel.date} u ${bookingToCancel.time}?`
+    );
 
-      if (!confirmed) return;
-    }
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`${API}/appointments/${bookingToCancel.id}/user-cancel`, {
@@ -1066,18 +1064,7 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
         setUserPopup({
           title: "Zahtjev je poslat",
           message:
-            "Ako ste greškom rezervisali pogrešan termin, možete ga odmah otkazati.",
-          confirmButtons: true,
-          bookingToCancel: {
-            id: request.id,
-            date: selectedDate,
-            time: selectedSlot,
-            client_name: clientName,
-            client_phone: clientPhone.trim(),
-            barber_id: selectedBarber,
-            barber_name: getBarberName(selectedBarber),
-            status: "pending",
-          },
+            "Vaš zahtjev je uspješno poslat administratoru. Ostanite na stranici i dobićete obavještenje kada termin bude potvrđen ili odbijen.",
         });
       }, 300);
   setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
@@ -2407,77 +2394,22 @@ if (isAdminPage) {
                 <div style={{ fontSize: 40, marginBottom: 10 }}>{icon}</div>
                 <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 16, color: "#18181b" }}>{userPopup.title}</h2>
                 <p style={{ fontSize: 16, marginBottom: 20, color: "#374151" }}>{userPopup.message}</p>
-                {userPopup.confirmButtons ? (
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <button
-                      type="button"
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const bookingToCancel = userPopup.bookingToCancel;
-                        setUserPopup(null);
-
-                        if (bookingToCancel) {
-                          cancelUserBooking(bookingToCancel, { skipConfirm: true });
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        border: 0,
-                        borderRadius: 16,
-                        background: "#191970",
-                        color: "white",
-                        padding: "14px 18px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        touchAction: "manipulation",
-                        pointerEvents: "auto",
-                      }}
-                    >
-                      DA
-                    </button>
-
-                    <button
-                      type="button"
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setUserPopup(null);
-                      }}
-                      style={{
-                        flex: 1,
-                        border: "1px solid #d4d4d8",
-                        borderRadius: 16,
-                        background: "white",
-                        color: "#18181b",
-                        padding: "14px 18px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        touchAction: "manipulation",
-                        pointerEvents: "auto",
-                      }}
-                    >
-                      NE
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setUserPopup(null)}
-                    style={{
-                      width: "100%",
-                      border: 0,
-                      borderRadius: 16,
-                      background: buttonColor,
-                      color: "white",
-                      padding: "14px 18px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                    }}
-                  >
-                    U redu
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setUserPopup(null)}
+                  style={{
+                    width: "100%",
+                    border: 0,
+                    borderRadius: 16,
+                    background: buttonColor,
+                    color: "white",
+                    padding: "14px 18px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  U redu
+                </button>
               </div>
             );
           })()}
