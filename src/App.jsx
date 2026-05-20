@@ -1702,6 +1702,11 @@ if (isAdminPage) {
                 )}
                 <button
                   type="button"
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setAdminPopups((current) => current.slice(1));
+                  }}
                   onPointerDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2416,6 +2421,11 @@ if (isAdminPage) {
                 <p style={{ fontSize: 16, marginBottom: 20, color: "#374151" }}>{userPopup.message}</p>
                 <button
                   type="button"
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setUserPopup(null);
+                  }}
                   onPointerDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
