@@ -46,6 +46,8 @@ const transporter = nodemailer.createTransport({
 const allowedOrigins = [
   "https://pleasure-app.vercel.app",
   "https://perofrizer.me",
+  "https://frizerpavicevic.com",
+  "https://www.frizerpavicevic.com",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ];

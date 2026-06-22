@@ -1519,6 +1519,23 @@ if (isAdminPage) {
             50% { transform: scale(1.22); opacity: 0.72; }
             100% { transform: scale(1); opacity: 1; }
           }
+
+          @keyframes logoGlow {
+            from {
+              filter:
+                drop-shadow(0 0 8px rgba(255,255,255,0.65))
+                drop-shadow(0 0 20px rgba(59,130,246,0.65))
+                drop-shadow(0 0 40px rgba(59,130,246,0.45));
+            }
+
+            to {
+              filter:
+                drop-shadow(0 0 18px rgba(255,255,255,0.95))
+                drop-shadow(0 0 42px rgba(59,130,246,1))
+                drop-shadow(0 0 90px rgba(59,130,246,0.9));
+            }
+          }
+
           .manual-booking-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -2300,10 +2317,28 @@ if (isAdminPage) {
     <div style={{ minHeight: "100vh", background: SALON_CONFIG.colors.pageBg, color: "#18181b", padding: 0, fontSize: 17, lineHeight: 1.45, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", WebkitTextSizeAdjust: "100%" }}>
       <style>{`
         @keyframes pulseStatus {
-          0% { transform: scale(1); opacity: 1; }
+          0% { transform: scale(1); opacity: 1; 
+          }
           50% { transform: scale(1.22); opacity: 0.72; }
           100% { transform: scale(1); opacity: 1; }
         }
+
+        @keyframes logoGlow {
+        from {
+          filter:
+            drop-shadow(0 0 8px rgba(255,255,255,0.65))
+            drop-shadow(0 0 20px rgba(59,130,246,0.65))
+            drop-shadow(0 0 40px rgba(59,130,246,0.45));
+        }
+
+        to {
+          filter:
+            drop-shadow(0 0 18px rgba(255,255,255,0.95))
+            drop-shadow(0 0 42px rgba(59,130,246,1))
+            drop-shadow(0 0 90px rgba(59,130,246,0.9));
+        }
+      }
+
         .pleasure-user-page,
         .pleasure-user-page * {
           box-sizing: border-box;
@@ -2476,6 +2511,11 @@ if (isAdminPage) {
         width: "100%",
         height: "auto",
         display: "block",
+        animation: "logoGlow 2.4s ease-in-out infinite alternate",
+        filter:
+          "drop-shadow(0 0 12px rgba(255,255,255,0.85)) " +
+          "drop-shadow(0 0 32px rgba(59,130,246,0.95)) " +
+          "drop-shadow(0 0 72px rgba(59,130,246,0.85))",
       }}
     />
 
