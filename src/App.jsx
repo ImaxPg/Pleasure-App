@@ -388,10 +388,15 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   };
 
   const syncUserConfirmedBookings = async () => {
-    if (isAdminPage || !isValidPhone(clientPhone)) return;
+    const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
+    const phoneToCheck = isValidPhone(clientPhone)
+      ? clientPhone
+      : savedBookings[0]?.client_phone;
+
+    if (isAdminPage || !isValidPhone(phoneToCheck || "")) return;
 
     try {
-      const response = await fetch(`${API}/appointments/my-booking?phone=${clientPhone}&t=${Date.now()}`, {
+      const response = await fetch(`${API}/appointments/my-booking?phone=${phoneToCheck}&t=${Date.now()}`, {
         cache: "no-store",
       });
 
@@ -467,7 +472,7 @@ setUserConfirmedBookings((current) => {
   };
 
   useEffect(() => {
-  if (isAdminPage || !isValidPhone(clientPhone)) return;
+  if (isAdminPage) return;
 
   syncUserConfirmedBookings();
 
