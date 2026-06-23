@@ -651,7 +651,7 @@ setUserConfirmedBookings((current) => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone]);
+  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone, userConfirmedBookings]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
