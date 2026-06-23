@@ -388,14 +388,12 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   };
 
   const syncUserConfirmedBookings = async () => {
-    const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
-const savedPhone = savedBookings[0]?.client_phone;
+  if (isAdminPage) return;
 
-const phoneToCheck = isValidPhone(savedPhone || "")
-  ? savedPhone
-  : clientPhone;
+  const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
+  const phoneToCheck = savedBookings[0]?.client_phone || clientPhone;
 
-    if (isAdminPage || !isValidPhone(phoneToCheck || "")) return;
+  if (!isValidPhone(phoneToCheck || "")) return;
 
     try {
       const response = await fetch(`${API}/appointments/my-booking?phone=${phoneToCheck}&t=${Date.now()}`, {
@@ -432,42 +430,27 @@ const phoneToCheck = isValidPhone(savedPhone || "")
           return a.time.localeCompare(b.time);
         });
 
-setUserConfirmedBookings((current) => {
-  const confirmedIds = new Set(confirmedBookings.map((booking) => String(booking.id)));
+const previousBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
 
-  const removedBookings = current.filter(
-    (booking) =>
-      booking?.id &&
-      !confirmedIds.has(String(booking.id)) &&
-      !isPastSlot(booking.date, booking.time)
-  );
+const confirmedIds = new Set(confirmedBookings.map((booking) => String(booking.id)));
 
-  const notifiedIds = JSON.parse(localStorage.getItem("adminCancelledNotifiedIds") || "[]");
-  const notifiedSet = new Set(notifiedIds.map(String));
+const removedBookings = previousBookings.filter(
+  (booking) =>
+    booking?.id &&
+    !confirmedIds.has(String(booking.id)) &&
+    !isPastSlot(booking.date, booking.time)
+);
 
-  const newlyRemoved = removedBookings.filter(
-    (booking) => !notifiedSet.has(String(booking.id))
-  );
+localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
+localStorage.removeItem("userConfirmedBooking");
+setUserConfirmedBookings(confirmedBookings);
 
-  if (newlyRemoved.length > 0) {
-    const updatedNotifiedIds = [
-      ...notifiedSet,
-      ...newlyRemoved.map((booking) => String(booking.id)),
-    ];
-
-    localStorage.setItem("adminCancelledNotifiedIds", JSON.stringify(updatedNotifiedIds));
-
-    setUserPopup({
-      title: "Termin je otkazan",
-      message: "Administrator je otkazao jedan od vaših termina.",
-    });
-  }
-
-  localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
-  localStorage.removeItem("userConfirmedBooking");
-
-  return confirmedBookings;
-});
+if (removedBookings.length > 0) {
+  setUserPopup({
+    title: "Termin je otkazan",
+    message: "Administrator je otkazao jedan od vaših termina.",
+  });
+}
     } catch (error) {
       // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
     }
@@ -593,41 +576,7 @@ setUserConfirmedBookings((current) => {
           setBlocked(blockedMap);
           setOverrideOpen(overrideMap);
 
-          if (userConfirmedBookings.length > 0) {
-            const confirmedIdsForSelectedDate = new Set(
-              data
-                .filter((item) => item.status === "confirmed")
-                .map((item) => String(item.id))
-            );
-
-            const removedBookings = userConfirmedBookings.filter(
-              (booking) =>
-                booking.date === selectedDate &&
-                !confirmedIdsForSelectedDate.has(String(booking.id)) &&
-                !userAdminCancelledNotifiedIdsRef.current.has(String(booking.id))
-            );
-
-            if (removedBookings.length > 0) {
-              removedBookings.forEach((booking) => {
-                userAdminCancelledNotifiedIdsRef.current.add(String(booking.id));
-              });
-
-              const nextBookings = userConfirmedBookings.filter(
-                (booking) =>
-                  booking.date !== selectedDate ||
-                  confirmedIdsForSelectedDate.has(String(booking.id))
-              );
-
-              localStorage.setItem("userConfirmedBookings", JSON.stringify(nextBookings));
-              localStorage.removeItem("userConfirmedBooking");
-              setUserConfirmedBookings(nextBookings);
-              setUserMessage("");
-              setUserPopup({
-                title: "Termin je otkazan",
-                message: "Jedan od vaših termina je otkazan od strane administratora.",
-              });
-            }
-          }
+          
 
           if (!isAdminPage && isValidPhone(clientPhone)) {
             syncUserConfirmedBookings();
