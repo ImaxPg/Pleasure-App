@@ -707,6 +707,8 @@ app.delete("/appointments/:id/user-cancel", async (req, res) => {
 app.get("/appointments/my-booking", async (req, res) => {
   const { phone } = req.query;
 
+  console.log("MY BOOKING PHONE:", phone);
+
   if (!/^06[0-9]{7}$/.test(String(phone || "").trim())) {
     return res.status(400).json({ error: "Neispravan telefon" });
   }
