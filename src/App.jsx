@@ -407,7 +407,12 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       const result = await response.json();
       const bookings = Array.isArray(result) ? result : [result];
       const confirmedBookings = bookings
-        .filter((booking) => booking?.id && !isPastSlot(booking.date, booking.time))
+        .filter(
+          (booking) =>
+            booking?.id &&
+            booking.status === "confirmed" &&
+            !isPastSlot(booking.date, booking.time)
+        )
         .map((booking) => ({
           id: booking.id,
           date: booking.date,
@@ -423,6 +428,15 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
       localStorage.removeItem("userConfirmedBooking");
       setUserConfirmedBookings(confirmedBookings);
+            if (
+        userConfirmedBookings.length > confirmedBookings.length &&
+        confirmedBookings.length >= 0
+      ) {
+        setUserPopup({
+          title: "Termin je otkazan",
+          message: "Administrator je otkazao jedan od vaših termina.",
+        });
+      }
     } catch (error) {
       // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
     }
