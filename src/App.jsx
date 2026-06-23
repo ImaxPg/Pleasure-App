@@ -1635,6 +1635,9 @@ if (isAdminPage) {
             background: white;
             font-size: 16px;
             min-height: 48px;
+            color: #111827;
+            -webkit-text-fill-color: #111827;
+            caret-color: #111827;
           }
 
           @media (max-width: 767px) {
