@@ -621,9 +621,7 @@ if (removedBookings.length > 0) {
 
           
 
-          if (!isAdminPage && isValidPhone(clientPhone)) {
-            syncUserConfirmedBookings();
-          }
+         
 
           setUserLastUpdated(new Date().toLocaleTimeString("sr-ME"));
         })
