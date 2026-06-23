@@ -727,6 +727,8 @@ app.get("/appointments/my-booking", async (req, res) => {
       [phone]
     );
 
+    console.log("MY BOOKING DB RESULT:", result.rows);
+
     res.json(result.rows);
   } catch (err) {
     console.error("Greška pri čitanju korisničkih termina:", err);
