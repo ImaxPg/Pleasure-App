@@ -45,6 +45,7 @@ const transporter = nodemailer.createTransport({
 
 const allowedOrigins = [
   "https://pleasure-app.vercel.app",
+  "https://pleasure-app-git-supabase-migration-imaxpgs-projects.vercel.app",
   "https://perofrizer.me",
   "https://frizerpavicevic.com",
   "https://www.frizerpavicevic.com",
