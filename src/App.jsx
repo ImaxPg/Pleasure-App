@@ -466,8 +466,16 @@ if (newlyRemoved.length > 0) {
   };
 
   useEffect(() => {
+  if (isAdminPage || !isValidPhone(clientPhone)) return;
+
+  syncUserConfirmedBookings();
+
+  const interval = setInterval(() => {
     syncUserConfirmedBookings();
-  }, [clientPhone, isAdminPage]);
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [clientPhone, isAdminPage]);
 
   // UCITAVANJE TERMINA IZ BACKENDA (auto refresh svakih 3s)
   useEffect(() => {
