@@ -76,8 +76,9 @@ export default function MassageBookingSite() {
   const pathname = window.location.pathname.replace(/\/$/, "");
   const fixedAdminBarberId = ADMIN_BARBER_ROUTES[pathname] || null;
   const isAdminPage = Boolean(fixedAdminBarberId);
-const [selectedDate, setSelectedDate] = useState(todayISO());
-const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [selectedSlots, setSelectedSlots] = useState([]);
   const [selectedBarber, setSelectedBarber] = useState(fixedAdminBarberId || 1);
 
 const barbers = SALON_CONFIG.barbers;
@@ -130,6 +131,19 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [userMessage, setUserMessage] = useState("");
   const [userPopup, setUserPopup] = useState(null);
   const [trackedBookingId, setTrackedBookingId] = useState(() => localStorage.getItem("trackedBookingId"));
+  const [trackedBookingIds, setTrackedBookingIds] = useState(() => {
+    const savedIds = localStorage.getItem("trackedBookingIds");
+    if (savedIds) {
+      try {
+        return JSON.parse(savedIds);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    const oldId = localStorage.getItem("trackedBookingId");
+    return oldId ? [oldId] : [];
+  });
   const [trackedBooking, setTrackedBooking] = useState(null);
   const [userConfirmedBookings, setUserConfirmedBookings] = useState(() => {
     const savedList = localStorage.getItem("userConfirmedBookings");
@@ -256,6 +270,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     if (!isAdminPage && selectedDate < todayISO()) {
       setSelectedDate(todayISO());
       setSelectedSlot("");
+      setSelectedSlots([]);
       setIsSubmitting(false);
     }
   }, [selectedDate, isAdminPage]);
@@ -393,12 +408,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
   const phoneToCheck = savedBookings[0]?.client_phone || clientPhone;
 
-  console.log("AAAAAAAAA SYNC USER BOOKINGS AAAAAAAAA", {
-  savedBookings,
-  clientPhone,
-  phoneToCheck,
-  time: new Date().toLocaleTimeString(),
-});
+  
 
   if (!isValidPhone(phoneToCheck || "")) return;
 
@@ -418,7 +428,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 
       const result = await response.json();
 
-      console.log("MY-BOOKING RESPONSE", result);
+      
 
       const bookings = Array.isArray(result) ? result : [result];
       const confirmedBookings = bookings
@@ -443,7 +453,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
           return a.time.localeCompare(b.time);
         });
 
-console.log("CONFIRMED BOOKINGS", confirmedBookings);
+
 
 const previousBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
 
@@ -511,7 +521,11 @@ if (removedBookings.length > 0) {
               };
             }
 
-            if (trackedBookingId && String(item.id) === String(trackedBookingId)) {
+            const trackedIds = new Set(
+              [...trackedBookingIds, trackedBookingId].filter(Boolean).map(String)
+            );
+
+            if (trackedIds.has(String(item.id))) {
               if (item.status === "confirmed") {
                 setUserPopup({
                   title: "Termin je potvrđen",
@@ -538,8 +552,15 @@ if (removedBookings.length > 0) {
                   syncUserConfirmedBookings();
                 }, 500);
                 setUserMessage("");
-                localStorage.removeItem("trackedBookingId");
-                setTrackedBookingId(null);
+                setTrackedBookingIds((current) => {
+                  const next = current.filter((id) => String(id) !== String(item.id));
+                  localStorage.setItem("trackedBookingIds", JSON.stringify(next));
+                  return next;
+                });
+                if (String(trackedBookingId) === String(item.id)) {
+                  localStorage.removeItem("trackedBookingId");
+                  setTrackedBookingId(null);
+                }
               }
 
               if (item.status === "rejected") {
@@ -548,8 +569,15 @@ if (removedBookings.length > 0) {
                   message: `Vaš zahtjev za ${item.date} u ${item.time} je odbijen. Molimo izaberite drugi termin.`,
                 });
                 setUserMessage("");
-                localStorage.removeItem("trackedBookingId");
-                setTrackedBookingId(null);
+                setTrackedBookingIds((current) => {
+                  const next = current.filter((id) => String(id) !== String(item.id));
+                  localStorage.setItem("trackedBookingIds", JSON.stringify(next));
+                  return next;
+                });
+                if (String(trackedBookingId) === String(item.id)) {
+                  localStorage.removeItem("trackedBookingId");
+                  setTrackedBookingId(null);
+                }
               }
             }
 
@@ -615,7 +643,7 @@ if (removedBookings.length > 0) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [selectedDate, selectedBarber, trackedBookingId, clientPhone, userConfirmedBookings]);
+  }, [selectedDate, selectedBarber, trackedBookingId, trackedBookingIds, clientPhone, userConfirmedBookings]);
 
   useEffect(() => {
     if (!isAdminPage || !isAdminAuth) return;
@@ -1003,6 +1031,9 @@ const barberSchedules = SALON_CONFIG.schedules;
 
   const requestBooking = async () => {
     if (isSubmitting) return;
+
+    const slotsToRequest = [...selectedSlots].sort();
+
     if (!clientName.trim()) {
       setUserMessage("Molimo unesite ime i prezime.");
       return;
@@ -1013,34 +1044,46 @@ const barberSchedules = SALON_CONFIG.schedules;
       return;
     }
 
-if (!selectedDate || !selectedSlot) {
-  setUserMessage("Izaberite datum i termin prije zakazivanja.");
-  return;
-}
-
-const hasConfirmedBookingForSelectedDate = userConfirmedBookings.some((booking) =>
-  booking.date === selectedDate && !isPastSlot(booking.date, booking.time)
-);
-
-if (hasConfirmedBookingForSelectedDate) {
-  setUserMessage("Već imate rezervisan termin za ovaj dan");
-  return;
-}
-
-if (!bookingPin.trim()) {
-  setBookingPinError("Unesite PIN za zakazivanje.");
-  setUserMessage("Unesite PIN za zakazivanje.");
-  return;
-}
-
-if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
-      setUserMessage("Izabrani termin je neradni i nije moguće zakazivanje.");
-      setSelectedSlot("");
+    if (!selectedDate || slotsToRequest.length === 0) {
+      setUserMessage("Izaberite datum i najmanje jedan termin prije zakazivanja.");
       return;
     }
 
-    if (isUnavailable(selectedDate, selectedSlot)) {
-      setUserMessage("Ovaj termin više nije dostupan. Izaberite drugi termin.");
+    if (slotsToRequest.length > 4) {
+      setUserMessage("Možete izabrati najviše 4 termina za isti dan.");
+      return;
+    }
+
+    const activeUserBookingsForSelectedDate = userConfirmedBookings.filter((booking) =>
+      booking.date === selectedDate && !isPastSlot(booking.date, booking.time)
+    ).length;
+
+    const pendingUserRequestsForSelectedDate = pending.filter((request) =>
+      request.date === selectedDate && request.clientPhone === clientPhone.trim()
+    ).length;
+
+    if (activeUserBookingsForSelectedDate + pendingUserRequestsForSelectedDate + slotsToRequest.length > 4) {
+      setUserMessage("Možete imati najviše 4 zahtjeva ili termina za isti dan.");
+      return;
+    }
+
+    if (!bookingPin.trim()) {
+      setBookingPinError("Unesite PIN za zakazivanje.");
+      setUserMessage("Unesite PIN za zakazivanje.");
+      return;
+    }
+
+    const invalidSlot = slotsToRequest.find((slot) => isNonWorkingSlot(selectedDate, slot, selectedBarber));
+    if (invalidSlot) {
+      setUserMessage(`Termin ${invalidSlot} je neradni i nije moguće zakazivanje.`);
+      setSelectedSlots((current) => current.filter((slot) => slot !== invalidSlot));
+      return;
+    }
+
+    const unavailableSlot = slotsToRequest.find((slot) => isUnavailable(selectedDate, slot));
+    if (unavailableSlot) {
+      setUserMessage(`Termin ${unavailableSlot} više nije dostupan. Izaberite drugi termin.`);
+      setSelectedSlots((current) => current.filter((slot) => slot !== unavailableSlot));
       return;
     }
 
@@ -1048,38 +1091,42 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
       setIsSubmitting(true);
       setBookingPinError("");
 
-      const response = await fetch(`${API}/appointments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: selectedDate,
-          time: selectedSlot,
-          client_name: clientName,
-          client_phone: clientPhone.trim(),
-          booking_pin: bookingPin.trim(),
-          barber_id: selectedBarber,
-        }),
-      });
+      const createdRequests = [];
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || "Backend nije prihvatio zahtjev.");
+      for (const slot of slotsToRequest) {
+        const response = await fetch(`${API}/appointments`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            date: selectedDate,
+            time: slot,
+            client_name: clientName,
+            client_phone: clientPhone.trim(),
+            booking_pin: bookingPin.trim(),
+            barber_id: selectedBarber,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || `Backend nije prihvatio zahtjev za ${slot}.`);
+        }
+
+        const data = await response.json();
+
+        createdRequests.push({
+          id: data.id || crypto.randomUUID(),
+          date: selectedDate,
+          slot,
+          clientName,
+          clientPhone: clientPhone.trim(),
+          createdAt: new Date().toLocaleString("sr-ME"),
+        });
       }
 
-      const data = await response.json();
-
-      const request = {
-        id: data.id || crypto.randomUUID(),
-        date: selectedDate,
-        slot: selectedSlot,
-        clientName,
-        clientPhone: clientPhone.trim(),
-        createdAt: new Date().toLocaleString("sr-ME"),
-      };
-
-      setPending((current) => [...current, request]);
+      setPending((current) => [...current, ...createdRequests]);
 
       if (rememberData) {
         localStorage.setItem("savedName", clientName);
@@ -1088,39 +1135,43 @@ if (isNonWorkingSlot(selectedDate, selectedSlot, selectedBarber)) {
         localStorage.removeItem("savedName");
         localStorage.removeItem("savedPhone");
       }
-      localStorage.setItem("trackedBookingId", String(request.id));
-      setTrackedBookingId(String(request.id));
+
+      const newTrackedIds = createdRequests.map((request) => String(request.id));
+      localStorage.setItem("trackedBookingIds", JSON.stringify(newTrackedIds));
+      localStorage.setItem("trackedBookingId", newTrackedIds[0]);
+      setTrackedBookingIds(newTrackedIds);
+      setTrackedBookingId(newTrackedIds[0]);
 
       setTimeout(() => {
         setUserPopup({
           title: "Zahtjev je poslat",
           message:
-            "Vaš zahtjev je uspješno poslat administratoru. Ostanite na stranici i dobićete obavještenje kada termin bude potvrđen ili odbijen.",
+            createdRequests.length === 1
+              ? "Vaš zahtjev je uspješno poslat administratoru. Ostanite na stranici i dobićete obavještenje kada termin bude potvrđen ili odbijen."
+              : `Poslali ste ${createdRequests.length} zahtjeva administratoru. Svaki termin će biti potvrđen ili odbijen pojedinačno.`,
         });
       }, 300);
-  setUserMessage("Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen.");
-  setSelectedSlot("");
-  setBookingPin("");
-  setBookingPinError("");
-  setIsSubmitting(false);
-} catch (error) {
-  setIsSubmitting(false);
-  let message = error.message || "Greška: zahtjev nije poslat backendu.";
 
-  const hasConfirmedBookingForSelectedDate = userConfirmedBookings.some((booking) =>
-    booking.date === selectedDate && !isPastSlot(booking.date, booking.time)
-  );
+      setUserMessage(
+        createdRequests.length === 1
+          ? "Zahtjev je poslat administratoru. Ostanite na stranici i dobićete poruku kada termin bude potvrđen ili odbijen."
+          : `Poslali ste ${createdRequests.length} zahtjeva administratoru. Svaki termin se odobrava pojedinačno.`
+      );
+      setSelectedSlot("");
+      setSelectedSlots([]);
+      setBookingPin("");
+      setBookingPinError("");
+      setIsSubmitting(false);
+    } catch (error) {
+      setIsSubmitting(false);
+      let message = error.message || "Greška: zahtjev nije poslat backendu.";
 
-  if (hasConfirmedBookingForSelectedDate && message.includes("Već imate zakazan")) {
-    message = "Već imate rezervisan termin za ovaj dan";
-  }
+      if (message.toLowerCase().includes("pin")) {
+        setBookingPinError(message);
+      }
 
-  if (message.toLowerCase().includes("pin")) {
-    setBookingPinError(message);
-  }
-
-  setUserMessage(message);
-}
+      setUserMessage(message);
+    }
   };
 
   const approveBooking = async (request) => {
@@ -2688,7 +2739,12 @@ if (isAdminPage) {
                   <button
                     key={barber.id}
                     type="button"
-                    onClick={() => setSelectedBarber(barber.id)}
+                    onClick={() => {
+                      setSelectedBarber(barber.id);
+                      setSelectedSlot("");
+                      setSelectedSlots([]);
+                      setUserMessage("");
+                    }}
                     style={{
                       border: active ? `3px solid ${theme.strong}` : "1px solid #e5e7eb",
                       borderRadius: 22,
@@ -2756,6 +2812,7 @@ if (isAdminPage) {
                       onClick={() => {
                         setSelectedDate(item.iso);
                         setSelectedSlot("");
+                        setSelectedSlots([]);
                         setUserMessage("");
                       }}
                       style={{
@@ -2809,6 +2866,7 @@ if (isAdminPage) {
                 onChange={(e) => {
                   setSelectedBarber(Number(e.target.value));
                   setSelectedSlot("");
+                  setSelectedSlots([]);
                   setUserMessage("");
                 }}
                 style={{
@@ -2836,15 +2894,27 @@ if (isAdminPage) {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, width: "100%", boxSizing: "border-box" }}>
               {visibleUserSlots.map((slot) => {
-                const checked = selectedSlot === slot;
+                const checked = selectedSlots.includes(slot);
 
                 return (
                   <button
                     key={slot}
                     type="button"
                     onClick={() => {
-                      setSelectedSlot(checked ? "" : slot);
                       setUserMessage("");
+
+                      setSelectedSlots((current) => {
+                        if (current.includes(slot)) {
+                          return current.filter((item) => item !== slot);
+                        }
+
+                        if (current.length >= 4) {
+                          setUserMessage("Možete izabrati najviše 4 termina za isti dan.");
+                          return current;
+                        }
+
+                        return [...current, slot].sort();
+                      });
                     }}
                     style={{
                       border: checked ? `2px solid ${theme.slotBorderActive}` : `1px solid ${theme.slotBorder}`,
@@ -2909,7 +2979,7 @@ if (isAdminPage) {
             </label>
 
             {(() => {
-              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlot && bookingPin.trim();
+              const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlots.length > 0 && bookingPin.trim();
               return (
                 <button
                   onClick={requestBooking}
@@ -2938,7 +3008,7 @@ if (isAdminPage) {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {isSubmitting ? "Slanje..." : "ZAKAŽI"}
+                  {isSubmitting ? "Slanje..." : selectedSlots.length > 1 ? `ZAKAŽI ${selectedSlots.length} TERMINA` : "ZAKAŽI"}
                 </button>
               );
             })()}
