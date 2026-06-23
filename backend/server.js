@@ -473,7 +473,7 @@ app.delete("/appointments/:id", requireAdmin, async (req, res) => {
 
   try {
     const result = await pool.query(
-      "DELETE FROM appointments WHERE id = $1 AND barber_id = $2",
+      "UPDATE appointments SET status = 'cancelled_by_admin' WHERE id = $1 AND barber_id = $2",
       [req.params.id, selectedBarberId]
     );
 
