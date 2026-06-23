@@ -393,7 +393,7 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
   const phoneToCheck = savedBookings[0]?.client_phone || clientPhone;
 
-  console.log("SYNC USER BOOKINGS", {
+  console.log("AAAAAAAAA SYNC USER BOOKINGS AAAAAAAAA", {
   savedBookings,
   clientPhone,
   phoneToCheck,
