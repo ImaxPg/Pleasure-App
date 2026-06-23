@@ -389,9 +389,11 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
 
   const syncUserConfirmedBookings = async () => {
     const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
-    const phoneToCheck = isValidPhone(clientPhone)
-      ? clientPhone
-      : savedBookings[0]?.client_phone;
+const savedPhone = savedBookings[0]?.client_phone;
+
+const phoneToCheck = isValidPhone(savedPhone || "")
+  ? savedPhone
+  : clientPhone;
 
     if (isAdminPage || !isValidPhone(phoneToCheck || "")) return;
 
