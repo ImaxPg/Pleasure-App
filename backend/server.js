@@ -363,20 +363,21 @@ app.post("/appointments", bookingLimiter, (req, res) => {
         return res.status(409).json({ error: "Ovaj termin više nije dostupan." });
       }
 
-      db.get(
+       db.get(
         `
-        SELECT * FROM appointments
+        SELECT COUNT(*) as count
+        FROM appointments
         WHERE client_phone = ?
         AND date = ?
         AND status IN ('pending', 'confirmed')
         `,
         [client_phone, date],
-        (err, existing) => {
+        (err, row) => {
           if (err) return res.status(500).json({ error: "Greška pri provjeri korisnika." });
 
-          if (existing) {
+          if (row.count >= 4) {
             return res.status(409).json({
-              error: "Već imate rezervisan termin za ovaj dan",
+              error: "Možete rezervisati najviše četiri termina dnevno.",
             });
           }
 
