@@ -428,15 +428,33 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       localStorage.setItem("userConfirmedBookings", JSON.stringify(confirmedBookings));
       localStorage.removeItem("userConfirmedBooking");
       setUserConfirmedBookings(confirmedBookings);
-            if (
-        userConfirmedBookings.length > confirmedBookings.length &&
-        confirmedBookings.length >= 0
-      ) {
-        setUserPopup({
-          title: "Termin je otkazan",
-          message: "Administrator je otkazao jedan od vaših termina.",
-        });
-      }
+      const confirmedIds = new Set(confirmedBookings.map((booking) => String(booking.id)));
+    const removedBookings = userConfirmedBookings.filter(
+      (booking) =>
+        !confirmedIds.has(String(booking.id)) &&
+        !isPastSlot(booking.date, booking.time)
+    );
+
+    const notifiedIds = JSON.parse(localStorage.getItem("adminCancelledNotifiedIds") || "[]");
+    const notifiedSet = new Set(notifiedIds.map(String));
+
+    const newlyRemoved = removedBookings.filter(
+      (booking) => !notifiedSet.has(String(booking.id))
+    );
+
+    if (newlyRemoved.length > 0) {
+      const updatedNotifiedIds = [
+        ...notifiedSet,
+        ...newlyRemoved.map((booking) => String(booking.id)),
+      ];
+
+      localStorage.setItem("adminCancelledNotifiedIds", JSON.stringify(updatedNotifiedIds));
+
+      setUserPopup({
+        title: "Termin je otkazan",
+        message: "Administrator je otkazao jedan od vaših termina.",
+      });
+    }
     } catch (error) {
       // Ako nema konekcije, ostavljamo postojeći lokalni prikaz.
     }
