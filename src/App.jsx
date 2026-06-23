@@ -417,8 +417,14 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       }
 
       const result = await response.json();
+
+      console.log("MY-BOOKING RESPONSE", result);
+
       const bookings = Array.isArray(result) ? result : [result];
       const confirmedBookings = bookings
+
+
+
         .filter(
           (booking) =>
             booking?.id &&
@@ -436,6 +442,8 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
           if (a.date !== b.date) return a.date.localeCompare(b.date);
           return a.time.localeCompare(b.time);
         });
+
+console.log("CONFIRMED BOOKINGS", confirmedBookings);
 
 const previousBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
 
