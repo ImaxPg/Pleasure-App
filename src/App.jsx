@@ -393,6 +393,13 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const savedBookings = JSON.parse(localStorage.getItem("userConfirmedBookings") || "[]");
   const phoneToCheck = savedBookings[0]?.client_phone || clientPhone;
 
+  console.log("SYNC USER BOOKINGS", {
+  savedBookings,
+  clientPhone,
+  phoneToCheck,
+  time: new Date().toLocaleTimeString(),
+});
+
   if (!isValidPhone(phoneToCheck || "")) return;
 
     try {
@@ -459,14 +466,14 @@ if (removedBookings.length > 0) {
   useEffect(() => {
   if (isAdminPage) return;
 
-  syncUserConfirmedBookings();
-
   const interval = setInterval(() => {
     syncUserConfirmedBookings();
-  }, 5000);
+  }, 3000);
+
+  syncUserConfirmedBookings();
 
   return () => clearInterval(interval);
-}, [clientPhone, isAdminPage]);
+}, []);
 
   // UCITAVANJE TERMINA IZ BACKENDA (auto refresh svakih 3s)
   useEffect(() => {
