@@ -2137,7 +2137,9 @@ if (isAdminPage) {
                   value={manualTime}
                   onChange={(e) => setManualTime(e.target.value)}
                 >
-                  {slots.map((slot) => (
+                  {slots
+                  .filter((slot) => !isPastSlot(manualDate, slot))
+                  .map((slot) => (
                     <option key={slot} value={slot}>
                       {slot}
                     </option>
@@ -2280,7 +2282,9 @@ if (isAdminPage) {
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {slots.map((slot) => {
+              {slots
+                .filter((slot) => !isPastSlot(selectedDate, slot))
+                .map((slot) => {
                 const blockedNow = isBlocked(selectedDate, slot);
                 const bookedNow = isBooked(selectedDate, slot);
                 const nonWorkingNow = isNonWorkingSlot(selectedDate, slot, fixedAdminBarberId || blockBarber);
