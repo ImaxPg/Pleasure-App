@@ -157,7 +157,6 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [adminLastUpdated, setAdminLastUpdated] = useState("");
   const [userLastUpdated, setUserLastUpdated] = useState("");
   const [isBackendOnline, setIsBackendOnline] = useState(true);
-  const [loadError, setLoadError] = useState(false);
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const knownConfirmedIdsRef = useRef(new Set());
@@ -504,7 +503,6 @@ if (removedBookings.length > 0) {
           return res.json();
         })
         .then((data) => {
-          setLoadError(false);
           const bookedMap = {};
           const pendingList = [];
           const blockedMap = {};
@@ -629,8 +627,8 @@ if (removedBookings.length > 0) {
         })
         .catch(() => {
           setIsBackendOnline(false);
-          setLoadError(true);
         });
+        const [loadError, setLoadError] = useState(false);
     };
 
     if (!userPopup) {
@@ -1033,11 +1031,6 @@ const barberSchedules = SALON_CONFIG.schedules;
 
   const requestBooking = async () => {
     if (isSubmitting) return;
-
-    if (loadError) {
-      setUserMessage("Server trenutno nije dostupan. Sačekajte nekoliko sekundi i pokušajte ponovo.");
-      return;
-    }
 
     const slotsToRequest = [...selectedSlots].sort();
 
@@ -2994,11 +2987,10 @@ if (isAdminPage) {
 
             {(() => {
               const isReady = clientName.trim() && isValidPhone(clientPhone) && selectedSlots.length > 0 && bookingPin.trim();
-              const canBook = isReady && !loadError && !isSubmitting;
               return (
                 <button
                   onClick={requestBooking}
-                  disabled={!canBook}
+                  disabled={!isReady || isSubmitting}
                   onMouseEnter={() => setIsHoverBooking(true)}
                   onMouseLeave={() => setIsHoverBooking(false)}
                   style={{
@@ -3007,23 +2999,23 @@ if (isAdminPage) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 14,
-                    border: canBook ? `1px solid ${theme.strong}` : "1px solid #d1d5db",
+                    border: isReady ? `1px solid ${theme.strong}` : "1px solid #d1d5db",
                     borderRadius: 14,
                     padding: "10px 12px",
-                    background: canBook
+                    background: isReady
                       ? isHoverBooking
                         ? theme.strongHover
                         : theme.strong
                       : "#e5e7eb",
-                    color: canBook ? "white" : "#9ca3af",
+                    color: isReady ? "white" : "#9ca3af",
                     fontWeight: 800,
                     fontSize: 16,
-                    cursor: canBook ? "pointer" : "not-allowed",
+                    cursor: isReady ? "pointer" : "not-allowed",
                     marginTop: 32,
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {loadError ? "SERVER SE POKREĆE..." : isSubmitting ? "Slanje..." : selectedSlots.length > 1 ? `ZAKAŽI ${selectedSlots.length} TERMINA` : "ZAKAŽI"}
+                  {isSubmitting ? "Slanje..." : selectedSlots.length > 1 ? `ZAKAŽI ${selectedSlots.length} TERMINA` : "ZAKAŽI"}
                 </button>
               );
             })()}
