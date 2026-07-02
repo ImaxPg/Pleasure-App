@@ -334,6 +334,21 @@ app.post("/appointments", bookingLimiter, async (req, res) => {
   }
 
   try {
+    const dayOffResult = await pool.query(
+      `
+      SELECT id
+      FROM barber_days_off
+      WHERE barber_id = $1
+        AND date = $2
+      LIMIT 1
+      `,
+      [selectedBarberId, date]
+    );
+
+    if (dayOffResult.rows.length > 0) {
+      return res.status(400).json({ error: "Frizer ne radi ovog dana. Izaberite drugi datum." });
+    }
+
     const takenSlotResult = await pool.query(
       `
       SELECT * FROM appointments
@@ -609,6 +624,28 @@ app.put("/admin/barber-schedule", requireAdmin, async (req, res) => {
 });
 
 
+
+app.get("/barber-days-off", async (req, res) => {
+  const selectedBarberId = Number(req.query.barber_id || 1) || 1;
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM barber_days_off
+      WHERE barber_id = $1
+        AND date >= TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+      ORDER BY date ASC
+      `,
+      [selectedBarberId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Greška pri javnom čitanju neradnih dana:", err);
+    res.status(500).json({ error: "Greška pri čitanju neradnih dana." });
+  }
+});
 
 app.get("/admin/barber-days-off", requireAdmin, async (req, res) => {
   const selectedBarberId = getAdminBarberId(req);

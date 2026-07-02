@@ -228,6 +228,10 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [barberSchedules, setBarberSchedules] = useState(initialScheduleMap);
   const [scheduleForm, setScheduleForm] = useState(() => scheduleToForm(initialScheduleMap[String(fixedAdminBarberId || 1)]));
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [barberDaysOff, setBarberDaysOff] = useState([]);
+  const [newDayOffDate, setNewDayOffDate] = useState(todayISO());
+  const [newDayOffReason, setNewDayOffReason] = useState("");
+  const [isSavingDayOff, setIsSavingDayOff] = useState(false);
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const knownConfirmedIdsRef = useRef(new Set());
@@ -349,6 +353,16 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       setScheduleForm(scheduleToForm(adminSchedule));
     }
   }, [barberSchedules, fixedAdminBarberId]);
+
+  useEffect(() => {
+    if (!isAdminPage || !isAdminAuth) return;
+    fetchAdminDaysOff();
+  }, [isAdminPage, isAdminAuth, fixedAdminBarberId]);
+
+  useEffect(() => {
+    if (isAdminPage) return;
+    fetchPublicDaysOff(selectedBarber);
+  }, [isAdminPage, selectedBarber]);
 
   useEffect(() => {
     if (adminQuickFilter === "today") {
@@ -559,6 +573,110 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       setUserMessage(error.message || "Greška pri čuvanju radnog vremena.");
     } finally {
       setIsSavingSchedule(false);
+    }
+  };
+
+  const fetchPublicDaysOff = async (barberId = selectedBarber) => {
+    if (isAdminPage) return;
+
+    try {
+      const response = await fetch(`${API}/barber-days-off?barber_id=${barberId}&t=${Date.now()}`, {
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => ([]));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Greška pri čitanju neradnih dana.");
+      }
+
+      setBarberDaysOff(Array.isArray(data) ? data : []);
+    } catch (error) {
+      // Ako javna ruta trenutno nije dostupna, aplikacija nastavlja bez liste neradnih dana.
+    }
+  };
+
+  const fetchAdminDaysOff = async () => {
+    if (!isAdminPage || !isAdminAuth) return;
+
+    try {
+      const response = await fetch(`${API}/admin/barber-days-off?t=${Date.now()}`, {
+        headers: getAdminHeaders(),
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => ([]));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Greška pri čitanju neradnih dana.");
+      }
+
+      setBarberDaysOff(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setUserMessage(error.message || "Greška pri čitanju neradnih dana.");
+    }
+  };
+
+  const handleAddDayOff = async () => {
+    if (!newDayOffDate) {
+      setUserMessage("Izaberite datum neradnog dana.");
+      return;
+    }
+
+    setIsSavingDayOff(true);
+
+    try {
+      const response = await fetch(`${API}/admin/barber-days-off`, {
+        method: "POST",
+        headers: getAdminJsonHeaders(),
+        body: JSON.stringify({
+          date: newDayOffDate,
+          reason: newDayOffReason,
+          barber_id: fixedAdminBarberId || 1,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Neradni dan nije sačuvan.");
+      }
+
+      setBarberDaysOff((current) => {
+        const withoutSameDate = current.filter((item) => item.date !== data.date);
+        return [...withoutSameDate, data].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      });
+      setNewDayOffReason("");
+      setUserMessage("Neradni dan je sačuvan.");
+    } catch (error) {
+      setUserMessage(error.message || "Greška pri čuvanju neradnog dana.");
+    } finally {
+      setIsSavingDayOff(false);
+    }
+  };
+
+  const handleDeleteDayOff = async (dayOff) => {
+    if (!dayOff?.id) return;
+
+    const confirmed = window.confirm(`Da li želite da uklonite neradni dan ${dayOff.date}?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API}/admin/barber-days-off/${dayOff.id}`, {
+        method: "DELETE",
+        headers: getAdminHeaders(),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Neradni dan nije obrisan.");
+      }
+
+      setBarberDaysOff((current) => current.filter((item) => item.id !== dayOff.id));
+      setUserMessage("Neradni dan je uklonjen.");
+    } catch (error) {
+      setUserMessage(error.message || "Greška pri brisanju neradnog dana.");
     }
   };
 
@@ -1105,9 +1223,17 @@ const getBarberColor = (appointment) => {
     return selectedBarber || 1;
   };
 
+  const isDayOff = (date, barberId = getActiveBarberForSchedule()) => {
+    return barberDaysOff.some(
+      (item) => String(item?.date || "") === String(date || "") && Number(item?.barber_id || fixedAdminBarberId || barberId) === Number(barberId || fixedAdminBarberId || 1)
+    );
+  };
+
   const isNonWorkingSlot = (date, slot, barberId = getActiveBarberForSchedule()) => {
     const slotKey = `${date}_${slot}`;
     if (overrideOpen[slotKey]) return false;
+
+    if (isDayOff(date, barberId)) return true;
 
     const day = getDayFromISO(date);
     const baseSchedule = barberSchedules[String(Number(barberId))] || initialScheduleMap[String(Number(barberId))] || scheduleFromConfig();
@@ -2277,157 +2403,6 @@ if (isAdminPage) {
             )}
           </section>
 
-          <section style={{ background: "rgba(255,255,255,0.96)", border: "1px solid #c7d2fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
-              Radno vrijeme
-            </h2>
-            <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
-              Ovdje mijenjate trajno radno vrijeme za frizera {getBarberName(fixedAdminBarberId)}. Privremeno radno vrijeme važi samo u odabranom periodu, a nakon toga se automatski koristi standardno radno vrijeme.
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
-              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                Početak rada
-                <select value={scheduleForm.workingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, workingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                </select>
-              </label>
-
-              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                Kraj rada
-                <select value={scheduleForm.workingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, workingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                </select>
-              </label>
-
-              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                Subota radi do
-                <select value={scheduleForm.saturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, saturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                </select>
-              </label>
-            </div>
-
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 14 }}>
-              <input type="checkbox" checked={scheduleForm.hasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, hasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
-              Standardna pauza
-            </label>
-
-            {scheduleForm.hasBreak && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
-                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                  Pauza od
-                  <select value={scheduleForm.breakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, breakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                    <option value="">Bez pauze</option>
-                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                  </select>
-                </label>
-                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                  Pauza do
-                  <select value={scheduleForm.breakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, breakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                    <option value="">Bez pauze</option>
-                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                  </select>
-                </label>
-              </div>
-            )}
-
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 18 }}>
-              <input type="checkbox" checked={scheduleForm.sundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, sundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
-              Nedjelja neradna
-            </label>
-
-            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 6 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900, marginBottom: 14 }}>
-                <input type="checkbox" checked={scheduleForm.temporaryEnabled} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEnabled: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
-                Uključi privremeno radno vrijeme
-              </label>
-
-              {scheduleForm.temporaryEnabled && (
-                <div style={{ display: "grid", gap: 14 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                      Važi od
-                      <input type="date" value={scheduleForm.temporaryStartDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryStartDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
-                    </label>
-                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                      Važi do
-                      <input type="date" value={scheduleForm.temporaryEndDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEndDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
-                    </label>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                      Privremeno od
-                      <select value={scheduleForm.temporaryWorkingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                      </select>
-                    </label>
-                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                      Privremeno do
-                      <select value={scheduleForm.temporaryWorkingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                      </select>
-                    </label>
-                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                      Privremena subota do
-                      <select value={scheduleForm.temporarySaturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySaturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                      </select>
-                    </label>
-                  </div>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
-                    <input type="checkbox" checked={scheduleForm.temporaryHasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryHasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
-                    Privremena pauza
-                  </label>
-
-                  {scheduleForm.temporaryHasBreak && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                        Pauza od
-                        <select value={scheduleForm.temporaryBreakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                          <option value="">Bez pauze</option>
-                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                        </select>
-                      </label>
-                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
-                        Pauza do
-                        <select value={scheduleForm.temporaryBreakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
-                          <option value="">Bez pauze</option>
-                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
-                        </select>
-                      </label>
-                    </div>
-                  )}
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
-                    <input type="checkbox" checked={scheduleForm.temporarySundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
-                    Privremena nedjelja neradna
-                  </label>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={handleSaveSchedule}
-              disabled={isSavingSchedule}
-              style={{
-                marginTop: 20,
-                width: "100%",
-                borderRadius: 16,
-                background: isSavingSchedule ? "#9ca3af" : "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
-                color: "white",
-                padding: "13px 16px",
-                fontWeight: 900,
-                border: "none",
-                cursor: isSavingSchedule ? "not-allowed" : "pointer",
-                boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
-              }}
-            >
-              {isSavingSchedule ? "Čuvam radno vrijeme..." : "Sačuvaj radno vrijeme"}
-            </button>
-          </section>
 
 <section style={{ background: "rgba(236,253,245,0.96)", border: "1px solid #b8c7dc", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Ručno zakazivanje telefonom</h2>
@@ -2664,6 +2639,241 @@ if (isAdminPage) {
               })}
             </div>
           </section>
+
+          <section style={{ background: "rgba(255,255,255,0.96)", border: "1px solid #c7d2fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
+              Raspored rada
+            </h2>
+            <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
+              Ovdje mijenjate raspored rada za frizera {getBarberName(fixedAdminBarberId)}. Privremeno radno vrijeme važi samo u odabranom periodu, a nakon toga se automatski koristi standardno radno vrijeme.
+            </p>
+
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: "#111827", marginBottom: 12 }}>Standardni raspored</h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Početak rada
+                <select value={scheduleForm.workingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, workingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Kraj rada
+                <select value={scheduleForm.workingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, workingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Subota radi do
+                <select value={scheduleForm.saturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, saturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 14 }}>
+              <input type="checkbox" checked={scheduleForm.hasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, hasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+              Standardna pauza
+            </label>
+
+            {scheduleForm.hasBreak && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Pauza od
+                  <select value={scheduleForm.breakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, breakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                    <option value="">Bez pauze</option>
+                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Pauza do
+                  <select value={scheduleForm.breakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, breakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                    <option value="">Bez pauze</option>
+                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 18 }}>
+              <input type="checkbox" checked={scheduleForm.sundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, sundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+              Nedjelja neradna
+            </label>
+
+            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 6 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900, marginBottom: 14 }}>
+                <input type="checkbox" checked={scheduleForm.temporaryEnabled} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEnabled: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                Uključi privremeno radno vrijeme
+              </label>
+
+              {scheduleForm.temporaryEnabled && (
+                <div style={{ display: "grid", gap: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Važi od
+                      <input type="date" value={scheduleForm.temporaryStartDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryStartDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Važi do
+                      <input type="date" value={scheduleForm.temporaryEndDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEndDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremeno od
+                      <select value={scheduleForm.temporaryWorkingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremeno do
+                      <select value={scheduleForm.temporaryWorkingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremena subota do
+                      <select value={scheduleForm.temporarySaturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySaturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                    <input type="checkbox" checked={scheduleForm.temporaryHasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryHasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                    Privremena pauza
+                  </label>
+
+                  {scheduleForm.temporaryHasBreak && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                        Pauza od
+                        <select value={scheduleForm.temporaryBreakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                          <option value="">Bez pauze</option>
+                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                        Pauza do
+                        <select value={scheduleForm.temporaryBreakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                          <option value="">Bez pauze</option>
+                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                  )}
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                    <input type="checkbox" checked={scheduleForm.temporarySundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                    Privremena nedjelja neradna
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleSaveSchedule}
+              disabled={isSavingSchedule}
+              style={{
+                marginTop: 20,
+                width: "100%",
+                borderRadius: 16,
+                background: isSavingSchedule ? "#9ca3af" : "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
+                color: "white",
+                padding: "13px 16px",
+                fontWeight: 900,
+                border: "none",
+                cursor: isSavingSchedule ? "not-allowed" : "pointer",
+                boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
+              }}
+            >
+              {isSavingSchedule ? "Čuvam radno vrijeme..." : "Sačuvaj radno vrijeme"}
+            </button>
+
+            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 18, marginTop: 22 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 900, color: "#111827", marginBottom: 8 }}>Neradni dani</h3>
+              <p style={{ color: "#4b5563", marginBottom: 16 }}>
+                Dodajte dane kada frizer ne radi. Već potvrđene rezervacije ostaju nepromijenjene.
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Datum
+                  <input type="date" min={todayISO()} value={newDayOffDate} onChange={(e) => setNewDayOffDate(e.target.value)} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                </label>
+
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Razlog
+                  <input type="text" value={newDayOffReason} onChange={(e) => setNewDayOffReason(e.target.value)} placeholder="npr. godišnji, praznik..." style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddDayOff}
+                disabled={isSavingDayOff}
+                style={{
+                  width: "100%",
+                  borderRadius: 16,
+                  background: isSavingDayOff ? "#9ca3af" : "linear-gradient(135deg, #991b1b 0%, #ef4444 100%)",
+                  color: "white",
+                  padding: "13px 16px",
+                  fontWeight: 900,
+                  border: "none",
+                  cursor: isSavingDayOff ? "not-allowed" : "pointer",
+                  boxShadow: "0 10px 25px rgba(153,27,27,0.18)",
+                  marginBottom: 16,
+                }}
+              >
+                {isSavingDayOff ? "Čuvam neradni dan..." : "Dodaj neradni dan"}
+              </button>
+
+              {barberDaysOff.length === 0 ? (
+                <p style={{ color: "#71717a", margin: 0 }}>Nema upisanih neradnih dana.</p>
+              ) : (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {barberDaysOff.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        border: "1px solid #fecaca",
+                        borderRadius: 14,
+                        background: "#fff7f7",
+                        padding: "10px 12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <strong style={{ minWidth: 110, color: "#991b1b" }}>{item.date}</strong>
+                      <span style={{ flex: 1, color: "#374151" }}>{item.reason || "Bez razloga"}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDayOff(item)}
+                        style={{
+                          border: "1px solid #fecaca",
+                          borderRadius: 10,
+                          background: "white",
+                          color: "#991b1b",
+                          padding: "8px 12px",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          WebkitTextFillColor: "#991b1b",
+                        }}
+                      >
+                        Obriši
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
 
           <section style={{ background: "rgba(245,243,255,0.96)", border: "1px solid #ddd6fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
