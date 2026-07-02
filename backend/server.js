@@ -608,6 +608,80 @@ app.put("/admin/barber-schedule", requireAdmin, async (req, res) => {
   }
 });
 
+
+
+app.get("/admin/barber-days-off", requireAdmin, async (req, res) => {
+  const selectedBarberId = getAdminBarberId(req);
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT *
+      FROM barber_days_off
+      WHERE barber_id = $1
+      ORDER BY date ASC
+      `,
+      [selectedBarberId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Greška pri čitanju neradnih dana:", err);
+    res.status(500).json({ error: "Greška pri čitanju neradnih dana." });
+  }
+});
+
+app.post("/admin/barber-days-off", requireAdmin, async (req, res) => {
+  const selectedBarberId = getAdminBarberId(req);
+  const { date, reason = "" } = req.body;
+
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+    return res.status(400).json({ error: "Datum mora biti u formatu YYYY-MM-DD." });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      INSERT INTO barber_days_off (barber_id, date, reason)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (barber_id, date)
+      DO UPDATE SET reason = EXCLUDED.reason
+      RETURNING *
+      `,
+      [selectedBarberId, date, String(reason || "").trim()]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Greška pri dodavanju neradnog dana:", err);
+    res.status(500).json({ error: "Greška pri dodavanju neradnog dana." });
+  }
+});
+
+app.delete("/admin/barber-days-off/:id", requireAdmin, async (req, res) => {
+  const selectedBarberId = getAdminBarberId(req);
+
+  try {
+    const result = await pool.query(
+      `
+      DELETE FROM barber_days_off
+      WHERE id = $1 AND barber_id = $2
+      RETURNING *
+      `,
+      [req.params.id, selectedBarberId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Neradni dan nije pronađen za ovog frizera." });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Greška pri brisanju neradnog dana:", err);
+    res.status(500).json({ error: "Greška pri brisanju neradnog dana." });
+  }
+});
+
 app.get("/admin/appointments", requireAdmin, async (req, res) => {
   const { filter = "all", search = "" } = req.query;
   const selectedBarberId = getAdminBarberId(req);
