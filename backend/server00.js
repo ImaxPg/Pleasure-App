@@ -107,6 +107,39 @@ async function initDb() {
       active = EXCLUDED.active
   `);
 
+
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS barber_schedules (
+      barber_id INTEGER PRIMARY KEY REFERENCES barbers(id),
+      working_start TEXT NOT NULL DEFAULT '09:00',
+      working_end TEXT NOT NULL DEFAULT '20:00',
+      break_start TEXT,
+      break_end TEXT,
+      saturday_end TEXT DEFAULT '15:00',
+      sunday_closed BOOLEAN DEFAULT true,
+      temporary_enabled BOOLEAN DEFAULT false,
+      temporary_start_date TEXT,
+      temporary_end_date TEXT,
+      temporary_working_start TEXT,
+      temporary_working_end TEXT,
+      temporary_break_start TEXT,
+      temporary_break_end TEXT,
+      temporary_saturday_end TEXT,
+      temporary_sunday_closed BOOLEAN,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    INSERT INTO barber_schedules
+      (barber_id, working_start, working_end, break_start, break_end, saturday_end, sunday_closed)
+    VALUES
+      (1, '08:00', '20:00', '15:00', '17:00', '15:00', true),
+      (2, '09:00', '20:00', '18:00', '20:00', '15:00', true)
+    ON CONFLICT (barber_id) DO NOTHING
+  `);
+
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot_barber
     ON appointments(date, time, barber_id)
@@ -733,6 +766,177 @@ app.get("/appointments/my-booking", async (req, res) => {
   } catch (err) {
     console.error("Greška pri čitanju korisničkih termina:", err);
     res.status(500).json({ error: "Greška pri čitanju termina" });
+  }
+});
+
+
+
+app.get("/barber-schedules", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        barber_id,
+        working_start,
+        working_end,
+        break_start,
+        break_end,
+        saturday_end,
+        sunday_closed,
+        temporary_enabled,
+        temporary_start_date,
+        temporary_end_date,
+        temporary_working_start,
+        temporary_working_end,
+        temporary_break_start,
+        temporary_break_end,
+        temporary_saturday_end,
+        temporary_sunday_closed,
+        updated_at
+      FROM barber_schedules
+      ORDER BY barber_id ASC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Greška pri čitanju radnog vremena:", err);
+    res.status(500).json({ error: "Greška pri čitanju radnog vremena" });
+  }
+});
+
+app.put("/admin/barber-schedule", requireAdmin, async (req, res) => {
+  const selectedBarberId = getAdminBarberId(req);
+  const {
+    working_start,
+    working_end,
+    break_start = null,
+    break_end = null,
+    saturday_end = null,
+    sunday_closed = true,
+    temporary_enabled = false,
+    temporary_start_date = null,
+    temporary_end_date = null,
+    temporary_working_start = null,
+    temporary_working_end = null,
+    temporary_break_start = null,
+    temporary_break_end = null,
+    temporary_saturday_end = null,
+    temporary_sunday_closed = null,
+  } = req.body;
+
+  const timeOrNull = (value) => value === "" || value === undefined ? null : value;
+  const isValidTimeOrNull = (value) => value === null || isValidTime(value);
+  const isValidDateOrNull = (value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+
+  const schedule = {
+    working_start: timeOrNull(working_start),
+    working_end: timeOrNull(working_end),
+    break_start: timeOrNull(break_start),
+    break_end: timeOrNull(break_end),
+    saturday_end: timeOrNull(saturday_end),
+    temporary_start_date: timeOrNull(temporary_start_date),
+    temporary_end_date: timeOrNull(temporary_end_date),
+    temporary_working_start: timeOrNull(temporary_working_start),
+    temporary_working_end: timeOrNull(temporary_working_end),
+    temporary_break_start: timeOrNull(temporary_break_start),
+    temporary_break_end: timeOrNull(temporary_break_end),
+    temporary_saturday_end: timeOrNull(temporary_saturday_end),
+  };
+
+  if (!schedule.working_start || !schedule.working_end) {
+    return res.status(400).json({ error: "Početak i kraj radnog vremena su obavezni." });
+  }
+
+  const timeValues = [
+    schedule.working_start,
+    schedule.working_end,
+    schedule.break_start,
+    schedule.break_end,
+    schedule.saturday_end,
+    schedule.temporary_working_start,
+    schedule.temporary_working_end,
+    schedule.temporary_break_start,
+    schedule.temporary_break_end,
+    schedule.temporary_saturday_end,
+  ];
+
+  if (!timeValues.every(isValidTimeOrNull)) {
+    return res.status(400).json({ error: "Vrijeme mora biti u formatu HH:00 ili HH:30." });
+  }
+
+  if (!isValidDateOrNull(schedule.temporary_start_date) || !isValidDateOrNull(schedule.temporary_end_date)) {
+    return res.status(400).json({ error: "Datumi privremenog radnog vremena nijesu validni." });
+  }
+
+  if (temporary_enabled && (!schedule.temporary_start_date || !schedule.temporary_end_date || !schedule.temporary_working_start || !schedule.temporary_working_end)) {
+    return res.status(400).json({ error: "Za privremeno radno vrijeme unesite period, početak i kraj rada." });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      INSERT INTO barber_schedules (
+        barber_id,
+        working_start,
+        working_end,
+        break_start,
+        break_end,
+        saturday_end,
+        sunday_closed,
+        temporary_enabled,
+        temporary_start_date,
+        temporary_end_date,
+        temporary_working_start,
+        temporary_working_end,
+        temporary_break_start,
+        temporary_break_end,
+        temporary_saturday_end,
+        temporary_sunday_closed,
+        updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW())
+      ON CONFLICT (barber_id)
+      DO UPDATE SET
+        working_start = EXCLUDED.working_start,
+        working_end = EXCLUDED.working_end,
+        break_start = EXCLUDED.break_start,
+        break_end = EXCLUDED.break_end,
+        saturday_end = EXCLUDED.saturday_end,
+        sunday_closed = EXCLUDED.sunday_closed,
+        temporary_enabled = EXCLUDED.temporary_enabled,
+        temporary_start_date = EXCLUDED.temporary_start_date,
+        temporary_end_date = EXCLUDED.temporary_end_date,
+        temporary_working_start = EXCLUDED.temporary_working_start,
+        temporary_working_end = EXCLUDED.temporary_working_end,
+        temporary_break_start = EXCLUDED.temporary_break_start,
+        temporary_break_end = EXCLUDED.temporary_break_end,
+        temporary_saturday_end = EXCLUDED.temporary_saturday_end,
+        temporary_sunday_closed = EXCLUDED.temporary_sunday_closed,
+        updated_at = NOW()
+      RETURNING *
+      `,
+      [
+        selectedBarberId,
+        schedule.working_start,
+        schedule.working_end,
+        schedule.break_start,
+        schedule.break_end,
+        schedule.saturday_end,
+        Boolean(sunday_closed),
+        Boolean(temporary_enabled),
+        schedule.temporary_start_date,
+        schedule.temporary_end_date,
+        schedule.temporary_working_start,
+        schedule.temporary_working_end,
+        schedule.temporary_break_start,
+        schedule.temporary_break_end,
+        schedule.temporary_saturday_end,
+        temporary_sunday_closed === null ? null : Boolean(temporary_sunday_closed),
+      ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Greška pri čuvanju radnog vremena:", err);
+    res.status(500).json({ error: "Greška pri čuvanju radnog vremena" });
   }
 });
 
