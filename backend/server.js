@@ -403,6 +403,22 @@ app.post("/appointments", bookingLimiter, async (req, res) => {
   }
 });
 
+
+app.get("/barber-schedules", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT *
+      FROM barber_schedules
+      ORDER BY barber_id ASC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Greška pri čitanju radnog vremena:", err);
+    res.status(500).json({ error: "Greška pri čitanju radnog vremena." });
+  }
+});
+
 app.get("/appointments", async (req, res) => {
   const { date, barber_id } = req.query;
 
@@ -485,6 +501,110 @@ app.delete("/appointments/:id", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Greška pri otkazivanju termina:", err);
     res.status(500).json({ error: "Greška pri otkazivanju termina" });
+  }
+});
+
+
+app.put("/admin/barber-schedule", requireAdmin, async (req, res) => {
+  const selectedBarberId = getAdminBarberId(req);
+
+  const {
+    working_start,
+    working_end,
+    break_start,
+    break_end,
+    saturday_end,
+    sunday_closed,
+    temporary_enabled,
+    temporary_start_date,
+    temporary_end_date,
+    temporary_working_start,
+    temporary_working_end,
+    temporary_break_start,
+    temporary_break_end,
+  } = req.body;
+
+  if (!isValidTime(working_start) || !isValidTime(working_end)) {
+    return res.status(400).json({ error: "Početak i kraj radnog vremena moraju biti ispravni termini." });
+  }
+
+  if (break_start && !isValidTime(break_start)) {
+    return res.status(400).json({ error: "Početak pauze nije ispravan." });
+  }
+
+  if (break_end && !isValidTime(break_end)) {
+    return res.status(400).json({ error: "Kraj pauze nije ispravan." });
+  }
+
+  if (saturday_end && !isValidTime(saturday_end)) {
+    return res.status(400).json({ error: "Subotnje radno vrijeme nije ispravno." });
+  }
+
+  if (temporary_enabled) {
+    if (!temporary_start_date || !temporary_end_date || !temporary_working_start || !temporary_working_end) {
+      return res.status(400).json({ error: "Za privremeno radno vrijeme unesite period i početak/kraj rada." });
+    }
+
+    if (!isValidTime(temporary_working_start) || !isValidTime(temporary_working_end)) {
+      return res.status(400).json({ error: "Privremeni početak i kraj rada nijesu ispravni." });
+    }
+
+    if (temporary_break_start && !isValidTime(temporary_break_start)) {
+      return res.status(400).json({ error: "Privremeni početak pauze nije ispravan." });
+    }
+
+    if (temporary_break_end && !isValidTime(temporary_break_end)) {
+      return res.status(400).json({ error: "Privremeni kraj pauze nije ispravan." });
+    }
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE barber_schedules
+      SET
+        working_start = $1,
+        working_end = $2,
+        break_start = $3,
+        break_end = $4,
+        saturday_end = $5,
+        sunday_closed = $6,
+        temporary_enabled = $7,
+        temporary_start_date = $8,
+        temporary_end_date = $9,
+        temporary_working_start = $10,
+        temporary_working_end = $11,
+        temporary_break_start = $12,
+        temporary_break_end = $13
+      WHERE barber_id = $14
+      RETURNING *
+      `,
+      [
+        working_start,
+        working_end,
+        break_start || null,
+        break_end || null,
+        saturday_end || null,
+        Boolean(sunday_closed),
+        Boolean(temporary_enabled),
+        temporary_start_date || null,
+        temporary_end_date || null,
+        temporary_working_start || null,
+        temporary_working_end || null,
+        temporary_break_start || null,
+        temporary_break_end || null,
+        selectedBarberId,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Radno vrijeme nije pronađeno za ovog frizera." });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Greška pri izmjeni radnog vremena:", err);
+    res.status(500).json({ error: "Greška pri izmjeni radnog vremena." });
   }
 });
 
