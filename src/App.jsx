@@ -3,8 +3,8 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Calendar, ShieldCheck } from "lucide-react";
 import peroImage from "./pero4png.png";
 
-const START_HOUR = 9;
-const END_HOUR = 20;
+const START_HOUR = 6;
+const END_HOUR = 23;
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 
