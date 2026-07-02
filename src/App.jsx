@@ -88,6 +88,72 @@ const barberNameMap = {
   2: "Dženo",
 };
 
+
+const scheduleFromConfig = (schedule = {}) => ({
+  workingStart: schedule.workingStart || "09:00",
+  workingEnd: schedule.workingEnd || "20:00",
+  breaks: Array.isArray(schedule.breaks) ? schedule.breaks : [],
+  saturdayEnd: schedule.saturdayEnd || "15:00",
+  sundayClosed: schedule.sundayClosed !== false,
+  temporaryEnabled: false,
+  temporaryStartDate: "",
+  temporaryEndDate: "",
+  temporaryWorkingStart: "",
+  temporaryWorkingEnd: "",
+  temporaryBreaks: [],
+  temporarySaturdayEnd: "",
+  temporarySundayClosed: true,
+});
+
+const initialScheduleMap = Object.fromEntries(
+  Object.entries(SALON_CONFIG.schedules || {}).map(([barberId, schedule]) => [barberId, scheduleFromConfig(schedule)])
+);
+
+const scheduleFromServer = (row = {}) => ({
+  workingStart: row.working_start || "09:00",
+  workingEnd: row.working_end || "20:00",
+  breaks: row.break_start && row.break_end ? [{ start: row.break_start, end: row.break_end }] : [],
+  saturdayEnd: row.saturday_end || "15:00",
+  sundayClosed: row.sunday_closed !== false,
+  temporaryEnabled: Boolean(row.temporary_enabled),
+  temporaryStartDate: row.temporary_start_date || "",
+  temporaryEndDate: row.temporary_end_date || "",
+  temporaryWorkingStart: row.temporary_working_start || "",
+  temporaryWorkingEnd: row.temporary_working_end || "",
+  temporaryBreaks: row.temporary_break_start && row.temporary_break_end ? [{ start: row.temporary_break_start, end: row.temporary_break_end }] : [],
+  temporarySaturdayEnd: row.temporary_saturday_end || "",
+  temporarySundayClosed: row.temporary_sunday_closed !== false,
+});
+
+const scheduleToForm = (schedule = {}) => ({
+  workingStart: schedule.workingStart || "09:00",
+  workingEnd: schedule.workingEnd || "20:00",
+  hasBreak: Boolean(schedule.breaks?.[0]?.start && schedule.breaks?.[0]?.end),
+  breakStart: schedule.breaks?.[0]?.start || "",
+  breakEnd: schedule.breaks?.[0]?.end || "",
+  saturdayEnd: schedule.saturdayEnd || "15:00",
+  sundayClosed: schedule.sundayClosed !== false,
+  temporaryEnabled: Boolean(schedule.temporaryEnabled),
+  temporaryStartDate: schedule.temporaryStartDate || "",
+  temporaryEndDate: schedule.temporaryEndDate || "",
+  temporaryWorkingStart: schedule.temporaryWorkingStart || schedule.workingStart || "09:00",
+  temporaryWorkingEnd: schedule.temporaryWorkingEnd || schedule.workingEnd || "20:00",
+  temporaryHasBreak: Boolean(schedule.temporaryBreaks?.[0]?.start && schedule.temporaryBreaks?.[0]?.end),
+  temporaryBreakStart: schedule.temporaryBreaks?.[0]?.start || "",
+  temporaryBreakEnd: schedule.temporaryBreaks?.[0]?.end || "",
+  temporarySaturdayEnd: schedule.temporarySaturdayEnd || schedule.saturdayEnd || "15:00",
+  temporarySundayClosed: schedule.temporarySundayClosed !== false,
+});
+
+const buildTimeOptions = (startHour = 6, endHour = 23) => {
+  const options = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    options.push(`${String(hour).padStart(2, "0")}:00`);
+    if (hour < endHour) options.push(`${String(hour).padStart(2, "0")}:30`);
+  }
+  return options;
+};
+
 const getBarberName = (appointmentOrId) => {
   const id =
     typeof appointmentOrId === "object"
@@ -158,6 +224,10 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
   const [userLastUpdated, setUserLastUpdated] = useState("");
   const [isBackendOnline, setIsBackendOnline] = useState(true);
   const [loadError, setLoadError] = useState(false);
+
+  const [barberSchedules, setBarberSchedules] = useState(initialScheduleMap);
+  const [scheduleForm, setScheduleForm] = useState(() => scheduleToForm(initialScheduleMap[String(fixedAdminBarberId || 1)]));
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [adminPopups, setAdminPopups] = useState([]);
   const knownPendingIdsRef = useRef(new Set());
   const knownConfirmedIdsRef = useRef(new Set());
@@ -249,6 +319,36 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
     setManualBarber(fixedAdminBarberId);
     setBlockBarber(fixedAdminBarberId);
   }, [fixedAdminBarberId]);
+
+
+  useEffect(() => {
+    const fetchSchedules = () => {
+      fetch(`${API}/barber-schedules?t=${Date.now()}`, { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Greška pri čitanju radnog vremena");
+          return res.json();
+        })
+        .then((rows) => {
+          if (!Array.isArray(rows)) return;
+          setBarberSchedules((current) => ({
+            ...current,
+            ...Object.fromEntries(rows.map((row) => [String(row.barber_id), scheduleFromServer(row)])),
+          }));
+        })
+        .catch(() => {
+          // Ako backend trenutno nije dostupan, ostaje lokalni raspored iz salonConfig.js.
+        });
+    };
+
+    fetchSchedules();
+  }, []);
+
+  useEffect(() => {
+    const adminSchedule = barberSchedules[String(fixedAdminBarberId || 1)];
+    if (adminSchedule) {
+      setScheduleForm(scheduleToForm(adminSchedule));
+    }
+  }, [barberSchedules, fixedAdminBarberId]);
 
   useEffect(() => {
     if (adminQuickFilter === "today") {
@@ -400,6 +500,65 @@ const [rememberData, setRememberData] = useState(() => Boolean(localStorage.getI
       setUserMessage(error.message || "Greška pri ručnom zakazivanju termina.");
     } finally {
       setIsManualSubmitting(false);
+    }
+  };
+
+
+  const handleSaveSchedule = async () => {
+    const activeBarberId = fixedAdminBarberId || 1;
+
+    if (!scheduleForm.workingStart || !scheduleForm.workingEnd) {
+      setUserMessage("Unesite početak i kraj standardnog radnog vremena.");
+      return;
+    }
+
+    if (scheduleForm.temporaryEnabled && (!scheduleForm.temporaryStartDate || !scheduleForm.temporaryEndDate || !scheduleForm.temporaryWorkingStart || !scheduleForm.temporaryWorkingEnd)) {
+      setUserMessage("Za privremeno radno vrijeme unesite period, početak i kraj rada.");
+      return;
+    }
+
+    setIsSavingSchedule(true);
+
+    try {
+      const response = await fetch(`${API}/admin/barber-schedule`, {
+        method: "PUT",
+        headers: getAdminJsonHeaders(),
+        body: JSON.stringify({
+          barber_id: activeBarberId,
+          working_start: scheduleForm.workingStart,
+          working_end: scheduleForm.workingEnd,
+          break_start: scheduleForm.hasBreak ? scheduleForm.breakStart : null,
+          break_end: scheduleForm.hasBreak ? scheduleForm.breakEnd : null,
+          saturday_end: scheduleForm.saturdayEnd || null,
+          sunday_closed: scheduleForm.sundayClosed,
+          temporary_enabled: scheduleForm.temporaryEnabled,
+          temporary_start_date: scheduleForm.temporaryEnabled ? scheduleForm.temporaryStartDate : null,
+          temporary_end_date: scheduleForm.temporaryEnabled ? scheduleForm.temporaryEndDate : null,
+          temporary_working_start: scheduleForm.temporaryEnabled ? scheduleForm.temporaryWorkingStart : null,
+          temporary_working_end: scheduleForm.temporaryEnabled ? scheduleForm.temporaryWorkingEnd : null,
+          temporary_break_start: scheduleForm.temporaryEnabled && scheduleForm.temporaryHasBreak ? scheduleForm.temporaryBreakStart : null,
+          temporary_break_end: scheduleForm.temporaryEnabled && scheduleForm.temporaryHasBreak ? scheduleForm.temporaryBreakEnd : null,
+          temporary_saturday_end: scheduleForm.temporaryEnabled ? scheduleForm.temporarySaturdayEnd : null,
+          temporary_sunday_closed: scheduleForm.temporaryEnabled ? scheduleForm.temporarySundayClosed : null,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Radno vrijeme nije sačuvano.");
+      }
+
+      const updatedSchedule = scheduleFromServer(data);
+      setBarberSchedules((current) => ({
+        ...current,
+        [String(activeBarberId)]: updatedSchedule,
+      }));
+      setScheduleForm(scheduleToForm(updatedSchedule));
+      setUserMessage("Radno vrijeme je sačuvano.");
+    } catch (error) {
+      setUserMessage(error.message || "Greška pri čuvanju radnog vremena.");
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
@@ -930,7 +1089,6 @@ const getBarberColor = (appointment) => {
   };
 
 
-const barberSchedules = SALON_CONFIG.schedules;
 
   const timeToMinutes = (time) => {
     const [hours, minutes] = String(time || "00:00").split(":").map(Number);
@@ -952,26 +1110,41 @@ const barberSchedules = SALON_CONFIG.schedules;
     if (overrideOpen[slotKey]) return false;
 
     const day = getDayFromISO(date);
-    const hour = Number(slot.split(":")[0]);
+    const baseSchedule = barberSchedules[String(Number(barberId))] || initialScheduleMap[String(Number(barberId))] || scheduleFromConfig();
+    const useTemporary =
+      baseSchedule.temporaryEnabled &&
+      baseSchedule.temporaryStartDate &&
+      baseSchedule.temporaryEndDate &&
+      date >= baseSchedule.temporaryStartDate &&
+      date <= baseSchedule.temporaryEndDate;
 
-    if (day === 0) return true;
-    if (day === 6 && hour >= 15) return true;
+    const schedule = useTemporary
+      ? {
+          workingStart: baseSchedule.temporaryWorkingStart || baseSchedule.workingStart,
+          workingEnd: baseSchedule.temporaryWorkingEnd || baseSchedule.workingEnd,
+          breaks: baseSchedule.temporaryBreaks || [],
+          saturdayEnd: baseSchedule.temporarySaturdayEnd || baseSchedule.saturdayEnd,
+          sundayClosed: baseSchedule.temporarySundayClosed,
+        }
+      : baseSchedule;
 
-    const schedule = barberSchedules[Number(barberId)];
+    if (day === 0 && schedule.sundayClosed !== false) return true;
 
-    if (schedule) {
-      if (schedule.workingStart && isSlotInRange(slot, "00:00", schedule.workingStart)) {
-        return true;
-      }
+    if (day === 6 && schedule.saturdayEnd && timeToMinutes(slot) >= timeToMinutes(schedule.saturdayEnd)) {
+      return true;
+    }
 
-      if (schedule.workingEnd && timeToMinutes(slot) >= timeToMinutes(schedule.workingEnd)) {
-        return true;
-      }
+    if (schedule.workingStart && isSlotInRange(slot, "00:00", schedule.workingStart)) {
+      return true;
+    }
 
-      if (Array.isArray(schedule.breaks)) {
-        const isBreak = schedule.breaks.some((pause) => isSlotInRange(slot, pause.start, pause.end));
-        if (isBreak) return true;
-      }
+    if (schedule.workingEnd && timeToMinutes(slot) >= timeToMinutes(schedule.workingEnd)) {
+      return true;
+    }
+
+    if (Array.isArray(schedule.breaks)) {
+      const isBreak = schedule.breaks.some((pause) => pause.start && pause.end && isSlotInRange(slot, pause.start, pause.end));
+      if (isBreak) return true;
     }
 
     return false;
@@ -2103,6 +2276,159 @@ if (isAdminPage) {
               </div>
             )}
           </section>
+
+          <section style={{ background: "rgba(255,255,255,0.96)", border: "1px solid #c7d2fe", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>
+              Radno vrijeme
+            </h2>
+            <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
+              Ovdje mijenjate trajno radno vrijeme za frizera {getBarberName(fixedAdminBarberId)}. Privremeno radno vrijeme važi samo u odabranom periodu, a nakon toga se automatski koristi standardno radno vrijeme.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Početak rada
+                <select value={scheduleForm.workingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, workingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Kraj rada
+                <select value={scheduleForm.workingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, workingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+
+              <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                Subota radi do
+                <select value={scheduleForm.saturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, saturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                  {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 14 }}>
+              <input type="checkbox" checked={scheduleForm.hasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, hasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+              Standardna pauza
+            </label>
+
+            {scheduleForm.hasBreak && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 16 }}>
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Pauza od
+                  <select value={scheduleForm.breakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, breakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                    <option value="">Bez pauze</option>
+                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                  Pauza do
+                  <select value={scheduleForm.breakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, breakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                    <option value="">Bez pauze</option>
+                    {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, marginBottom: 18 }}>
+              <input type="checkbox" checked={scheduleForm.sundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, sundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+              Nedjelja neradna
+            </label>
+
+            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16, marginTop: 6 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 900, marginBottom: 14 }}>
+                <input type="checkbox" checked={scheduleForm.temporaryEnabled} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEnabled: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                Uključi privremeno radno vrijeme
+              </label>
+
+              {scheduleForm.temporaryEnabled && (
+                <div style={{ display: "grid", gap: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Važi od
+                      <input type="date" value={scheduleForm.temporaryStartDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryStartDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Važi do
+                      <input type="date" value={scheduleForm.temporaryEndDate} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryEndDate: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremeno od
+                      <select value={scheduleForm.temporaryWorkingStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremeno do
+                      <select value={scheduleForm.temporaryWorkingEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryWorkingEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                    <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                      Privremena subota do
+                      <select value={scheduleForm.temporarySaturdayEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySaturdayEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                        {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                    <input type="checkbox" checked={scheduleForm.temporaryHasBreak} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryHasBreak: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                    Privremena pauza
+                  </label>
+
+                  {scheduleForm.temporaryHasBreak && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                        Pauza od
+                        <select value={scheduleForm.temporaryBreakStart} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakStart: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                          <option value="">Bez pauze</option>
+                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ display: "grid", gap: 6, fontWeight: 800 }}>
+                        Pauza do
+                        <select value={scheduleForm.temporaryBreakEnd} onChange={(e) => setScheduleForm((current) => ({ ...current, temporaryBreakEnd: e.target.value }))} style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: "12px 14px", background: "white", color: "#111827" }}>
+                          <option value="">Bez pauze</option>
+                          {buildTimeOptions().map((time) => <option key={time} value={time}>{time}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                  )}
+
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                    <input type="checkbox" checked={scheduleForm.temporarySundayClosed} onChange={(e) => setScheduleForm((current) => ({ ...current, temporarySundayClosed: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#191970" }} />
+                    Privremena nedjelja neradna
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleSaveSchedule}
+              disabled={isSavingSchedule}
+              style={{
+                marginTop: 20,
+                width: "100%",
+                borderRadius: 16,
+                background: isSavingSchedule ? "#9ca3af" : "linear-gradient(135deg, #191970 0%, #2c3e75 100%)",
+                color: "white",
+                padding: "13px 16px",
+                fontWeight: 900,
+                border: "none",
+                cursor: isSavingSchedule ? "not-allowed" : "pointer",
+                boxShadow: "0 10px 25px rgba(25,25,112,0.22)",
+              }}
+            >
+              {isSavingSchedule ? "Čuvam radno vrijeme..." : "Sačuvaj radno vrijeme"}
+            </button>
+          </section>
+
 <section style={{ background: "rgba(236,253,245,0.96)", border: "1px solid #b8c7dc", borderRadius: 30, padding: 24, boxShadow: "0 16px 45px rgba(15,23,42,0.08)" }}>
             <h2 className="text-2xl font-semibold mb-4" style={{ color: "#111827", fontSize: 26, lineHeight: 1.2, WebkitTextFillColor: "#111827" }}>Ručno zakazivanje telefonom</h2>
             <p style={{ color: "#4b5563", marginTop: -6, marginBottom: 18 }}>
