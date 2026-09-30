@@ -928,6 +928,19 @@ app.delete("/appointments/:id/user-cancel", async (req, res) => {
 
     await pool.query("DELETE FROM appointments WHERE id = $1", [req.params.id]);
 
+    const barberName = getBarberName(appointment.barber_id);
+
+    const telegramMessage =
+      `❌ OTKAZAN TERMIN\n\n` +
+      `Frizer: ${barberName}\n` +
+      `Ime: ${appointment.client_name || "-"}\n` +
+      `Telefon: ${appointment.client_phone || "-"}\n` +
+      `Datum: ${appointment.date}\n` +
+      `Vrijeme: ${appointment.time}\n\n` +
+      `Otkazao: korisnik`;
+
+    sendTelegramNotification(telegramMessage);
+
     res.json({ success: true });
   } catch (err) {
     console.error("Greška pri otkazivanju korisničkog termina:", err);
