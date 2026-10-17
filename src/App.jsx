@@ -81,7 +81,7 @@ export default function MassageBookingSite() {
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [selectedBarber, setSelectedBarber] = useState(fixedAdminBarberId || 1);
 
-const barbers = SALON_CONFIG.barbers;
+const barbers = SALON_CONFIG.barbers.filter((barber) => Number(barber.id) === 1);
 
 const barberNameMap = {
   1: "Pero",
