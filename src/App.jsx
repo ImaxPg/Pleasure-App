@@ -3277,12 +3277,12 @@ if (isAdminPage) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gridTemplateColumns: "minmax(0, 1fr)",
                 gap: 14,
                 marginBottom: 20,
               }}
             >
-              {barbers.map((barber) => {
+              {barbers.filter((barber) => Number(barber.id) === 1).map((barber) => {
                 const active = selectedBarber === barber.id;
 
                 return (
@@ -3434,7 +3434,7 @@ if (isAdminPage) {
                   fontWeight: 800,
                 }}
               >
-                {barbers.map((barber) => (
+                {barbers.filter((barber) => Number(barber.id) === 1).map((barber) => (
                   <option key={barber.id} value={barber.id}>
                     {barber.name}
                   </option>
