@@ -313,6 +313,10 @@ app.post("/appointments", bookingLimiter, async (req, res) => {
   const { date, time, client_name, client_phone, booking_pin, barber_id = 1 } = req.body;
   const selectedBarberId = Number(barber_id) || 1;
 
+  if (selectedBarberId !== 1) {
+    return res.status(400).json({ error: "Zakazivanje je dostupno samo kod Pera." });
+  }
+
   if (!date || !time || !client_name || !client_phone) {
     return res.status(400).json({ error: "Nedostaju podaci za zakazivanje." });
   }
