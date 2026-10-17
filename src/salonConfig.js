@@ -17,11 +17,6 @@ export const SALON_CONFIG = {
       name: "Pero",
       image: "/barbers/pero.jpg",
     },
-    {
-      id: 2,
-      name: "Dženo",
-      image: "/barbers/dzeno.jpg",
-    },
   ],
 
   schedules: {
